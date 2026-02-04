@@ -1,39 +1,53 @@
-import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
-/* =========================
+/* ============================
    SEO METADATA (VERY IMPORTANT)
-========================= */
+============================ */
 export async function generateMetadata({ params }) {
   const { slug } = params;
 
   const { data: category } = await supabase
     .from("categories")
-    .select("name, description, h1")
+    .select("name, description")
     .eq("slug", slug)
     .single();
 
   if (!category) {
     return {
       title: "Category Not Found | Bartanwala",
+      description: "Wholesale kitchen utensils across India.",
     };
   }
 
   return {
-    title: `${category.name} Wholesale Price | Bartanwala`,
+    title: `${category.name} Wholesale Supplier in India | Bartanwala`,
     description:
       category.description ||
-      `Buy ${category.name} at wholesale price across India.`,
+      `Buy ${category.name} at best wholesale price across India. Bulk supply for hotel, catering and restaurant use.`,
+    alternates: {
+      canonical: `https://bartanwala.in/category/${slug}`,
+    },
+    openGraph: {
+      title: `${category.name} Wholesale | Bartanwala`,
+      description:
+        category.description ||
+        `Best wholesale supplier of ${category.name} in India.`,
+      url: `https://bartanwala.in/category/${slug}`,
+      siteName: "Bartanwala",
+      type: "website",
+    },
   };
 }
 
-/* =========================
+/* ============================
    CATEGORY PAGE
-========================= */
+============================ */
 export default async function CategoryPage({ params }) {
   const { slug } = params;
 
-  // 1️⃣ Fetch category
+  /* ---------- Fetch Category ---------- */
   const { data: category } = await supabase
     .from("categories")
     .select("*")
@@ -41,45 +55,63 @@ export default async function CategoryPage({ params }) {
     .single();
 
   if (!category) {
-    return <h1>Category not found</h1>;
+    notFound();
   }
 
-  // 2️⃣ Fetch products of category
-  const { data: products } = await supabase
-    .from("products")
-    .select("id, name, slug, price, price_unit")
-    .eq("category_id", category.id)
-    .order("created_at", { ascending: false });
+  /* ---------- Fetch Products with Min Price ---------- */
+  const { data: products } = await supabase.rpc(
+    "get_products_by_category",
+    { cat_id: category.id }
+  );
 
   return (
-    <main style={{ padding: "16px" }}>
-      {/* H1 – SEO GOLD */}
-      <h1>{category.h1 || category.name}</h1>
+    <main className="container">
+      {/* =========================
+          SEO H1 (ONLY ONE H1)
+      ========================== */}
+      <h1 className="category-title">
+        {category.h1 || `${category.name} Wholesale Supplier`}
+      </h1>
 
-      <p>{category.description}</p>
+      {/* =========================
+          SEO DESCRIPTION
+      ========================== */}
+      <p className="category-description">
+        {category.description ||
+          `Buy ${category.name} at best wholesale price across India. Ideal for hotels, caterers, restaurants and bulk buyers.`}
+      </p>
 
       <hr />
 
-      {/* PRODUCTS LIST */}
+      {/* =========================
+          PRODUCT LIST
+      ========================== */}
       {products && products.length > 0 ? (
-        <ul style={{ listStyle: "none", padding: 0 }}>
+        <ul className="product-grid">
           {products.map((product) => (
-            <li
-              key={product.id}
-              style={{
-                border: "1px solid #ddd",
-                padding: "12px",
-                marginBottom: "12px",
-              }}
-            >
-              <h2>{product.name}</h2>
+            <li key={product.id} className="product-card">
+              {/* H2 for SEO */}
+              <h2 className="product-title">{product.name}</h2>
 
-              <p>
-                Price: ₹{product.price} / {product.price_unit}
+              {/* Price */}
+              <p className="price">
+                Starting from <strong>₹{product.min_price}</strong>
               </p>
 
-              {/* Future Product Page */}
-              <Link href={`/product/${product.slug}`}>
+              {/* Size / Gauge */}
+              {(product.size || product.gauge) && (
+                <p className="meta">
+                  {product.size && <>Size: {product.size}</>}
+                  {product.size && product.gauge && " | "}
+                  {product.gauge && <>Gauge: {product.gauge}</>}
+                </p>
+              )}
+
+              {/* Internal Link */}
+              <Link
+                href={`/product/${product.slug}`}
+                className="view-link"
+              >
                 View Product →
               </Link>
             </li>
@@ -88,6 +120,19 @@ export default async function CategoryPage({ params }) {
       ) : (
         <p>No products available in this category.</p>
       )}
+
+      {/* =========================
+          SEO TEXT BLOCK (POWERFUL)
+      ========================== */}
+      <section className="seo-content">
+        <h2>Why buy {category.name} from Bartanwala?</h2>
+        <p>
+          Bartanwala is a trusted B2B wholesale supplier of{" "}
+          {category.name} across India. We supply hotels, catering
+          businesses, restaurants and bulk buyers with consistent
+          quality, competitive pricing and reliable delivery.
+        </p>
+      </section>
     </main>
   );
-              }
+}
