@@ -1,13 +1,32 @@
-# Bartanwala 🥣
+# Bartanwala 🥣  
+Wholesale Steel & Aluminium Utensils – All India
 
-B2B wholesale platform for steel & aluminium utensils.
+## About
+Bartanwala is a B2B wholesale platform for hotel, catering,
+restaurant and bulk utensil buyers across India.
 
-## Categories
+## Product Categories
 - Steel Bartan
-- Steel Thali & Parat
-- Aluminium Deg & Dabba
+- Steel Thali & Steel Parat
+- Aluminium Deg
+- Aluminium Dabba
+- Aluminium Top
+- Steel Pawali
+
+## Pricing Units
+- KG
+- PCS
+- DOZEN
+- SET
 
 ## Tech Stack
-- Next.js
-- Supabase
-- SEO-first architecture
+- Frontend: Next.js (SEO-first)
+- Backend: Supabase
+- Hosting: Vercel
+- Database: PostgreSQL
+
+## SEO Strategy
+- Clean URLs (/steel-thali-12-inch)
+- Category pages optimized
+- Product schema (JSON-LD)
+- Merchant Center ready
