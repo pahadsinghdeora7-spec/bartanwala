@@ -1,13 +1,12 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 
-// Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-// SEO metadata (SSR safe)
+// SEO metadata (SSR)
 export async function generateMetadata({ params }) {
   const { data: product } = await supabase
     .from("products")
@@ -27,7 +26,6 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ProductPage({ params }) {
-  // Product
   const { data: product } = await supabase
     .from("products")
     .select("*")
@@ -36,21 +34,18 @@ export default async function ProductPage({ params }) {
 
   if (!product) return notFound();
 
-  // Images
   const { data: images } = await supabase
     .from("product_images")
     .select("*")
     .eq("product_id", product.id)
-    .order("position", { ascending: true });
+    .order("position");
 
   return (
-    <main style={{ maxWidth: "1000px", margin: "auto", padding: "24px" }}>
+    <main style={{ maxWidth: "1100px", margin: "auto", padding: "24px" }}>
       <h1>{product.name}</h1>
-
       <p>{product.description}</p>
 
-      {/* Images */}
-      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
         {images?.map((img) => (
           <img
             key={img.id}
@@ -60,8 +55,6 @@ export default async function ProductPage({ params }) {
           />
         ))}
       </div>
-
-      <hr />
 
       <p><b>Size:</b> {product.size}</p>
       <p><b>Gauge:</b> {product.gauge}</p>
@@ -77,41 +70,11 @@ export default async function ProductPage({ params }) {
       )}
 
       <a
-        href={`https://wa.me/919873670361?text=Need%20price%20for%20${product.name}`}
+        href={`https://wa.me/919873670361?text=Need price for ${product.name}`}
         target="_blank"
-        style={{
-          display: "inline-block",
-          marginTop: "20px",
-          background: "#128C7E",
-          color: "#fff",
-          padding: "12px 18px",
-          borderRadius: "6px",
-          textDecoration: "none",
-        }}
       >
-        Order on WhatsApp
+        WhatsApp Order
       </a>
-
-      {/* JSON-LD SEO */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Product",
-            name: product.name,
-            description: product.description,
-            offers: {
-              "@type": "Offer",
-              priceCurrency: "INR",
-              price: product.price,
-              availability: product.in_stock
-                ? "https://schema.org/InStock"
-                : "https://schema.org/OutOfStock",
-            },
-          }),
-        }}
-      />
     </main>
   );
-      }
+}
