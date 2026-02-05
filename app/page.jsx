@@ -1,24 +1,16 @@
-export const metadata = {
-  title: "Bartanwala | Wholesale Steel & Aluminium Utensils",
-  description:
-    "Steel thali, parat, aluminium deg, dabba – bulk utensils supplier for hotels & caterers in India.",
-};
-
 export default function HomePage() {
   return (
-    <main style={{ padding: 20 }}>
-      <h1>Wholesale Steel & Aluminium Utensils</h1>
-
+    <main style={{ padding: "16px" }}>
+      <h1>Bartanwala</h1>
       <p>
-        Buy premium quality steel and aluminium bartan in bulk. Serving hotels,
-        caterers and wholesalers across India.
+        Wholesale Steel & Aluminium Utensils for Hotels, Catering
+        and Bulk Buyers across India.
       </p>
 
       <ul>
-        <li>Steel Bartan</li>
-        <li>Aluminium Bartan</li>
-        <li>Steel Thali & Parat</li>
-        <li>Aluminium Deg & Dabba</li>
+        <li><a href="/category/steel-bartan">Steel Bartan</a></li>
+        <li><a href="/category/steel-thali-parat">Steel Thali & Parat</a></li>
+        <li><a href="/category/aluminium-deg">Aluminium Deg</a></li>
       </ul>
     </main>
   );
