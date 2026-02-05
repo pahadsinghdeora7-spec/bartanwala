@@ -2,8 +2,22 @@ import { useState, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
+import {
+  FaBars,
+  FaSearch,
+  FaWhatsapp,
+  FaHome,
+  FaThLarge,
+  FaShoppingCart,
+  FaClipboardList,
+  FaUser,
+  FaRupeeSign,
+  FaBox,
+  FaTruck,
+  FaCheckCircle,
+} from "react-icons/fa";
 
-/* SUPABASE CLIENT */
+/* SUPABASE */
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -11,240 +25,261 @@ const supabase = createClient(
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [slide, setSlide] = useState(0);
   const [products, setProducts] = useState([]);
+  const [search, setSearch] = useState("");
+  const [slide, setSlide] = useState(0);
 
   const banners = [
     "Wholesale Steel Utensils – All India",
-    "Aluminium Deg & Dabba – Bulk Supply",
+    "Aluminium Deg & Dabba – Factory Price",
     "Hotel & Catering Bartan Supplier",
   ];
 
   /* SLIDER */
   useEffect(() => {
-    const timer = setInterval(() => {
-      setSlide((prev) => (prev + 1) % banners.length);
-    }, 3000);
-    return () => clearInterval(timer);
+    const t = setInterval(
+      () => setSlide((p) => (p + 1) % banners.length),
+      3000
+    );
+    return () => clearInterval(t);
   }, []);
 
-  /* LOAD PRODUCTS FROM DB */
+  /* FETCH PRODUCTS */
   useEffect(() => {
-    loadProducts();
+    fetchProducts();
   }, []);
 
-  async function loadProducts() {
-    const { data, error } = await supabase
+  async function fetchProducts() {
+    const { data } = await supabase
       .from("products")
-      .select("id, name, slug, price, price_unit");
+      .select("id, name, slug, price, price_unit, image_url")
+      .order("id", { ascending: false })
+      .limit(12);
 
-    if (!error && data) {
-      setProducts(data);
-    }
+    if (data) setProducts(data);
   }
 
   return (
     <>
       <Head>
-        <title>Bartanwala | Wholesale Utensils India</title>
+        <title>Bartanwala | B2B Wholesale Utensils</title>
         <meta
           name="description"
-          content="B2B wholesale steel and aluminium utensils supplier across India."
+          content="Buy steel & aluminium utensils in bulk at wholesale prices across India."
         />
       </Head>
 
       {/* HEADER */}
-      <header style={header}>
-        <div style={hamburger} onClick={() => setMenuOpen(!menuOpen)}>
-          <span style={line}></span>
-          <span style={line}></span>
-          <span style={line}></span>
-        </div>
-
-        <div style={logo}>Bartanwala</div>
-
+      <header style={styles.header}>
+        <FaBars size={20} onClick={() => setMenuOpen(!menuOpen)} />
+        <b>Bartanwala</b>
         <a
           href="https://wa.me/919873670361"
           target="_blank"
-          rel="noopener noreferrer"
-          style={whatsapp}
+          style={styles.whatsapp}
         >
-          WhatsApp
+          <FaWhatsapp /> WhatsApp
         </a>
       </header>
 
       {/* DRAWER */}
       {menuOpen && (
-        <div style={drawer}>
-          <b>Categories</b>
+        <div style={styles.drawer}>
+          <Link href="/">Home</Link>
           <Link href="/category/steel-bartan">Steel Bartan</Link>
           <Link href="/category/aluminium-bartan">Aluminium Bartan</Link>
-          <Link href="/category/steel-thali-parat">Steel Thali & Parat</Link>
-          <Link href="/category/aluminium-deg-dabba">Aluminium Deg & Dabba</Link>
+          <Link href="/orders">Orders</Link>
         </div>
       )}
 
       {/* SEARCH */}
-      <div style={searchBox}>
+      <div style={styles.searchBox}>
+        <FaSearch />
         <input
           placeholder="Search steel bartan, aluminium deg, thali..."
-          style={searchInput}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
       {/* SLIDER */}
-      <div style={slider}>
+      <div style={styles.slider}>
         <h2>{banners[slide]}</h2>
-        <p>B2B Wholesale · Best Prices · All India Delivery</p>
+        <div style={styles.features}>
+          <span><FaBox /> Bulk Supply</span>
+          <span><FaRupeeSign /> Factory Price</span>
+          <span><FaTruck /> All India Delivery</span>
+        </div>
       </div>
 
       {/* PRODUCTS */}
-      <main style={main}>
+      <main style={styles.main}>
         <h2>Products</h2>
 
-        <div style={productGrid}>
-          {products.map((p) => (
-            <div key={p.id} style={productCard}>
-              <div style={imgBox}>Image</div>
+        <div style={styles.grid}>
+          {products
+            .filter((p) =>
+              p.name.toLowerCase().includes(search.toLowerCase())
+            )
+            .map((p) => (
+              <div key={p.id} style={styles.card}>
+                <img
+                  src={p.image_url || "https://via.placeholder.com/200"}
+                  alt={p.name}
+                />
+                <h3>{p.name}</h3>
 
-              <h4>{p.name}</h4>
+                <p style={styles.price}>
+                  <FaRupeeSign /> {p.price} / {p.price_unit}
+                </p>
 
-              <p style={price}>
-                ₹{p.price} / {p.price_unit}
-              </p>
+                <span style={styles.verified}>
+                  <FaCheckCircle /> Verified Supplier
+                </span>
 
-              <Link href={`/product/${p.slug}`} style={viewBtn}>
-                View Details →
-              </Link>
-            </div>
-          ))}
+                <Link href={`/product/${p.slug}`} style={styles.viewBtn}>
+                  View Details
+                </Link>
+
+                <a
+                  href={`https://wa.me/919873670361?text=Need price for ${p.name}`}
+                  target="_blank"
+                  style={styles.enquiry}
+                >
+                  <FaWhatsapp /> Enquiry
+                </a>
+              </div>
+            ))}
         </div>
-
-        {products.length === 0 && (
-          <p style={{ opacity: 0.6 }}>No products found</p>
-        )}
       </main>
 
       {/* BOTTOM NAV */}
-      <nav style={bottomNav}>
-        <NavItem href="/" label="Home" />
-        <NavItem href="/category/steel-bartan" label="Category" />
-        <NavItem href="/cart" label="Cart" />
-        <NavItem href="/orders" label="Orders" />
-        <NavItem href="/account" label="Account" />
+      <nav style={styles.bottomNav}>
+        <NavItem href="/" icon={<FaHome />} label="Home" />
+        <NavItem href="/category/steel-bartan" icon={<FaThLarge />} label="Category" />
+        <NavItem href="/cart" icon={<FaShoppingCart />} label="Cart" />
+        <NavItem href="/orders" icon={<FaClipboardList />} label="Orders" />
+        <NavItem href="/account" icon={<FaUser />} label="Account" />
       </nav>
     </>
   );
 }
 
 /* COMPONENT */
-function NavItem({ href, label }) {
+function NavItem({ href, icon, label }) {
   return (
-    <Link href={href} style={navItem}>
-      {label}
+    <Link href={href} style={styles.navItem}>
+      {icon}
+      <span>{label}</span>
     </Link>
   );
 }
 
 /* STYLES */
-
-const header = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  padding: "12px",
-  borderBottom: "1px solid #ddd",
-  background: "#fff",
-  position: "sticky",
-  top: 0,
-  zIndex: 1000,
-};
-
-const hamburger = { display: "flex", flexDirection: "column", gap: "4px" };
-const line = { width: "22px", height: "2px", background: "#000" };
-const logo = { fontWeight: "bold", fontSize: "18px" };
-
-const whatsapp = {
-  background: "#25D366",
-  color: "#fff",
-  padding: "6px 10px",
-  borderRadius: "4px",
-  fontSize: "14px",
-  textDecoration: "none",
-};
-
-const drawer = {
-  padding: "16px",
-  background: "#f9f9f9",
-  borderBottom: "1px solid #ddd",
-  display: "flex",
-  flexDirection: "column",
-  gap: "10px",
-};
-
-const searchBox = { padding: "12px" };
-
-const searchInput = {
-  width: "100%",
-  padding: "10px",
-  border: "1px solid #ccc",
-  borderRadius: "4px",
-};
-
-const slider = {
-  padding: "20px",
-  background: "#f2f6ff",
-  textAlign: "center",
-};
-
-const main = { padding: "16px", paddingBottom: "90px" };
-
-const productGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-  gap: "14px",
-};
-
-const productCard = {
-  border: "1px solid #ddd",
-  borderRadius: "6px",
-  padding: "10px",
-  background: "#fff",
-};
-
-const imgBox = {
-  height: "120px",
-  background: "#eee",
-  marginBottom: "8px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "12px",
-};
-
-const price = { fontWeight: "bold", marginBottom: "6px" };
-
-const viewBtn = {
-  textDecoration: "none",
-  color: "#0070f3",
-  fontWeight: "bold",
-  fontSize: "13px",
-};
-
-const bottomNav = {
-  position: "fixed",
-  bottom: 0,
-  left: 0,
-  right: 0,
-  display: "flex",
-  justifyContent: "space-around",
-  borderTop: "1px solid #ddd",
-  background: "#fff",
-  padding: "10px 0",
-};
-
-const navItem = {
-  fontSize: "13px",
-  textDecoration: "none",
-  color: "#000",
+const styles = {
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    padding: 12,
+    borderBottom: "1px solid #ddd",
+    position: "sticky",
+    top: 0,
+    background: "#fff",
+    zIndex: 10,
+  },
+  whatsapp: {
+    background: "#25D366",
+    color: "#fff",
+    padding: "6px 10px",
+    borderRadius: 4,
+    textDecoration: "none",
+    display: "flex",
+    gap: 5,
+  },
+  drawer: {
+    padding: 12,
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+    background: "#f7f7f7",
+  },
+  searchBox: {
+    display: "flex",
+    gap: 8,
+    padding: 12,
+    borderBottom: "1px solid #eee",
+  },
+  slider: {
+    background: "#f2f6ff",
+    padding: 20,
+    textAlign: "center",
+  },
+  features: {
+    display: "flex",
+    justifyContent: "center",
+    gap: 16,
+    marginTop: 10,
+    fontSize: 14,
+  },
+  main: {
+    padding: 16,
+    paddingBottom: 90,
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+    gap: 16,
+  },
+  card: {
+    border: "1px solid #ddd",
+    padding: 12,
+    borderRadius: 6,
+    background: "#fff",
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+  },
+  price: {
+    fontWeight: "bold",
+  },
+  verified: {
+    fontSize: 12,
+    color: "green",
+    display: "flex",
+    gap: 4,
+    alignItems: "center",
+  },
+  viewBtn: {
+    textDecoration: "none",
+    color: "#0070f3",
+    fontWeight: "bold",
+  },
+  enquiry: {
+    background: "#25D366",
+    color: "#fff",
+    padding: 6,
+    textAlign: "center",
+    borderRadius: 4,
+    textDecoration: "none",
+    marginTop: 4,
+  },
+  bottomNav: {
+    position: "fixed",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    display: "flex",
+    justifyContent: "space-around",
+    borderTop: "1px solid #ddd",
+    background: "#fff",
+    padding: "8px 0",
+  },
+  navItem: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    fontSize: 12,
+    color: "#000",
+    textDecoration: "none",
+  },
 };
