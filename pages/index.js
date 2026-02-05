@@ -1,178 +1,154 @@
+import { useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 
 export default function Home() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <>
       <Head>
-        <title>Bartanwala | Wholesale Steel & Aluminium Utensils</title>
+        <title>Bartanwala | Wholesale Utensils B2B</title>
         <meta
           name="description"
-          content="Wholesale steel and aluminium utensils supplier for hotels, restaurants, caterers and bulk buyers across India."
+          content="Wholesale steel and aluminium utensils supplier for hotels, restaurants and caterers across India."
         />
       </Head>
 
-      <main style={{ maxWidth: "1100px", margin: "auto", padding: "24px" }}>
-        {/* HEADER */}
-        <header style={{ marginBottom: "32px" }}>
-          <h1 style={{ marginBottom: "8px" }}>Bartanwala</h1>
-          <p style={{ color: "#555" }}>
-            Wholesale Steel & Aluminium Utensils – All India
-          </p>
-
-          <a
-            href="https://wa.me/919873670361"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: "inline-block",
-              marginTop: "12px",
-              padding: "10px 16px",
-              background: "#25D366",
-              color: "#fff",
-              textDecoration: "none",
-              borderRadius: "4px",
-              fontWeight: "bold",
-            }}
-          >
-            WhatsApp Order
-          </a>
-        </header>
-
-        {/* HERO / INTRO */}
-        <section style={{ marginBottom: "40px" }}>
-          <h2>Wholesale Steel & Aluminium Utensils Supplier</h2>
-          <p style={{ maxWidth: "700px", color: "#444" }}>
-            Supplying hotels, restaurants, caterers and bulk buyers with premium
-            quality stainless steel and aluminium utensils at wholesale prices
-            across India.
-          </p>
-
-          <ul style={{ marginTop: "12px", paddingLeft: "18px" }}>
-            <li>Bulk orders accepted</li>
-            <li>Multiple sizes & gauges available</li>
-            <li>Suitable for hotel & catering use</li>
-            <li>Pan India supply</li>
-          </ul>
-        </section>
-
-        {/* CATEGORIES */}
-        <section style={{ marginBottom: "40px" }}>
-          <h2>Product Categories</h2>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-              gap: "16px",
-              marginTop: "16px",
-            }}
-          >
-            {/* CATEGORY CARD */}
-            <div style={cardStyle}>
-              <h3>Aluminium Bartan</h3>
-              <p style={cardText}>
-                Aluminium deg, dabba, patila and cookware for hotels, caterers
-                and bulk buyers.
-              </p>
-              <Link href="/category/aluminium-bartan">View Products →</Link>
-            </div>
-
-            <div style={cardStyle}>
-              <h3>Aluminium Deg & Dabba</h3>
-              <p style={cardText}>
-                Heavy duty aluminium degs and dabbas suitable for commercial
-                kitchen and bulk cooking.
-              </p>
-              <Link href="/category/aluminium-deg-dabba">View Products →</Link>
-            </div>
-
-            <div style={cardStyle}>
-              <h3>Steel Bartan</h3>
-              <p style={cardText}>
-                Stainless steel utensils, patila, paraat and bulk items for
-                hotels and retail stores.
-              </p>
-              <Link href="/category/steel-bartan">View Products →</Link>
-            </div>
-
-            <div style={cardStyle}>
-              <h3>Steel Thali & Parat</h3>
-              <p style={cardText}>
-                Premium quality steel thali and parat available in multiple
-                sizes and gauges.
-              </p>
-              <Link href="/category/steel-thali-parat">View Products →</Link>
-            </div>
-          </div>
-        </section>
-
-        {/* TRUST SECTION */}
-        <section style={{ marginBottom: "40px" }}>
-          <h2>Why Buy From Bartanwala?</h2>
-          <ul style={{ paddingLeft: "18px", color: "#444" }}>
-            <li>Wholesale pricing for bulk buyers</li>
-            <li>Products suitable for hotels & catering businesses</li>
-            <li>Consistent quality supply</li>
-            <li>Direct WhatsApp ordering – no middleman</li>
-          </ul>
-        </section>
-
-        {/* CTA */}
-        <section
-          style={{
-            padding: "20px",
-            border: "1px solid #ddd",
-            borderRadius: "6px",
-            textAlign: "center",
-            marginBottom: "40px",
-          }}
+      {/* HEADER */}
+      <header style={headerStyle}>
+        {/* LEFT: HAMBURGER */}
+        <div
+          style={hamburgerStyle}
+          onClick={() => setMenuOpen(!menuOpen)}
         >
-          <h2>Need Bulk Utensils at Wholesale Price?</h2>
-          <p style={{ color: "#444" }}>
-            Contact us on WhatsApp for latest prices and availability.
-          </p>
+          <span style={lineStyle}></span>
+          <span style={lineStyle}></span>
+          <span style={lineStyle}></span>
+        </div>
 
-          <a
-            href="https://wa.me/919873670361"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: "inline-block",
-              marginTop: "12px",
-              padding: "12px 20px",
-              background: "#25D366",
-              color: "#fff",
-              textDecoration: "none",
-              borderRadius: "4px",
-              fontWeight: "bold",
-            }}
-          >
-            Chat on WhatsApp
-          </a>
-        </section>
+        {/* CENTER: LOGO */}
+        <div style={logoStyle}>Bartanwala</div>
 
-        {/* FOOTER */}
-        <footer style={{ borderTop: "1px solid #eee", paddingTop: "16px" }}>
-          <p style={{ fontSize: "14px", color: "#777" }}>
-            © 2026 Bartanwala
-            <br />
-            B2B Wholesale Utensils Platform – India
-          </p>
-        </footer>
+        {/* RIGHT: WHATSAPP */}
+        <a
+          href="https://wa.me/919873670361"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={whatsappBtn}
+        >
+          WhatsApp
+        </a>
+      </header>
+
+      {/* NAVBAR */}
+      <nav style={navStyle}>
+        <Link href="/">Home</Link>
+        <Link href="/category/steel-bartan">Category</Link>
+        <Link href="/cart">Cart</Link>
+        <Link href="/orders">Orders</Link>
+        <Link href="/account">Account</Link>
+      </nav>
+
+      {/* MOBILE MENU */}
+      {menuOpen && (
+        <div style={mobileMenu}>
+          <Link href="/" onClick={() => setMenuOpen(false)}>Home</Link>
+          <Link href="/category/steel-bartan" onClick={() => setMenuOpen(false)}>Category</Link>
+          <Link href="/cart" onClick={() => setMenuOpen(false)}>Cart</Link>
+          <Link href="/orders" onClick={() => setMenuOpen(false)}>Orders</Link>
+          <Link href="/account" onClick={() => setMenuOpen(false)}>Account</Link>
+        </div>
+      )}
+
+      {/* PAGE CONTENT */}
+      <main style={{ padding: "24px", maxWidth: "1100px", margin: "auto" }}>
+        <h1>Wholesale Steel & Aluminium Utensils</h1>
+        <p style={{ color: "#555", maxWidth: "700px" }}>
+          Buy stainless steel and aluminium utensils in bulk at wholesale prices.
+          Trusted by hotels, caterers and restaurants across India.
+        </p>
+
+        <h2 style={{ marginTop: "32px" }}>Product Categories</h2>
+
+        <ul>
+          <li>Steel Bartan</li>
+          <li>Aluminium Bartan</li>
+          <li>Steel Thali & Parat</li>
+          <li>Aluminium Deg & Dabba</li>
+        </ul>
       </main>
+
+      {/* FOOTER */}
+      <footer style={footerStyle}>
+        © 2026 Bartanwala · B2B Wholesale Platform
+      </footer>
     </>
   );
 }
 
-const cardStyle = {
-  border: "1px solid #e0e0e0",
-  borderRadius: "6px",
-  padding: "16px",
+/* ================= STYLES ================= */
+
+const headerStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: "12px 16px",
+  borderBottom: "1px solid #e5e5e5",
+  position: "sticky",
+  top: 0,
+  background: "#fff",
+  zIndex: 1000,
 };
 
-const cardText = {
+const hamburgerStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "4px",
+  cursor: "pointer",
+};
+
+const lineStyle = {
+  width: "22px",
+  height: "2px",
+  background: "#000",
+};
+
+const logoStyle = {
+  fontSize: "18px",
+  fontWeight: "bold",
+};
+
+const whatsappBtn = {
+  background: "#25D366",
+  color: "#fff",
+  padding: "6px 10px",
+  borderRadius: "4px",
+  textDecoration: "none",
   fontSize: "14px",
-  color: "#555",
-  marginBottom: "8px",
+};
+
+const navStyle = {
+  display: "flex",
+  gap: "20px",
+  padding: "10px 16px",
+  borderBottom: "1px solid #eee",
+  fontSize: "14px",
+};
+
+const mobileMenu = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "12px",
+  padding: "16px",
+  borderBottom: "1px solid #ddd",
+  background: "#fafafa",
+};
+
+const footerStyle = {
+  borderTop: "1px solid #eee",
+  padding: "16px",
+  fontSize: "14px",
+  color: "#777",
+  textAlign: "center",
 };
