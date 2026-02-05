@@ -1,8 +1,6 @@
 import { supabase } from "@/lib/supabase";
 
-/* =========================
-   STATIC PARAMS
-========================= */
+/* 🔹 REQUIRED */
 export async function generateStaticParams() {
   const { data: products } = await supabase
     .from("products")
@@ -13,9 +11,7 @@ export async function generateStaticParams() {
   }));
 }
 
-/* =========================
-   SEO METADATA
-========================= */
+/* 🔹 SEO */
 export async function generateMetadata({ params }) {
   const { slug } = params;
 
@@ -31,13 +27,13 @@ export async function generateMetadata({ params }) {
 
   return {
     title: `${product.name} Wholesale Price | Bartanwala`,
-    description: product.description,
+    description:
+      product.description ||
+      `Buy ${product.name} at wholesale price across India`,
   };
 }
 
-/* =========================
-   PAGE
-========================= */
+/* 🔹 PAGE */
 export default async function ProductPage({ params }) {
   const { slug } = params;
 
@@ -46,10 +42,6 @@ export default async function ProductPage({ params }) {
     .select("*")
     .eq("slug", slug)
     .single();
-
-  if (!product) {
-    return <h1>Product not found</h1>;
-  }
 
   return (
     <main style={{ padding: "16px" }}>
