@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
@@ -12,9 +12,7 @@ import {
   FaClipboardList,
   FaUser,
   FaRupeeSign,
-  FaBox,
-  FaTruck,
-  FaCheckCircle,
+  FaBoxOpen,
 } from "react-icons/fa";
 
 /* SUPABASE */
@@ -23,61 +21,49 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+/* COLORS */
+const COLORS = {
+  primary: "#0B5ED7",
+  dark: "#333333",
+  muted: "#9CA3AF",
+  border: "#E5E7EB",
+  success: "#25D366",
+};
+
 export default function Home() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [products, setProducts] = useState([]);
-  const [search, setSearch] = useState("");
-  const [slide, setSlide] = useState(0);
-
-  const banners = [
-    "Wholesale Steel Utensils – All India",
-    "Aluminium Deg & Dabba – Factory Price",
-    "Hotel & Catering Bartan Supplier",
-  ];
-
-  /* SLIDER */
-  useEffect(() => {
-    const t = setInterval(
-      () => setSlide((p) => (p + 1) % banners.length),
-      3000
-    );
-    return () => clearInterval(t);
-  }, []);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   /* FETCH PRODUCTS */
   useEffect(() => {
-    fetchProducts();
+    async function loadProducts() {
+      const { data } = await supabase
+        .from("products")
+        .select("id, name, slug, price, price_unit, image")
+        .eq("in_stock", true)
+        .order("created_at", { ascending: false })
+        .limit(8);
+
+      setProducts(data || []);
+    }
+    loadProducts();
   }, []);
-
-  async function fetchProducts() {
-    const { data } = await supabase
-      .from("products")
-      .select("id, name, slug, price, price_unit, image_url")
-      .order("id", { ascending: false })
-      .limit(12);
-
-    if (data) setProducts(data);
-  }
 
   return (
     <>
       <Head>
-        <title>Bartanwala | B2B Wholesale Utensils</title>
+        <title>Bartanwala | Wholesale Steel & Aluminium Utensils</title>
         <meta
           name="description"
-          content="Buy steel & aluminium utensils in bulk at wholesale prices across India."
+          content="B2B wholesale steel & aluminium utensils supplier. Bulk prices, all India delivery."
         />
       </Head>
 
       {/* HEADER */}
       <header style={styles.header}>
         <FaBars size={20} onClick={() => setMenuOpen(!menuOpen)} />
-        <b>Bartanwala</b>
-        <a
-          href="https://wa.me/919873670361"
-          target="_blank"
-          style={styles.whatsapp}
-        >
+        <strong>Bartanwala</strong>
+        <a href="https://wa.me/919873670361" style={styles.whatsapp}>
           <FaWhatsapp /> WhatsApp
         </a>
       </header>
@@ -88,90 +74,91 @@ export default function Home() {
           <Link href="/">Home</Link>
           <Link href="/category/steel-bartan">Steel Bartan</Link>
           <Link href="/category/aluminium-bartan">Aluminium Bartan</Link>
-          <Link href="/orders">Orders</Link>
+          <Link href="/category/steel-thali-parat">Steel Thali & Parat</Link>
+          <Link href="/category/aluminium-deg-dabba">Aluminium Deg & Dabba</Link>
         </div>
       )}
 
       {/* SEARCH */}
       <div style={styles.searchBox}>
-        <FaSearch />
+        <FaSearch style={{ color: COLORS.muted }} />
         <input
           placeholder="Search steel bartan, aluminium deg, thali..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          style={styles.searchInput}
         />
       </div>
 
-      {/* SLIDER */}
-      <div style={styles.slider}>
-        <h2>{banners[slide]}</h2>
-        <div style={styles.features}>
-          <span><FaBox /> Bulk Supply</span>
-          <span><FaRupeeSign /> Factory Price</span>
-          <span><FaTruck /> All India Delivery</span>
-        </div>
-      </div>
+      {/* HERO */}
+      <section style={styles.hero}>
+        <h1>Wholesale Steel & Aluminium Utensils</h1>
+        <p>B2B Wholesale · Factory Price · All India Delivery</p>
+      </section>
 
       {/* PRODUCTS */}
       <main style={styles.main}>
         <h2>Products</h2>
 
         <div style={styles.grid}>
-          {products
-            .filter((p) =>
-              p.name.toLowerCase().includes(search.toLowerCase())
-            )
-            .map((p) => (
-              <div key={p.id} style={styles.card}>
-                <img
-                  src={p.image_url || "https://via.placeholder.com/200"}
-                  alt={p.name}
-                />
-                <h3>{p.name}</h3>
-
-                <p style={styles.price}>
-                  <FaRupeeSign /> {p.price} / {p.price_unit}
-                </p>
-
-                <span style={styles.verified}>
-                  <FaCheckCircle /> Verified Supplier
-                </span>
-
-                <Link href={`/product/${p.slug}`} style={styles.viewBtn}>
-                  View Details
-                </Link>
-
-                <a
-                  href={`https://wa.me/919873670361?text=Need price for ${p.name}`}
-                  target="_blank"
-                  style={styles.enquiry}
-                >
-                  <FaWhatsapp /> Enquiry
-                </a>
-              </div>
-            ))}
+          {products.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
         </div>
       </main>
 
       {/* BOTTOM NAV */}
       <nav style={styles.bottomNav}>
-        <NavItem href="/" icon={<FaHome />} label="Home" />
-        <NavItem href="/category/steel-bartan" icon={<FaThLarge />} label="Category" />
-        <NavItem href="/cart" icon={<FaShoppingCart />} label="Cart" />
-        <NavItem href="/orders" icon={<FaClipboardList />} label="Orders" />
-        <NavItem href="/account" icon={<FaUser />} label="Account" />
+        <BottomIcon icon={<FaHome />} label="Home" active />
+        <BottomIcon icon={<FaThLarge />} label="Category" />
+        <BottomIcon icon={<FaShoppingCart />} label="Cart" />
+        <BottomIcon icon={<FaClipboardList />} label="Orders" />
+        <BottomIcon icon={<FaUser />} label="Account" />
       </nav>
     </>
   );
 }
 
-/* COMPONENT */
-function NavItem({ href, icon, label }) {
+/* PRODUCT CARD – FINAL (NO CHANGE NEEDED LATER) */
+function ProductCard({ product }) {
   return (
-    <Link href={href} style={styles.navItem}>
-      {icon}
-      <span>{label}</span>
-    </Link>
+    <div style={styles.card}>
+      <div style={styles.imageWrap}>
+        {product.image ? (
+          <img src={product.image} alt={product.name} style={styles.image} />
+        ) : (
+          <div style={styles.placeholder}>Image</div>
+        )}
+      </div>
+
+      <h3 style={styles.pName}>{product.name}</h3>
+
+      <div style={styles.price}>
+        <FaRupeeSign size={12} />
+        <strong>{product.price}</strong> / {product.price_unit}
+      </div>
+
+      <div style={styles.meta}>
+        <FaBoxOpen /> Bulk Available
+      </div>
+
+      <Link href={`/product/${product.slug}`} style={styles.details}>
+        View Details →
+      </Link>
+    </div>
+  );
+}
+
+/* BOTTOM ICON */
+function BottomIcon({ icon, label, active }) {
+  return (
+    <div
+      style={{
+        textAlign: "center",
+        color: active ? COLORS.primary : COLORS.muted,
+      }}
+    >
+      <div>{icon}</div>
+      <small>{label}</small>
+    </div>
   );
 }
 
@@ -180,46 +167,49 @@ const styles = {
   header: {
     display: "flex",
     justifyContent: "space-between",
+    alignItems: "center",
     padding: 12,
-    borderBottom: "1px solid #ddd",
+    borderBottom: `1px solid ${COLORS.border}`,
     position: "sticky",
     top: 0,
     background: "#fff",
     zIndex: 10,
   },
   whatsapp: {
-    background: "#25D366",
+    background: COLORS.success,
     color: "#fff",
     padding: "6px 10px",
     borderRadius: 4,
     textDecoration: "none",
+    fontSize: 13,
     display: "flex",
-    gap: 5,
+    gap: 4,
+    alignItems: "center",
   },
   drawer: {
-    padding: 12,
+    padding: 16,
     display: "flex",
     flexDirection: "column",
     gap: 10,
-    background: "#f7f7f7",
+    background: "#f9fafb",
+    borderBottom: `1px solid ${COLORS.border}`,
   },
   searchBox: {
     display: "flex",
     gap: 8,
     padding: 12,
-    borderBottom: "1px solid #eee",
+    borderBottom: `1px solid ${COLORS.border}`,
   },
-  slider: {
-    background: "#f2f6ff",
-    padding: 20,
-    textAlign: "center",
-  },
-  features: {
-    display: "flex",
-    justifyContent: "center",
-    gap: 16,
-    marginTop: 10,
+  searchInput: {
+    flex: 1,
+    border: "none",
+    outline: "none",
     fontSize: 14,
+  },
+  hero: {
+    background: "#f2f6ff",
+    padding: 24,
+    textAlign: "center",
   },
   main: {
     padding: 16,
@@ -227,41 +217,57 @@ const styles = {
   },
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-    gap: 16,
+    gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+    gap: 14,
   },
   card: {
-    border: "1px solid #ddd",
-    padding: 12,
+    border: `1px solid ${COLORS.border}`,
     borderRadius: 6,
+    padding: 10,
     background: "#fff",
+  },
+  imageWrap: {
+    height: 120,
+    marginBottom: 8,
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+    objectFit: "contain",
+  },
+  placeholder: {
+    height: "100%",
+    background: "#f3f4f6",
     display: "flex",
-    flexDirection: "column",
-    gap: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    color: COLORS.muted,
+  },
+  pName: {
+    fontSize: 14,
+    margin: "6px 0",
   },
   price: {
-    fontWeight: "bold",
+    color: COLORS.primary,
+    fontSize: 14,
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
   },
-  verified: {
+  meta: {
     fontSize: 12,
-    color: "green",
+    color: COLORS.dark,
     display: "flex",
     gap: 4,
-    alignItems: "center",
-  },
-  viewBtn: {
-    textDecoration: "none",
-    color: "#0070f3",
-    fontWeight: "bold",
-  },
-  enquiry: {
-    background: "#25D366",
-    color: "#fff",
-    padding: 6,
-    textAlign: "center",
-    borderRadius: 4,
-    textDecoration: "none",
     marginTop: 4,
+  },
+  details: {
+    display: "inline-block",
+    marginTop: 6,
+    fontSize: 13,
+    color: COLORS.primary,
+    textDecoration: "none",
+    fontWeight: "bold",
   },
   bottomNav: {
     position: "fixed",
@@ -270,16 +276,8 @@ const styles = {
     right: 0,
     display: "flex",
     justifyContent: "space-around",
-    borderTop: "1px solid #ddd",
+    borderTop: `1px solid ${COLORS.border}`,
     background: "#fff",
     padding: "8px 0",
-  },
-  navItem: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    fontSize: 12,
-    color: "#000",
-    textDecoration: "none",
   },
 };
