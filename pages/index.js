@@ -1,10 +1,18 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import { createClient } from "@supabase/supabase-js";
+
+/* SUPABASE CLIENT */
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [slide, setSlide] = useState(0);
+  const [products, setProducts] = useState([]);
 
   const banners = [
     "Wholesale Steel Utensils – All India",
@@ -12,12 +20,28 @@ export default function Home() {
     "Hotel & Catering Bartan Supplier",
   ];
 
+  /* SLIDER */
   useEffect(() => {
     const timer = setInterval(() => {
       setSlide((prev) => (prev + 1) % banners.length);
     }, 3000);
     return () => clearInterval(timer);
   }, []);
+
+  /* LOAD PRODUCTS FROM DB */
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  async function loadProducts() {
+    const { data, error } = await supabase
+      .from("products")
+      .select("id, name, slug, price, price_unit");
+
+    if (!error && data) {
+      setProducts(data);
+    }
+  }
 
   return (
     <>
@@ -49,10 +73,10 @@ export default function Home() {
         </a>
       </header>
 
-      {/* MOBILE DRAWER */}
+      {/* DRAWER */}
       {menuOpen && (
         <div style={drawer}>
-          <p><b>Categories</b></p>
+          <b>Categories</b>
           <Link href="/category/steel-bartan">Steel Bartan</Link>
           <Link href="/category/aluminium-bartan">Aluminium Bartan</Link>
           <Link href="/category/steel-thali-parat">Steel Thali & Parat</Link>
@@ -60,10 +84,9 @@ export default function Home() {
         </div>
       )}
 
-      {/* SEARCH BAR */}
+      {/* SEARCH */}
       <div style={searchBox}>
         <input
-          type="text"
           placeholder="Search steel bartan, aluminium deg, thali..."
           style={searchInput}
         />
@@ -75,35 +98,34 @@ export default function Home() {
         <p>B2B Wholesale · Best Prices · All India Delivery</p>
       </div>
 
-      {/* MAIN CONTENT */}
+      {/* PRODUCTS */}
       <main style={main}>
-        <h2>Product Categories</h2>
+        <h2>Products</h2>
 
-        <div style={categoryGrid}>
-          <CategoryCard
-            title="Steel Bartan"
-            desc="Bulk stainless steel utensils for hotels & caterers."
-            link="/category/steel-bartan"
-          />
-          <CategoryCard
-            title="Aluminium Bartan"
-            desc="Lightweight aluminium utensils at wholesale prices."
-            link="/category/aluminium-bartan"
-          />
-          <CategoryCard
-            title="Steel Thali & Parat"
-            desc="Heavy gauge steel thali & parat."
-            link="/category/steel-thali-parat"
-          />
-          <CategoryCard
-            title="Aluminium Deg & Dabba"
-            desc="Commercial cooking deg & storage dabba."
-            link="/category/aluminium-deg-dabba"
-          />
+        <div style={productGrid}>
+          {products.map((p) => (
+            <div key={p.id} style={productCard}>
+              <div style={imgBox}>Image</div>
+
+              <h4>{p.name}</h4>
+
+              <p style={price}>
+                ₹{p.price} / {p.price_unit}
+              </p>
+
+              <Link href={`/product/${p.slug}`} style={viewBtn}>
+                View Details →
+              </Link>
+            </div>
+          ))}
         </div>
+
+        {products.length === 0 && (
+          <p style={{ opacity: 0.6 }}>No products found</p>
+        )}
       </main>
 
-      {/* BOTTOM NAVBAR */}
+      {/* BOTTOM NAV */}
       <nav style={bottomNav}>
         <NavItem href="/" label="Home" />
         <NavItem href="/category/steel-bartan" label="Category" />
@@ -115,20 +137,7 @@ export default function Home() {
   );
 }
 
-/* COMPONENTS */
-
-function CategoryCard({ title, desc, link }) {
-  return (
-    <div style={card}>
-      <h3>{title}</h3>
-      <p>{desc}</p>
-      <Link href={link} style={cardLink}>
-        View Products →
-      </Link>
-    </div>
-  );
-}
-
+/* COMPONENT */
 function NavItem({ href, label }) {
   return (
     <Link href={href} style={navItem}>
@@ -151,22 +160,9 @@ const header = {
   zIndex: 1000,
 };
 
-const hamburger = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "4px",
-};
-
-const line = {
-  width: "22px",
-  height: "2px",
-  background: "#000",
-};
-
-const logo = {
-  fontWeight: "bold",
-  fontSize: "18px",
-};
+const hamburger = { display: "flex", flexDirection: "column", gap: "4px" };
+const line = { width: "22px", height: "2px", background: "#000" };
+const logo = { fontWeight: "bold", fontSize: "18px" };
 
 const whatsapp = {
   background: "#25D366",
@@ -186,16 +182,13 @@ const drawer = {
   gap: "10px",
 };
 
-const searchBox = {
-  padding: "12px",
-};
+const searchBox = { padding: "12px" };
 
 const searchInput = {
   width: "100%",
   padding: "10px",
-  fontSize: "14px",
-  borderRadius: "4px",
   border: "1px solid #ccc",
+  borderRadius: "4px",
 };
 
 const slider = {
@@ -204,28 +197,38 @@ const slider = {
   textAlign: "center",
 };
 
-const main = {
-  padding: "16px",
-  paddingBottom: "90px",
-};
+const main = { padding: "16px", paddingBottom: "90px" };
 
-const categoryGrid = {
+const productGrid = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-  gap: "16px",
+  gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+  gap: "14px",
 };
 
-const card = {
+const productCard = {
   border: "1px solid #ddd",
-  padding: "14px",
   borderRadius: "6px",
+  padding: "10px",
   background: "#fff",
 };
 
-const cardLink = {
+const imgBox = {
+  height: "120px",
+  background: "#eee",
+  marginBottom: "8px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "12px",
+};
+
+const price = { fontWeight: "bold", marginBottom: "6px" };
+
+const viewBtn = {
+  textDecoration: "none",
   color: "#0070f3",
   fontWeight: "bold",
-  textDecoration: "none",
+  fontSize: "13px",
 };
 
 const bottomNav = {
