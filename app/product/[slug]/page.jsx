@@ -1,13 +1,9 @@
 import { notFound } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabase } from "@/lib/supabase";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
-
-// SEO metadata (SSR)
 export async function generateMetadata({ params }) {
+  const supabase = getSupabase();
+
   const { data: product } = await supabase
     .from("products")
     .select("name, description, slug")
@@ -20,19 +16,21 @@ export async function generateMetadata({ params }) {
     title: `${product.name} | Bartanwala`,
     description: product.description,
     alternates: {
-      canonical: `https://bartanwala.pages.dev/product/${product.slug}`,
+      canonical: `https://bartanwala.vercel.app/product/${product.slug}`,
     },
   };
 }
 
 export default async function ProductPage({ params }) {
+  const supabase = getSupabase();
+
   const { data: product } = await supabase
     .from("products")
     .select("*")
     .eq("slug", params.slug)
     .single();
 
-  if (!product) return notFound();
+  if (!product) notFound();
 
   const { data: images } = await supabase
     .from("product_images")
@@ -41,40 +39,28 @@ export default async function ProductPage({ params }) {
     .order("position");
 
   return (
-    <main style={{ maxWidth: "1100px", margin: "auto", padding: "24px" }}>
+    <main style={{ maxWidth: 1100, margin: "auto", padding: 24 }}>
       <h1>{product.name}</h1>
       <p>{product.description}</p>
 
-      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-        {images?.map((img) => (
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        {images?.map(img => (
           <img
             key={img.id}
             src={img.image_url}
             alt={img.alt_text || product.name}
-            width="220"
+            width={220}
           />
         ))}
       </div>
 
-      <p><b>Size:</b> {product.size}</p>
-      <p><b>Gauge:</b> {product.gauge}</p>
-      <p><b>Weight:</b> {product.weight}</p>
-      <p>
-        <b>Price:</b> ₹{product.price} / {product.price_unit}
-      </p>
+      <p><b>Price:</b> ₹{product.price} / {product.price_unit}</p>
 
       {product.in_stock ? (
         <p style={{ color: "green" }}>In Stock</p>
       ) : (
         <p style={{ color: "red" }}>Out of Stock</p>
       )}
-
-      <a
-        href={`https://wa.me/919873670361?text=Need price for ${product.name}`}
-        target="_blank"
-      >
-        WhatsApp Order
-      </a>
     </main>
   );
 }
