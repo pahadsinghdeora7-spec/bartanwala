@@ -22,7 +22,7 @@ restaurant and bulk utensil buyers across India.
 ## Tech Stack
 - Frontend: Next.js (SEO-first)
 - Backend: Supabase
-- Hosting: Vercel
+- Hosting: Cloudflare Pages
 - Database: PostgreSQL
 
 ## SEO Strategy
