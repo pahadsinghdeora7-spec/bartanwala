@@ -1,25 +1,22 @@
-   import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
-/* 🔑 Supabase client (NO alias) */
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-/* ✅ REQUIRED FOR STATIC EXPORT */
 export async function generateStaticParams() {
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("products")
     .select("slug");
 
-  if (error || !data) return [];
+  if (!data) return [];
 
-  return data.map((item) => ({
-    slug: item.slug,
+  return data.map((p) => ({
+    slug: p.slug,
   }));
 }
 
-/* ✅ SEO METADATA */
 export async function generateMetadata({ params }) {
   const { slug } = params;
 
@@ -35,11 +32,10 @@ export async function generateMetadata({ params }) {
       : "Product | Bartanwala",
     description:
       data?.description ||
-      "Wholesale steel & aluminium utensils",
+      "Wholesale utensils product",
   };
 }
 
-/* ✅ PAGE */
 export default async function ProductPage({ params }) {
   const { slug } = params;
 
@@ -56,16 +52,10 @@ export default async function ProductPage({ params }) {
   return (
     <main style={{ padding: "24px" }}>
       <h1>{product.name}</h1>
-
-      {product.description && (
-        <p>{product.description}</p>
-      )}
-
-      <p>
-        <strong>
-          ₹{product.price} / {product.price_unit}
-        </strong>
-      </p>
+      <p>{product.description}</p>
+      <strong>
+        ₹{product.price} / {product.price_unit}
+      </strong>
     </main>
   );
 }
