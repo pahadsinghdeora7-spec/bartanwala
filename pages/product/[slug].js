@@ -4,8 +4,8 @@ import { getSupabase } from "../../lib/supabase";
 import {
   FaWhatsapp,
   FaRupeeSign,
-  FaBoxOpen,
   FaShoppingCart,
+  FaBoxOpen,
 } from "react-icons/fa";
 
 export async function getServerSideProps({ params }) {
@@ -31,6 +31,29 @@ export async function getServerSideProps({ params }) {
 export default function ProductPage({ product }) {
   const [qty, setQty] = useState(1);
 
+  // Add to Cart (localStorage)
+  function addToCart() {
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+
+    const existing = cart.find((i) => i.id === product.id);
+
+    if (existing) {
+      existing.qty += qty;
+    } else {
+      cart.push({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        unit: product.price_unit,
+        qty,
+      });
+    }
+
+    localStorage.setItem("cart", JSON.stringify(cart));
+    alert("Product added to cart");
+  }
+
+  // WhatsApp bulk message
   const whatsappMessage = encodeURIComponent(
     `Hello Bartanwala,
 
@@ -40,21 +63,6 @@ Price: ₹${product.price}/${product.price_unit}
 Quantity: ${qty} ${product.price_unit}`
   );
 
-  function addToCart() {
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-
-    cart.push({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      unit: product.price_unit,
-      qty,
-    });
-
-    localStorage.setItem("cart", JSON.stringify(cart));
-    alert("Product added to cart");
-  }
-
   return (
     <>
       <Head>
@@ -63,14 +71,14 @@ Quantity: ${qty} ${product.price_unit}`
           name="description"
           content={
             product.description ||
-            `Wholesale ${product.name} at factory price.`
+            `Wholesale ${product.name} at factory price. All India delivery.`
           }
         />
       </Head>
 
       <main style={{ padding: 16 }}>
         {/* IMAGE */}
-        <div style={{ height: 220, marginBottom: 12 }}>
+        <div style={{ height: 240, marginBottom: 12 }}>
           {product.image ? (
             <img
               src={product.image}
@@ -111,7 +119,7 @@ Quantity: ${qty} ${product.price_unit}`
           <strong>{product.price}</strong> / {product.price_unit}
         </div>
 
-        {/* MOQ + STOCK */}
+        {/* META */}
         <div style={{ marginTop: 8, fontSize: 13 }}>
           {product.moq && (
             <div>
@@ -140,17 +148,13 @@ Quantity: ${qty} ${product.price_unit}`
 
         {/* DESCRIPTION */}
         {product.description && (
-          <p style={{ marginTop: 12 }}>{product.description}</p>
+          <p style={{ marginTop: 12, color: "#374151" }}>
+            {product.description}
+          </p>
         )}
 
         {/* ACTION BUTTONS */}
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            marginTop: 20,
-          }}
-        >
+        <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
           {/* ADD TO CART */}
           <button
             onClick={addToCart}
@@ -196,4 +200,4 @@ Quantity: ${qty} ${product.price_unit}`
       </main>
     </>
   );
-          }
+                    }
