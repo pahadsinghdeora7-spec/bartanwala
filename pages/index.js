@@ -117,33 +117,36 @@ export default function Home() {
   );
 }
 
-/* PRODUCT CARD – FINAL (NO CHANGE NEEDED LATER) */
+/* PRODUCT CARD – FULLY CLICKABLE */
 function ProductCard({ product }) {
   return (
-    <div style={styles.card}>
-      <div style={styles.imageWrap}>
-        {product.image ? (
-          <img src={product.image} alt={product.name} style={styles.image} />
-        ) : (
-          <div style={styles.placeholder}>Image</div>
-        )}
+    <Link
+      href={`/product/${product.slug}`}
+      style={{ textDecoration: "none", color: "inherit" }}
+    >
+      <div style={styles.card}>
+        <div style={styles.imageWrap}>
+          {product.image ? (
+            <img src={product.image} alt={product.name} style={styles.image} />
+          ) : (
+            <div style={styles.placeholder}>Image</div>
+          )}
+        </div>
+
+        <h3 style={styles.pName}>{product.name}</h3>
+
+        <div style={styles.price}>
+          <FaRupeeSign size={12} />
+          <strong>{product.price}</strong> / {product.price_unit}
+        </div>
+
+        <div style={styles.meta}>
+          <FaBoxOpen /> Bulk Available
+        </div>
+
+        <span style={styles.details}>View Details →</span>
       </div>
-
-      <h3 style={styles.pName}>{product.name}</h3>
-
-      <div style={styles.price}>
-        <FaRupeeSign size={12} />
-        <strong>{product.price}</strong> / {product.price_unit}
-      </div>
-
-      <div style={styles.meta}>
-        <FaBoxOpen /> Bulk Available
-      </div>
-
-      <Link href={`/product/${product.slug}`} style={styles.details}>
-        View Details →
-      </Link>
-    </div>
+    </Link>
   );
 }
 
@@ -225,6 +228,7 @@ const styles = {
     borderRadius: 6,
     padding: 10,
     background: "#fff",
+    cursor: "pointer",
   },
   imageWrap: {
     height: 120,
@@ -266,7 +270,6 @@ const styles = {
     marginTop: 6,
     fontSize: 13,
     color: COLORS.primary,
-    textDecoration: "none",
     fontWeight: "bold",
   },
   bottomNav: {
