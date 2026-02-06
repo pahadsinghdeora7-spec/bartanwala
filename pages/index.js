@@ -117,13 +117,20 @@ export default function Home() {
   );
 }
 
-/* PRODUCT CARD – FULLY CLICKABLE */
+/* ✅ PRODUCT CARD – 404 SAFE CLICK */
 function ProductCard({ product }) {
   return (
-    <Link
-      href={`/product/${product.slug}`}
-      style={{ textDecoration: "none", color: "inherit" }}
-    >
+    <div style={{ position: "relative" }}>
+      {/* invisible full-card link */}
+      <Link
+        href={`/product/${product.slug}`}
+        style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 1,
+        }}
+      />
+
       <div style={styles.card}>
         <div style={styles.imageWrap}>
           {product.image ? (
@@ -146,7 +153,7 @@ function ProductCard({ product }) {
 
         <span style={styles.details}>View Details →</span>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -228,7 +235,6 @@ const styles = {
     borderRadius: 6,
     padding: 10,
     background: "#fff",
-    cursor: "pointer",
   },
   imageWrap: {
     height: 120,
