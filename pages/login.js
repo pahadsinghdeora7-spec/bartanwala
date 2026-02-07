@@ -16,7 +16,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -27,7 +27,7 @@ export default function LoginPage() {
       return;
     }
 
-    // ✅ LOGIN SUCCESS
+    setLoading(false);
     router.replace("/account");
   };
 
@@ -39,7 +39,7 @@ export default function LoginPage() {
 
       <div style={styles.page}>
         <form style={styles.card} onSubmit={handleLogin}>
-          <h2 style={{ marginBottom: 4 }}>Welcome Back</h2>
+          <h2>Welcome Back</h2>
           <p style={styles.sub}>Login to continue ordering</p>
 
           {error && <p style={styles.error}>{error}</p>}
@@ -62,7 +62,7 @@ export default function LoginPage() {
             style={styles.input}
           />
 
-          <button style={styles.btn} disabled={loading}>
+          <button disabled={loading} style={styles.btn}>
             {loading ? "Logging in..." : "Login"}
           </button>
 
@@ -79,7 +79,6 @@ export default function LoginPage() {
   );
 }
 
-/* ===== STYLES ===== */
 const styles = {
   page: {
     minHeight: "100vh",
@@ -87,44 +86,48 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
     background: "#f5f6f8",
+    padding: 16,
   },
   card: {
     width: "100%",
-    maxWidth: 360,
+    maxWidth: 380,
     background: "#fff",
-    padding: 20,
-    borderRadius: 14,
+    padding: 24,
+    borderRadius: 16,
     textAlign: "center",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
   },
   sub: {
     fontSize: 13,
     color: "#6b7280",
-    marginBottom: 16,
+    marginBottom: 18,
   },
   input: {
     width: "100%",
-    padding: 12,
-    marginBottom: 12,
-    borderRadius: 8,
+    padding: 14,
+    marginBottom: 14,
+    borderRadius: 10,
     border: "1px solid #d1d5db",
+    fontSize: 15,
   },
   btn: {
     width: "100%",
-    padding: 12,
+    padding: 14,
     background: "#16a34a",
     color: "#fff",
     border: "none",
-    borderRadius: 10,
+    borderRadius: 12,
     fontWeight: 600,
+    fontSize: 16,
     cursor: "pointer",
   },
   error: {
     color: "#dc2626",
     fontSize: 13,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   link: {
-    marginTop: 12,
+    marginTop: 14,
     color: "#2563eb",
     cursor: "pointer",
     fontSize: 14,
@@ -132,6 +135,6 @@ const styles = {
   note: {
     fontSize: 12,
     color: "#6b7280",
-    marginTop: 10,
+    marginTop: 12,
   },
 };
