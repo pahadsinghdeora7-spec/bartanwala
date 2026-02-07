@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import Head from "next/head";
 import {
-  FaTrash,
   FaMinus,
   FaPlus,
+  FaTrash,
   FaWhatsapp,
 } from "react-icons/fa";
 
@@ -16,23 +15,21 @@ export default function CartPage() {
     setCart(saved);
   }, []);
 
-  function updateQty(id, qty) {
+  const updateQty = (id, qty) => {
     const updated = cart.map((item) =>
-      item.id === id
-        ? { ...item, qty: Math.max(1, qty) }
-        : item
+      item.id === id ? { ...item, qty: Math.max(1, qty) } : item
     );
     setCart(updated);
     localStorage.setItem("cart", JSON.stringify(updated));
-  }
+  };
 
-  function removeItem(id) {
+  const removeItem = (id) => {
     const updated = cart.filter((i) => i.id !== id);
     setCart(updated);
     localStorage.setItem("cart", JSON.stringify(updated));
-  }
+  };
 
-  const totalAmount = cart.reduce(
+  const subtotal = cart.reduce(
     (sum, i) => sum + i.price * i.qty,
     0
   );
@@ -41,35 +38,24 @@ export default function CartPage() {
     cart
       .map(
         (i) =>
-          `${i.name} - Qty: ${i.qty} (${i.price}/${i.price_unit})`
+          `${i.name}\nQty: ${i.qty}\nRate: ₹${i.price}/${i.price_unit}\n`
       )
-      .join("\n") +
-      `\n\nTotal: ₹${totalAmount}`
+      .join("\n") + `\nTotal Amount: ₹${subtotal}`
   );
 
   return (
     <>
       <Head>
-        <title>My Cart | Bartanwala</title>
+        <title>Shopping Cart | Bartanwala</title>
       </Head>
 
       <div style={styles.page}>
-        {/* HEADER */}
-        <div style={styles.topRow}>
-          <h2>My Cart</h2>
-          <Link href="/">
-            <a style={styles.continue}>Continue Shopping</a>
-          </Link>
-        </div>
+        {/* TITLE */}
+        <h2 style={styles.title}>
+          Shopping Cart ({cart.length} items)
+        </h2>
 
-        {/* EMPTY CART */}
-        {cart.length === 0 && (
-          <div style={styles.empty}>
-            🛒 Cart is empty
-          </div>
-        )}
-
-        {/* CART ITEMS */}
+        {/* CART LIST */}
         {cart.map((item) => (
           <div key={item.id} style={styles.card}>
             <img
@@ -79,64 +65,60 @@ export default function CartPage() {
 
             <div style={styles.info}>
               <div style={styles.name}>{item.name}</div>
-              <div style={styles.price}>
-                ₹ {item.price} / {item.price_unit}
-              </div>
+              <div style={styles.price}>₹ {item.price}</div>
 
               <div style={styles.qtyRow}>
-                <button
-                  onClick={() =>
-                    updateQty(item.id, item.qty - 1)
-                  }
-                >
+                <button onClick={() => updateQty(item.id, item.qty - 1)}>
                   <FaMinus />
                 </button>
-
-                <input
-                  type="number"
-                  value={item.qty}
-                  onChange={(e) =>
-                    updateQty(item.id, Number(e.target.value))
-                  }
-                />
-
-                <button
-                  onClick={() =>
-                    updateQty(item.id, item.qty + 1)
-                  }
-                >
+                <span>{item.qty}</span>
+                <button onClick={() => updateQty(item.id, item.qty + 1)}>
                   <FaPlus />
                 </button>
               </div>
             </div>
 
             <button
-              style={styles.remove}
+              style={styles.delete}
               onClick={() => removeItem(item.id)}
             >
               <FaTrash />
             </button>
           </div>
         ))}
-      </div>
 
-      {/* STICKY BOTTOM SUMMARY */}
-      {cart.length > 0 && (
-        <div style={styles.bottom}>
-          <div style={styles.total}>
-            <span>Total</span>
-            <strong>₹ {totalAmount}</strong>
+        {/* ORDER SUMMARY */}
+        {cart.length > 0 && (
+          <div style={styles.summary}>
+            <h3>Order Summary</h3>
+
+            <div style={styles.row}>
+              <span>Subtotal</span>
+              <span>₹ {subtotal}</span>
+            </div>
+
+            <div style={styles.rowMuted}>
+              <span>Courier Charges</span>
+              <span>Not included</span>
+            </div>
+
+            <hr />
+
+            <div style={styles.totalRow}>
+              <strong>Total</strong>
+              <strong>₹ {subtotal}</strong>
+            </div>
+
+            <a
+              href={`https://wa.me/919873670361?text=${whatsappText}`}
+              target="_blank"
+              style={styles.whatsapp}
+            >
+              <FaWhatsapp /> Place Order on WhatsApp
+            </a>
           </div>
-
-          <a
-            href={`https://wa.me/919873670361?text=${whatsappText}`}
-            target="_blank"
-            style={styles.whatsapp}
-          >
-            <FaWhatsapp /> Place Order on WhatsApp
-          </a>
-        </div>
-      )}
+        )}
+      </div>
     </>
   );
 }
@@ -146,46 +128,33 @@ export default function CartPage() {
 const styles = {
   page: {
     padding: 16,
-    paddingBottom: 120,
     background: "#f5f6f8",
     minHeight: "100vh",
+    paddingBottom: 80,
   },
 
-  topRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-
-  continue: {
-    fontSize: 13,
-    color: "#2563eb",
-    textDecoration: "underline",
-  },
-
-  empty: {
-    textAlign: "center",
-    marginTop: 80,
-    color: "#6b7280",
+  title: {
+    fontSize: 18,
+    fontWeight: 600,
+    marginBottom: 12,
   },
 
   card: {
     display: "flex",
     gap: 12,
     background: "#fff",
-    borderRadius: 12,
     padding: 12,
-    marginBottom: 12,
+    borderRadius: 10,
+    marginBottom: 10,
     alignItems: "center",
   },
 
   image: {
-    width: 64,
-    height: 64,
+    width: 60,
+    height: 60,
     objectFit: "contain",
-    borderRadius: 8,
     background: "#f3f4f6",
+    borderRadius: 6,
   },
 
   info: {
@@ -194,53 +163,64 @@ const styles = {
 
   name: {
     fontSize: 14,
-    fontWeight: 600,
+    fontWeight: 500,
+    marginBottom: 4,
   },
 
   price: {
-    fontSize: 13,
+    fontSize: 14,
     color: "#2563eb",
-    marginTop: 2,
   },
 
   qtyRow: {
     display: "flex",
-    gap: 6,
-    marginTop: 8,
+    gap: 10,
     alignItems: "center",
+    marginTop: 6,
   },
 
-  remove: {
+  delete: {
     background: "none",
     border: "none",
     color: "#dc2626",
   },
 
-  bottom: {
-    position: "fixed",
-    bottom: 0,
-    left: 0,
-    right: 0,
+  summary: {
     background: "#fff",
-    borderTop: "1px solid #e5e7eb",
-    padding: 12,
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 14,
   },
 
-  total: {
+  row: {
     display: "flex",
     justifyContent: "space-between",
-    marginBottom: 10,
+    marginBottom: 6,
+  },
+
+  rowMuted: {
+    display: "flex",
+    justifyContent: "space-between",
+    color: "#6b7280",
+    fontSize: 13,
+  },
+
+  totalRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginTop: 10,
     fontSize: 16,
   },
 
   whatsapp: {
-    background: "#25D366",
+    marginTop: 14,
+    background: "#2563eb",
     color: "#fff",
     padding: 14,
     borderRadius: 10,
     textAlign: "center",
+    fontWeight: 600,
     textDecoration: "none",
-    fontWeight: 700,
     display: "flex",
     justifyContent: "center",
     gap: 8,
