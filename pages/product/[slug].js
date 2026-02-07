@@ -53,31 +53,58 @@ export default function ProductPage({ product, related }) {
 
   /* ================= QUANTITY LOGIC ================= */
 
-  // Assume KG product (as per discussion)
-  const quantityOptions = [
-    { label: "40 KG (Minimum Order)", value: 40 },
-    { label: "80 KG (1 Bundle)", value: 80 },
-    { label: "160 KG (2 Bundle)", value: 160 },
-    { label: "240 KG (3 Bundle)", value: 240 },
-    { label: "320 KG (4 Bundle)", value: 320 },
-  ];
+  const unit = product.unit_type || "kg"; // kg | pcs | set
+  const cartonSize = product.carton_size || 1; // backend use only
 
-  const [qty, setQty] = useState(40);
+  let quantityOptions = [];
+
+  // KG LOGIC
+  if (unit === "kg") {
+    quantityOptions = [
+      { label: "40 KG (Minimum Order)", value: 40 },
+      { label: "80 KG (1 Bundle)", value: 80 },
+      { label: "160 KG (2 Bundle)", value: 160 },
+      { label: "240 KG (3 Bundle)", value: 240 },
+      { label: "320 KG (4 Bundle)", value: 320 },
+    ];
+  }
+
+  // PCS / SET → CARTON ONLY (NO PCS SHOWN)
+  if (unit === "pcs" || unit === "set") {
+    quantityOptions = Array.from({ length: 5 }).map((_, i) => {
+      const cartons = i + 1;
+      return {
+        label: `${cartons} Carton`,
+        value: cartons * cartonSize, // real qty (hidden)
+        cartons,
+      };
+    });
+  }
+
+  const [qty, setQty] = useState(quantityOptions[0]?.value || 1);
 
   function addToCart() {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
     const existing = cart.find((i) => i.id === product.id);
 
+    const cartons =
+      unit === "kg"
+        ? qty >= 80
+          ? qty / 80
+          : 0
+        : qty / cartonSize;
+
     const cartItem = {
       ...product,
       qty,
-      unit: "kg",
-      bundle_base: 40,
-      bundle_size: qty >= 80 ? qty / 80 : 0,
+      unit,
+      cartons,
+      carton_size: unit === "kg" ? null : cartonSize,
     };
 
     if (existing) {
       existing.qty = qty;
+      existing.cartons = cartons;
     } else {
       cart.push(cartItem);
     }
@@ -118,7 +145,6 @@ export default function ProductPage({ product, related }) {
         <div style={styles.card}>
           <h1 style={styles.title}>{product.name}</h1>
 
-          {/* PRICE + STOCK */}
           <div style={styles.row}>
             <div style={styles.price}>
               <FaRupeeSign /> {product.price} / {product.price_unit}
@@ -128,20 +154,14 @@ export default function ProductPage({ product, related }) {
             </div>
           </div>
 
-          {/* SPECS */}
           <div style={styles.row}>
-            <div>📏 Size: {product.size}</div>
-            <div>⚙️ Gauge: {product.gauge}</div>
-          </div>
-
-          <div style={styles.row}>
-            <div>⚖️ Weight: {product.weight}</div>
+            <div>📦 Unit: {unit.toUpperCase()}</div>
             <div>
               <FaBoxOpen /> Bulk Available
             </div>
           </div>
 
-          {/* QUANTITY DROPDOWN */}
+          {/* QUANTITY */}
           <div style={styles.qtyRow}>
             <span>Quantity</span>
             <select
@@ -171,7 +191,6 @@ export default function ProductPage({ product, related }) {
             </a>
           </div>
 
-          {/* DESCRIPTION */}
           <p style={styles.desc}>{product.description}</p>
         </div>
 
@@ -203,18 +222,14 @@ export default function ProductPage({ product, related }) {
 
 const styles = {
   page: { background: "#f5f6f8", paddingBottom: 90 },
-
   imageWrap: { background: "#fff", padding: 16 },
-
   mainImage: {
     width: "100%",
     height: 260,
     objectFit: "contain",
     borderRadius: 12,
   },
-
   thumbRow: { display: "flex", gap: 8, marginTop: 10 },
-
   thumb: {
     width: 56,
     height: 56,
@@ -223,43 +238,34 @@ const styles = {
     padding: 4,
     background: "#fff",
   },
-
   card: {
     background: "#fff",
     margin: 12,
     padding: 18,
     borderRadius: 16,
   },
-
   title: { textAlign: "center", fontSize: 20, fontWeight: 700 },
-
   row: {
     display: "flex",
     justifyContent: "space-between",
     marginTop: 10,
     fontSize: 14,
   },
-
   price: { color: "#0B5ED7", fontWeight: 700 },
-
   stock: { color: "green", display: "flex", gap: 4 },
-
   qtyRow: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: 14,
   },
-
   select: {
     padding: 8,
     borderRadius: 8,
     border: "1px solid #e5e7eb",
     fontSize: 14,
   },
-
   actionRow: { display: "flex", gap: 10, marginTop: 18 },
-
   cartBtn: {
     flex: 1,
     padding: 14,
@@ -269,7 +275,6 @@ const styles = {
     color: "#0B5ED7",
     fontWeight: 600,
   },
-
   whatsappBtn: {
     flex: 1,
     padding: 14,
@@ -280,22 +285,18 @@ const styles = {
     textAlign: "center",
     textDecoration: "none",
   },
-
   desc: {
     marginTop: 16,
     fontSize: 14,
     lineHeight: 1.6,
     color: "#4b5563",
   },
-
   related: { padding: 12 },
-
   relatedGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
     gap: 12,
   },
-
   relatedCard: {
     background: "#fff",
     padding: 10,
