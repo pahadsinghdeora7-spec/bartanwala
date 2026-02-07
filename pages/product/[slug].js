@@ -25,6 +25,14 @@ export async function getServerSideProps({ params }) {
 }
 
 export default function ProductPage({ product }) {
+  const images = [
+    product.image,
+    product.image1,
+    product.image2,
+    product.image3,
+  ].filter(Boolean);
+
+  const [activeImg, setActiveImg] = useState(images[0]);
   const [qty, setQty] = useState(1);
 
   function addToCart() {
@@ -60,22 +68,34 @@ Please share bulk price.`
         <title>{product.name} | Bartanwala</title>
       </Head>
 
-      <div style={styles.mobilePage}>
-        {/* IMAGE */}
-        <div style={styles.mobileImageBox}>
-          {product.image ? (
-            <img
-              src={product.image}
-              alt={product.name}
-              style={styles.mobileImage}
-            />
-          ) : (
-            <div style={styles.noImage}>No Image</div>
+      {/* PAGE */}
+      <div style={styles.page}>
+        {/* IMAGE SECTION */}
+        <div style={styles.imageSection}>
+          <img src={activeImg} alt={product.name} style={styles.mainImage} />
+
+          {images.length > 1 && (
+            <div style={styles.thumbRow}>
+              {images.map((img, i) => (
+                <img
+                  key={i}
+                  src={img}
+                  onClick={() => setActiveImg(img)}
+                  style={{
+                    ...styles.thumb,
+                    border:
+                      img === activeImg
+                        ? "2px solid #0B5ED7"
+                        : "1px solid #e5e7eb",
+                  }}
+                />
+              ))}
+            </div>
           )}
         </div>
 
-        {/* CONTENT */}
-        <div style={styles.content}>
+        {/* DETAILS */}
+        <div style={styles.details}>
           <h1 style={styles.title}>{product.name}</h1>
 
           <div style={styles.priceRow}>
@@ -114,7 +134,7 @@ Please share bulk price.`
           )}
         </div>
 
-        {/* STICKY ACTION BAR (MOBILE PROFESSIONAL) */}
+        {/* STICKY ACTION BAR (LIKE LAPKINGHUB) */}
         <div style={styles.stickyBar}>
           <button style={styles.cartBtn} onClick={addToCart}>
             <FaShoppingCart /> Add to Cart
@@ -134,42 +154,48 @@ Please share bulk price.`
   );
 }
 
-/* ================= MOBILE-FIRST STYLES ================= */
+/* ================= STYLES ================= */
 
 const styles = {
-  mobilePage: {
+  page: {
     background: "#f5f6f8",
     minHeight: "100vh",
-    paddingBottom: 80, // space for sticky bar
+    paddingBottom: 90,
   },
 
-  mobileImageBox: {
+  imageSection: {
     background: "#fff",
     padding: 16,
   },
 
-  mobileImage: {
+  mainImage: {
     width: "100%",
-    maxHeight: 280,
+    height: 260,
+    objectFit: "contain",
+    borderRadius: 10,
+  },
+
+  thumbRow: {
+    display: "flex",
+    gap: 8,
+    marginTop: 10,
+  },
+
+  thumb: {
+    width: 60,
+    height: 60,
     objectFit: "contain",
     borderRadius: 8,
+    padding: 4,
+    background: "#fff",
   },
 
-  noImage: {
-    height: 240,
-    background: "#e5e7eb",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#9ca3af",
-  },
-
-  content: {
+  details: {
     background: "#fff",
     marginTop: 8,
     padding: 16,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
   },
 
   title: {
@@ -210,7 +236,7 @@ const styles = {
   },
 
   qtyRow: {
-    marginTop: 14,
+    marginTop: 16,
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
@@ -219,11 +245,11 @@ const styles = {
   qtyControl: {
     display: "flex",
     alignItems: "center",
-    gap: 12,
+    gap: 14,
   },
 
   desc: {
-    marginTop: 12,
+    marginTop: 14,
     fontSize: 14,
     lineHeight: 1.6,
     color: "#4b5563",
@@ -235,7 +261,7 @@ const styles = {
     left: 0,
     right: 0,
     display: "flex",
-    gap: 8,
+    gap: 10,
     padding: 12,
     background: "#fff",
     borderTop: "1px solid #e5e7eb",
@@ -244,20 +270,22 @@ const styles = {
   cartBtn: {
     flex: 1,
     padding: 14,
-    borderRadius: 8,
+    borderRadius: 10,
     border: "1px solid #0B5ED7",
     background: "#fff",
     color: "#0B5ED7",
     fontWeight: 600,
+    fontSize: 15,
   },
 
   whatsappBtn: {
     flex: 1,
     padding: 14,
-    borderRadius: 8,
+    borderRadius: 10,
     background: "#25D366",
     color: "#fff",
     fontWeight: 600,
+    fontSize: 15,
     textAlign: "center",
     textDecoration: "none",
   },
