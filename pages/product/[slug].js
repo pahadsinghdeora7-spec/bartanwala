@@ -39,28 +39,10 @@ export default function ProductPage({ product }) {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
     const existing = cart.find((i) => i.id === product.id);
     if (existing) existing.qty += qty;
-    else {
-      cart.push({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        unit: product.price_unit,
-        qty,
-      });
-    }
+    else cart.push({ ...product, qty });
     localStorage.setItem("cart", JSON.stringify(cart));
     alert("Added to cart");
   }
-
-  const whatsappMessage = encodeURIComponent(
-    `Hello Bartanwala,
-
-Product: ${product.name}
-Price: ₹${product.price}/${product.price_unit}
-Quantity: ${qty}
-
-Please share bulk price.`
-  );
 
   return (
     <>
@@ -68,11 +50,10 @@ Please share bulk price.`
         <title>{product.name} | Bartanwala</title>
       </Head>
 
-      {/* PAGE */}
       <div style={styles.page}>
-        {/* IMAGE SECTION */}
-        <div style={styles.imageSection}>
-          <img src={activeImg} alt={product.name} style={styles.mainImage} />
+        {/* IMAGE */}
+        <div style={styles.imageWrap}>
+          <img src={activeImg} style={styles.mainImage} />
 
           {images.length > 1 && (
             <div style={styles.thumbRow}>
@@ -94,25 +75,24 @@ Please share bulk price.`
           )}
         </div>
 
-        {/* DETAILS */}
-        <div style={styles.details}>
+        {/* PRODUCT CARD */}
+        <div style={styles.card}>
           <h1 style={styles.title}>{product.name}</h1>
 
           <div style={styles.priceRow}>
             <FaRupeeSign />
-            <span style={styles.price}>{product.price}</span>
-            <span style={styles.unit}>/ {product.price_unit}</span>
+            <strong>{product.price}</strong>
+            <span>/ {product.price_unit}</span>
           </div>
 
           <div style={styles.stock}>
             <FaCheckCircle color="green" /> In Stock
           </div>
 
-          {/* SPECS */}
           <div style={styles.specs}>
-            {product.size && <div>📏 Size: {product.size}</div>}
-            {product.gauge && <div>⚙️ Gauge: {product.gauge}</div>}
-            {product.weight && <div>⚖️ Weight: {product.weight}</div>}
+            <div>📏 Size: {product.size}</div>
+            <div>⚙️ Gauge: {product.gauge}</div>
+            <div>⚖️ Weight: {product.weight}</div>
             <div>
               <FaBoxOpen /> Bulk Available
             </div>
@@ -121,33 +101,29 @@ Please share bulk price.`
           {/* QUANTITY */}
           <div style={styles.qtyRow}>
             <span>Quantity</span>
-            <div style={styles.qtyControl}>
+            <div style={styles.qty}>
               <button onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
               <strong>{qty}</strong>
               <button onClick={() => setQty(qty + 1)}>+</button>
             </div>
           </div>
 
-          {/* DESCRIPTION */}
-          {product.description && (
-            <p style={styles.desc}>{product.description}</p>
-          )}
-        </div>
+          <p style={styles.desc}>{product.description}</p>
 
-        {/* STICKY ACTION BAR (LIKE LAPKINGHUB) */}
-        <div style={styles.stickyBar}>
-          <button style={styles.cartBtn} onClick={addToCart}>
-            <FaShoppingCart /> Add to Cart
-          </button>
+          {/* ACTION BUTTONS (NOT TOO LOW) */}
+          <div style={styles.actionRow}>
+            <button style={styles.cartBtn} onClick={addToCart}>
+              <FaShoppingCart /> Add to Cart
+            </button>
 
-          <a
-            href={`https://wa.me/919873670361?text=${whatsappMessage}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={styles.whatsappBtn}
-          >
-            <FaWhatsapp /> Get Bulk Price
-          </a>
+            <a
+              href={`https://wa.me/919873670361`}
+              target="_blank"
+              style={styles.whatsappBtn}
+            >
+              <FaWhatsapp /> Get Bulk Price
+            </a>
+          </div>
         </div>
       </div>
     </>
@@ -159,11 +135,10 @@ Please share bulk price.`
 const styles = {
   page: {
     background: "#f5f6f8",
-    minHeight: "100vh",
-    paddingBottom: 90,
+    paddingBottom: 30,
   },
 
-  imageSection: {
+  imageWrap: {
     background: "#fff",
     padding: 16,
   },
@@ -172,40 +147,42 @@ const styles = {
     width: "100%",
     height: 260,
     objectFit: "contain",
-    borderRadius: 10,
+    borderRadius: 12,
   },
 
   thumbRow: {
     display: "flex",
     gap: 8,
     marginTop: 10,
+    justifyContent: "center",
   },
 
   thumb: {
-    width: 60,
-    height: 60,
+    width: 56,
+    height: 56,
     objectFit: "contain",
     borderRadius: 8,
     padding: 4,
     background: "#fff",
   },
 
-  details: {
+  card: {
     background: "#fff",
-    marginTop: 8,
-    padding: 16,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
+    margin: "12px",
+    padding: "18px",
+    borderRadius: 16,
   },
 
   title: {
     fontSize: 20,
     fontWeight: 700,
     lineHeight: 1.3,
+    textAlign: "center",
   },
 
   priceRow: {
     display: "flex",
+    justifyContent: "center",
     alignItems: "center",
     gap: 6,
     fontSize: 22,
@@ -213,26 +190,19 @@ const styles = {
     marginTop: 8,
   },
 
-  price: {
-    fontWeight: 700,
-  },
-
-  unit: {
-    fontSize: 14,
-    color: "#6b7280",
-  },
-
   stock: {
+    textAlign: "center",
     marginTop: 6,
     fontSize: 14,
   },
 
   specs: {
-    marginTop: 12,
+    marginTop: 14,
     display: "grid",
     gap: 6,
     fontSize: 14,
     color: "#374151",
+    textAlign: "center",
   },
 
   qtyRow: {
@@ -242,10 +212,10 @@ const styles = {
     alignItems: "center",
   },
 
-  qtyControl: {
+  qty: {
     display: "flex",
+    gap: 12,
     alignItems: "center",
-    gap: 14,
   },
 
   desc: {
@@ -253,18 +223,13 @@ const styles = {
     fontSize: 14,
     lineHeight: 1.6,
     color: "#4b5563",
+    textAlign: "center",
   },
 
-  stickyBar: {
-    position: "fixed",
-    bottom: 0,
-    left: 0,
-    right: 0,
+  actionRow: {
     display: "flex",
     gap: 10,
-    padding: 12,
-    background: "#fff",
-    borderTop: "1px solid #e5e7eb",
+    marginTop: 18,
   },
 
   cartBtn: {
@@ -275,7 +240,6 @@ const styles = {
     background: "#fff",
     color: "#0B5ED7",
     fontWeight: 600,
-    fontSize: 15,
   },
 
   whatsappBtn: {
@@ -285,7 +249,6 @@ const styles = {
     background: "#25D366",
     color: "#fff",
     fontWeight: 600,
-    fontSize: 15,
     textAlign: "center",
     textDecoration: "none",
   },
