@@ -50,13 +50,38 @@ export default function ProductPage({ product, related }) {
   ].filter(Boolean);
 
   const [activeImg, setActiveImg] = useState(images[0]);
-  const [qty, setQty] = useState(1);
+
+  /* ================= QUANTITY LOGIC ================= */
+
+  // Assume KG product (as per discussion)
+  const quantityOptions = [
+    { label: "40 KG (Minimum Order)", value: 40 },
+    { label: "80 KG (1 Bundle)", value: 80 },
+    { label: "160 KG (2 Bundle)", value: 160 },
+    { label: "240 KG (3 Bundle)", value: 240 },
+    { label: "320 KG (4 Bundle)", value: 320 },
+  ];
+
+  const [qty, setQty] = useState(40);
 
   function addToCart() {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
     const existing = cart.find((i) => i.id === product.id);
-    if (existing) existing.qty += qty;
-    else cart.push({ ...product, qty });
+
+    const cartItem = {
+      ...product,
+      qty,
+      unit: "kg",
+      bundle_base: 40,
+      bundle_size: qty >= 80 ? qty / 80 : 0,
+    };
+
+    if (existing) {
+      existing.qty = qty;
+    } else {
+      cart.push(cartItem);
+    }
+
     localStorage.setItem("cart", JSON.stringify(cart));
     alert("Added to cart");
   }
@@ -116,19 +141,20 @@ export default function ProductPage({ product, related }) {
             </div>
           </div>
 
-          {/* QUANTITY */}
+          {/* QUANTITY DROPDOWN */}
           <div style={styles.qtyRow}>
             <span>Quantity</span>
-            <div style={styles.qtyBox}>
-              <button onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
-              <input
-                type="number"
-                value={qty}
-                min="1"
-                onChange={(e) => setQty(Number(e.target.value) || 1)}
-              />
-              <button onClick={() => setQty(qty + 1)}>+</button>
-            </div>
+            <select
+              value={qty}
+              onChange={(e) => setQty(Number(e.target.value))}
+              style={styles.select}
+            >
+              {quantityOptions.map((q) => (
+                <option key={q.value} value={q.value}>
+                  {q.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* ACTION BUTTONS */}
@@ -225,7 +251,12 @@ const styles = {
     marginTop: 14,
   },
 
-  qtyBox: { display: "flex", gap: 6 },
+  select: {
+    padding: 8,
+    borderRadius: 8,
+    border: "1px solid #e5e7eb",
+    fontSize: 14,
+  },
 
   actionRow: { display: "flex", gap: 10, marginTop: 18 },
 
