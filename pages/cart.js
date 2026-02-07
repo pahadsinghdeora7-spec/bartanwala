@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
-import {
-  FaMinus,
-  FaPlus,
-  FaTrash,
-  FaWhatsapp,
-} from "react-icons/fa";
+import { useRouter } from "next/router";
+import { FaMinus, FaPlus, FaTrash } from "react-icons/fa";
 
 export default function CartPage() {
+  const router = useRouter();
   const [cart, setCart] = useState([]);
 
   useEffect(() => {
@@ -34,28 +31,27 @@ export default function CartPage() {
     0
   );
 
-  const whatsappText = encodeURIComponent(
-    cart
-      .map(
-        (i) =>
-          `${i.name}\nQty: ${i.qty}\nRate: ₹${i.price}/${i.price_unit}\n`
-      )
-      .join("\n") + `\nTotal Amount: ₹${subtotal}`
-  );
-
   return (
     <>
       <Head>
-        <title>Shopping Cart | Bartanwala</title>
+        <title>My Cart | Bartanwala</title>
       </Head>
 
       <div style={styles.page}>
         {/* TITLE */}
-        <h2 style={styles.title}>
-          Shopping Cart ({cart.length} items)
-        </h2>
+        <div style={styles.header}>
+          <h2>Shopping Cart</h2>
+          <span>{cart.length} items</span>
+        </div>
 
-        {/* CART LIST */}
+        {/* EMPTY CART */}
+        {cart.length === 0 && (
+          <div style={styles.empty}>
+            Your cart is empty
+          </div>
+        )}
+
+        {/* CART ITEMS */}
         {cart.map((item) => (
           <div key={item.id} style={styles.card}>
             <img
@@ -65,14 +61,28 @@ export default function CartPage() {
 
             <div style={styles.info}>
               <div style={styles.name}>{item.name}</div>
-              <div style={styles.price}>₹ {item.price}</div>
+              <div style={styles.price}>
+                ₹ {item.price} / {item.price_unit}
+              </div>
 
               <div style={styles.qtyRow}>
-                <button onClick={() => updateQty(item.id, item.qty - 1)}>
+                <button
+                  style={styles.qtyBtn}
+                  onClick={() =>
+                    updateQty(item.id, item.qty - 1)
+                  }
+                >
                   <FaMinus />
                 </button>
-                <span>{item.qty}</span>
-                <button onClick={() => updateQty(item.id, item.qty + 1)}>
+
+                <span style={styles.qty}>{item.qty}</span>
+
+                <button
+                  style={styles.qtyBtn}
+                  onClick={() =>
+                    updateQty(item.id, item.qty + 1)
+                  }
+                >
                   <FaPlus />
                 </button>
               </div>
@@ -99,7 +109,7 @@ export default function CartPage() {
 
             <div style={styles.rowMuted}>
               <span>Courier Charges</span>
-              <span>Not included</span>
+              <span>As applicable</span>
             </div>
 
             <hr />
@@ -109,13 +119,13 @@ export default function CartPage() {
               <strong>₹ {subtotal}</strong>
             </div>
 
-            <a
-              href={`https://wa.me/919873670361?text=${whatsappText}`}
-              target="_blank"
-              style={styles.whatsapp}
+            {/* CHECKOUT BUTTON */}
+            <button
+              style={styles.checkout}
+              onClick={() => router.push("/checkout")}
             >
-              <FaWhatsapp /> Place Order on WhatsApp
-            </a>
+              Proceed to Checkout →
+            </button>
           </div>
         )}
       </div>
@@ -130,13 +140,23 @@ const styles = {
     padding: 16,
     background: "#f5f6f8",
     minHeight: "100vh",
-    paddingBottom: 80,
+    paddingBottom: 90,
   },
 
-  title: {
-    fontSize: 18,
-    fontWeight: 600,
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
     marginBottom: 12,
+    fontSize: 16,
+    fontWeight: 600,
+  },
+
+  empty: {
+    background: "#fff",
+    padding: 20,
+    borderRadius: 12,
+    textAlign: "center",
+    color: "#6b7280",
   },
 
   card: {
@@ -144,17 +164,17 @@ const styles = {
     gap: 12,
     background: "#fff",
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     marginBottom: 10,
     alignItems: "center",
   },
 
   image: {
-    width: 60,
-    height: 60,
+    width: 64,
+    height: 64,
     objectFit: "contain",
     background: "#f3f4f6",
-    borderRadius: 6,
+    borderRadius: 8,
   },
 
   info: {
@@ -163,31 +183,45 @@ const styles = {
 
   name: {
     fontSize: 14,
-    fontWeight: 500,
+    fontWeight: 600,
     marginBottom: 4,
   },
 
   price: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#2563eb",
   },
 
   qtyRow: {
     display: "flex",
-    gap: 10,
     alignItems: "center",
+    gap: 10,
     marginTop: 6,
+  },
+
+  qtyBtn: {
+    border: "1px solid #e5e7eb",
+    background: "#fff",
+    padding: "4px 8px",
+    borderRadius: 6,
+  },
+
+  qty: {
+    minWidth: 20,
+    textAlign: "center",
+    fontWeight: 600,
   },
 
   delete: {
     background: "none",
     border: "none",
     color: "#dc2626",
+    fontSize: 16,
   },
 
   summary: {
     background: "#fff",
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     marginTop: 14,
   },
@@ -212,18 +246,16 @@ const styles = {
     fontSize: 16,
   },
 
-  whatsapp: {
+  checkout: {
     marginTop: 14,
+    width: "100%",
     background: "#2563eb",
     color: "#fff",
-    padding: 14,
-    borderRadius: 10,
-    textAlign: "center",
+    padding: 16,
+    borderRadius: 12,
+    border: "none",
+    fontSize: 16,
     fontWeight: 600,
-    textDecoration: "none",
-    display: "flex",
-    justifyContent: "center",
-    gap: 8,
-    alignItems: "center",
+    cursor: "pointer",
   },
 };
