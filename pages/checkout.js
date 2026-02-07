@@ -11,6 +11,8 @@ export default function CheckoutPage() {
     phone: "",
     city: "",
     address: "",
+    transportSelect: "",
+    transportName: "",
   });
 
   useEffect(() => {
@@ -25,6 +27,15 @@ export default function CheckoutPage() {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleTransportChange = (e) => {
+    const value = e.target.value;
+    setForm({
+      ...form,
+      transportSelect: value,
+      transportName: value === "Other" ? "" : value,
+    });
   };
 
   const placeOrder = () => {
@@ -42,18 +53,21 @@ export default function CheckoutPage() {
 📍 City: ${form.city}
 🏠 Address: ${form.address}
 
+🚚 *Transport Details*
+Transport: ${form.transportName || "Not provided"}
+
 🛒 *Order Details*
 ${cart
   .map(
     (i) =>
       `• ${i.name}
-   Qty: ${i.qty}
-   Rate: ₹${i.price}/${i.price_unit}`
+  Qty: ${i.qty}
+  Rate: ₹${i.price}/${i.price_unit}`
   )
   .join("\n")}
 
+📦 Packing Charges: As applicable
 💰 *Total Amount: ₹${subtotal}*
-(Courier charges extra)
 `;
 
     window.open(
@@ -113,6 +127,38 @@ ${cart
           />
         </div>
 
+        {/* TRANSPORT */}
+        <div className={styles.card}>
+          <h3>Transport Details</h3>
+
+          <select
+            className={styles.input}
+            value={form.transportSelect}
+            onChange={handleTransportChange}
+          >
+            <option value="">Select Your Transport</option>
+            <option value="VRL Logistics">VRL Logistics</option>
+            <option value="GATI">GATI</option>
+            <option value="TCI Express">TCI Express</option>
+            <option value="SafeExpress">SafeExpress</option>
+            <option value="Local Transport">Local Transport</option>
+            <option value="Other">Other (Type manually)</option>
+          </select>
+
+          <input
+            name="transportName"
+            placeholder="Transport Name (eg: VRL Transport)"
+            value={form.transportName}
+            onChange={handleChange}
+            className={styles.input}
+          />
+
+          <p className={styles.note}>
+            Packing charges applicable. Transport charges will be paid
+            by customer as per transporter rates.
+          </p>
+        </div>
+
         {/* ORDER SUMMARY */}
         <div className={styles.card}>
           <h3>Order Summary</h3>
@@ -127,7 +173,7 @@ ${cart
           ))}
 
           <div className={styles.rowMuted}>
-            <span>Courier Charges</span>
+            <span>Packing Charges</span>
             <span>As applicable</span>
           </div>
 
@@ -146,4 +192,4 @@ ${cart
       </div>
     </>
   );
-    }
+              }
