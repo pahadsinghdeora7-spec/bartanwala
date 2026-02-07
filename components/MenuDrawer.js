@@ -12,25 +12,39 @@ import {
   FaPhone,
 } from "react-icons/fa";
 
-export default function MenuDrawer({ open, onClose, user }) {
+/**
+ * DrawerMenu
+ * open  : boolean
+ * onClose : function
+ * user : object | null
+ */
+export default function DrawerMenu({ open, onClose, user }) {
   if (!open) return null;
 
   const isLoggedIn = !!user;
 
   return (
     <>
+      {/* OVERLAY */}
       <div style={styles.overlay} onClick={onClose} />
 
-      <div style={styles.drawer}>
+      {/* DRAWER */}
+      <div
+        style={styles.drawer}
+        onClick={(e) => e.stopPropagation()} // 🔥 VERY IMPORTANT
+      >
         {/* TOP */}
         <div style={styles.top}>
           <div>
             <strong>Bartanwala</strong>
             <div style={styles.sub}>
-              {isLoggedIn ? `Hi, ${user.name || "Customer"}` : "Guest User"}
+              {isLoggedIn ? `Hi, ${user?.name || "Customer"}` : "Guest User"}
             </div>
           </div>
-          <FaTimes onClick={onClose} />
+
+          <button onClick={onClose} style={styles.closeBtn}>
+            <FaTimes size={18} />
+          </button>
         </div>
 
         {/* MAIN MENU */}
@@ -69,6 +83,7 @@ export default function MenuDrawer({ open, onClose, user }) {
         <a
           href="https://wa.me/919873670361"
           target="_blank"
+          rel="noreferrer"
           style={styles.whatsapp}
         >
           <FaWhatsapp /> WhatsApp Support
@@ -88,21 +103,23 @@ function MenuItem({ href, icon, label }) {
   return (
     <Link href={href}>
       <a style={styles.item}>
-        <span>{icon}</span>
+        <span style={styles.icon}>{icon}</span>
         {label}
       </a>
     </Link>
   );
 }
 
-/* STYLES */
+/* ================= STYLES ================= */
+
 const styles = {
   overlay: {
     position: "fixed",
     inset: 0,
-    background: "rgba(0,0,0,0.4)",
-    zIndex: 999,
+    background: "rgba(0,0,0,0.45)",
+    zIndex: 9999,
   },
+
   drawer: {
     position: "fixed",
     top: 0,
@@ -110,11 +127,13 @@ const styles = {
     width: 270,
     height: "100vh",
     background: "#fff",
-    zIndex: 1000,
+    zIndex: 10000, // 🔥 header se bhi upar
     padding: 16,
     display: "flex",
     flexDirection: "column",
+    boxShadow: "2px 0 12px rgba(0,0,0,0.15)",
   },
+
   top: {
     display: "flex",
     justifyContent: "space-between",
@@ -122,22 +141,43 @@ const styles = {
     borderBottom: "1px solid #e5e7eb",
     paddingBottom: 12,
   },
-  sub: { fontSize: 12, color: "#6b7280" },
+
+  closeBtn: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+  },
+
+  sub: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginTop: 2,
+  },
+
   menu: {
-    marginTop: 12,
+    marginTop: 14,
     display: "flex",
     flexDirection: "column",
     gap: 6,
   },
+
   item: {
     display: "flex",
+    alignItems: "center",
     gap: 12,
-    padding: 10,
+    padding: "10px 8px",
     borderRadius: 8,
     textDecoration: "none",
     color: "#111",
     fontSize: 15,
   },
+
+  icon: {
+    width: 18,
+    display: "flex",
+    justifyContent: "center",
+  },
+
   whatsapp: {
     marginTop: "auto",
     background: "#25D366",
@@ -148,6 +188,7 @@ const styles = {
     textDecoration: "none",
     fontWeight: 600,
   },
+
   logout: {
     marginTop: 10,
     background: "#ef4444",
@@ -156,5 +197,6 @@ const styles = {
     borderRadius: 10,
     border: "none",
     fontWeight: 600,
+    cursor: "pointer",
   },
 };
