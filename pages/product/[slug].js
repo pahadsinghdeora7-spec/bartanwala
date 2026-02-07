@@ -1,7 +1,10 @@
 import { useState } from "react";
 import Head from "next/head";
+import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 import {
+  FaBars,
+  FaSearch,
   FaWhatsapp,
   FaRupeeSign,
   FaShoppingCart,
@@ -21,7 +24,6 @@ export async function getServerSideProps({ params }) {
   const product = data?.[0];
   if (!product) return { notFound: true };
 
-  // related products (same category)
   const { data: related } = await supabase
     .from("products")
     .select("id,name,slug,image,price,price_unit")
@@ -29,7 +31,12 @@ export async function getServerSideProps({ params }) {
     .neq("id", product.id)
     .limit(6);
 
-  return { props: { product, related: related || [] } };
+  return {
+    props: {
+      product,
+      related: related || [],
+    },
+  };
 }
 
 export default function ProductPage({ product, related }) {
@@ -58,6 +65,22 @@ export default function ProductPage({ product, related }) {
         <title>{product.name} | Bartanwala</title>
       </Head>
 
+      {/* HEADER */}
+      <header style={styles.header}>
+        <FaBars />
+        <strong>Bartanwala</strong>
+        <a href="https://wa.me/919873670361" style={styles.whatsappTop}>
+          <FaWhatsapp /> WhatsApp
+        </a>
+      </header>
+
+      {/* SEARCH */}
+      <div style={styles.searchBox}>
+        <FaSearch />
+        <input placeholder="Search steel bartan, thali, deg..." />
+      </div>
+
+      {/* PAGE */}
       <div style={styles.page}>
         {/* IMAGE */}
         <div style={styles.imageWrap}>
@@ -80,7 +103,7 @@ export default function ProductPage({ product, related }) {
           </div>
         </div>
 
-        {/* CARD */}
+        {/* PRODUCT CARD */}
         <div style={styles.card}>
           <h1 style={styles.title}>{product.name}</h1>
 
@@ -94,13 +117,12 @@ export default function ProductPage({ product, related }) {
             </div>
           </div>
 
-          {/* SIZE / GAUGE */}
+          {/* SPECS */}
           <div style={styles.row}>
             <div>📏 Size: {product.size}</div>
             <div>⚙️ Gauge: {product.gauge}</div>
           </div>
 
-          {/* WEIGHT / BULK */}
           <div style={styles.row}>
             <div>⚖️ Weight: {product.weight}</div>
             <div>
@@ -128,9 +150,8 @@ export default function ProductPage({ product, related }) {
             <button style={styles.cartBtn} onClick={addToCart}>
               <FaShoppingCart /> Add to Cart
             </button>
-
             <a
-              href={`https://wa.me/919873670361`}
+              href="https://wa.me/919873670361"
               target="_blank"
               style={styles.whatsappBtn}
             >
@@ -146,9 +167,9 @@ export default function ProductPage({ product, related }) {
         {related.length > 0 && (
           <div style={styles.related}>
             <h3>Related Products</h3>
-            <div style={styles.relatedRow}>
+            <div style={styles.relatedGrid}>
               {related.map((p) => (
-                <a
+                <Link
                   key={p.id}
                   href={`/product/${p.slug}`}
                   style={styles.relatedCard}
@@ -158,7 +179,7 @@ export default function ProductPage({ product, related }) {
                   <strong>
                     ₹{p.price}/{p.price_unit}
                   </strong>
-                </a>
+                </Link>
               ))}
             </div>
           </div>
@@ -171,6 +192,32 @@ export default function ProductPage({ product, related }) {
 /* ================= STYLES ================= */
 
 const styles = {
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 12,
+    borderBottom: "1px solid #e5e7eb",
+    background: "#fff",
+  },
+
+  whatsappTop: {
+    background: "#25D366",
+    color: "#fff",
+    padding: "6px 10px",
+    borderRadius: 6,
+    textDecoration: "none",
+    fontSize: 13,
+  },
+
+  searchBox: {
+    display: "flex",
+    gap: 8,
+    padding: 10,
+    borderBottom: "1px solid #e5e7eb",
+    background: "#fff",
+  },
+
   page: { background: "#f5f6f8", paddingBottom: 30 },
 
   imageWrap: { background: "#fff", padding: 16 },
@@ -220,11 +267,7 @@ const styles = {
     marginTop: 14,
   },
 
-  qtyBox: {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-  },
+  qtyBox: { display: "flex", gap: 6 },
 
   actionRow: { display: "flex", gap: 10, marginTop: 18 },
 
@@ -258,14 +301,13 @@ const styles = {
 
   related: { padding: 12 },
 
-  relatedRow: {
-    display: "flex",
+  relatedGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
     gap: 12,
-    overflowX: "auto",
   },
 
   relatedCard: {
-    minWidth: 140,
     background: "#fff",
     padding: 10,
     borderRadius: 12,
