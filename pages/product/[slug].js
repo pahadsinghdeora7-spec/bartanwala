@@ -3,14 +3,14 @@ import Head from "next/head";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 import {
-  FaBars,
-  FaSearch,
   FaWhatsapp,
   FaRupeeSign,
   FaShoppingCart,
   FaCheckCircle,
   FaBoxOpen,
 } from "react-icons/fa";
+
+/* ================= SERVER ================= */
 
 export async function getServerSideProps({ params }) {
   const supabase = getSupabase();
@@ -39,6 +39,8 @@ export async function getServerSideProps({ params }) {
   };
 }
 
+/* ================= PAGE ================= */
+
 export default function ProductPage({ product, related }) {
   const images = [
     product.image,
@@ -65,24 +67,8 @@ export default function ProductPage({ product, related }) {
         <title>{product.name} | Bartanwala</title>
       </Head>
 
-      {/* HEADER */}
-      <header style={styles.header}>
-        <FaBars />
-        <strong>Bartanwala</strong>
-        <a href="https://wa.me/919873670361" style={styles.whatsappTop}>
-          <FaWhatsapp /> WhatsApp
-        </a>
-      </header>
-
-      {/* SEARCH */}
-      <div style={styles.searchBox}>
-        <FaSearch />
-        <input placeholder="Search steel bartan, thali, deg..." />
-      </div>
-
-      {/* PAGE */}
       <div style={styles.page}>
-        {/* IMAGE */}
+        {/* IMAGE SECTION */}
         <div style={styles.imageWrap}>
           <img src={activeImg} style={styles.mainImage} />
           <div style={styles.thumbRow}>
@@ -103,7 +89,7 @@ export default function ProductPage({ product, related }) {
           </div>
         </div>
 
-        {/* PRODUCT CARD */}
+        {/* DETAILS CARD */}
         <div style={styles.card}>
           <h1 style={styles.title}>{product.name}</h1>
 
@@ -145,7 +131,7 @@ export default function ProductPage({ product, related }) {
             </div>
           </div>
 
-          {/* BUTTONS */}
+          {/* ACTION BUTTONS */}
           <div style={styles.actionRow}>
             <button style={styles.cartBtn} onClick={addToCart}>
               <FaShoppingCart /> Add to Cart
@@ -169,16 +155,14 @@ export default function ProductPage({ product, related }) {
             <h3>Related Products</h3>
             <div style={styles.relatedGrid}>
               {related.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/product/${p.slug}`}
-                  style={styles.relatedCard}
-                >
-                  <img src={p.image} />
-                  <div>{p.name}</div>
-                  <strong>
-                    ₹{p.price}/{p.price_unit}
-                  </strong>
+                <Link key={p.id} href={`/product/${p.slug}`}>
+                  <a style={styles.relatedCard}>
+                    <img src={p.image} />
+                    <div>{p.name}</div>
+                    <strong>
+                      ₹{p.price}/{p.price_unit}
+                    </strong>
+                  </a>
                 </Link>
               ))}
             </div>
@@ -192,33 +176,7 @@ export default function ProductPage({ product, related }) {
 /* ================= STYLES ================= */
 
 const styles = {
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 12,
-    borderBottom: "1px solid #e5e7eb",
-    background: "#fff",
-  },
-
-  whatsappTop: {
-    background: "#25D366",
-    color: "#fff",
-    padding: "6px 10px",
-    borderRadius: 6,
-    textDecoration: "none",
-    fontSize: 13,
-  },
-
-  searchBox: {
-    display: "flex",
-    gap: 8,
-    padding: 10,
-    borderBottom: "1px solid #e5e7eb",
-    background: "#fff",
-  },
-
-  page: { background: "#f5f6f8", paddingBottom: 30 },
+  page: { background: "#f5f6f8", paddingBottom: 90 },
 
   imageWrap: { background: "#fff", padding: 16 },
 
