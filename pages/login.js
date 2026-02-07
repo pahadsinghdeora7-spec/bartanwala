@@ -1,15 +1,21 @@
 import { useState } from "react";
 import Head from "next/head";
-import { supabase } from "../lib/supabase";
+import Link from "next/link";
 import { useRouter } from "next/router";
+import { getSupabase } from "../lib/supabase";
 
 export default function LoginPage() {
+  const supabase = getSupabase();
   const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const login = async () => {
+  async function handleLogin(e) {
+    e.preventDefault();
+    setError("");
     setLoading(true);
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -17,14 +23,15 @@ export default function LoginPage() {
       password,
     });
 
-    setLoading(false);
-
     if (error) {
-      alert(error.message);
-    } else {
-      router.push("/account");
+      setError(error.message);
+      setLoading(false);
+      return;
     }
-  };
+
+    setLoading(false);
+    router.push("/account");
+  }
 
   return (
     <>
@@ -33,62 +40,131 @@ export default function LoginPage() {
       </Head>
 
       <div style={styles.page}>
-        <h2>Login</h2>
+        <form style={styles.card} onSubmit={handleLogin}>
+          <h1 style={styles.title}>Login to Bartanwala</h1>
+          <p style={styles.subtitle}>
+            Wholesale utensils | B2B bulk ordering
+          </p>
 
-        <input
-          type="email"
-          placeholder="Email"
-          onChange={(e) => setEmail(e.target.value)}
-          style={styles.input}
-        />
+          {error && <div style={styles.error}>{error}</div>}
 
-        <input
-          type="password"
-          placeholder="Password"
-          onChange={(e) => setPassword(e.target.value)}
-          style={styles.input}
-        />
+          <input
+            type="email"
+            placeholder="Email Address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={styles.input}
+            required
+          />
 
-        <button onClick={login} style={styles.btn} disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
-        </button>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={styles.input}
+            required
+          />
 
-        <p style={styles.link} onClick={() => router.push("/signup")}>
-          New user? Create account
-        </p>
+          <button style={styles.button} disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
+          </button>
+
+          <p style={styles.footer}>
+            New customer?{" "}
+            <Link href="/signup">
+              <a style={styles.link}>Create Account</a>
+            </Link>
+          </p>
+
+          <p style={styles.lock}>🔒 Secure B2B Login</p>
+        </form>
       </div>
     </>
   );
 }
 
+/* ================= STYLES ================= */
+
 const styles = {
   page: {
-    padding: 20,
     minHeight: "100vh",
+    background: "#f5f6f8",
     display: "flex",
-    flexDirection: "column",
+    alignItems: "center",
     justifyContent: "center",
-    gap: 12,
+    padding: 16,
   },
+
+  card: {
+    background: "#fff",
+    padding: 24,
+    borderRadius: 14,
+    maxWidth: 400,
+    width: "100%",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+  },
+
+  title: {
+    fontSize: 22,
+    fontWeight: 700,
+    textAlign: "center",
+    marginBottom: 6,
+  },
+
+  subtitle: {
+    fontSize: 13,
+    textAlign: "center",
+    color: "#6b7280",
+    marginBottom: 18,
+  },
+
   input: {
+    width: "100%",
     padding: 12,
-    fontSize: 16,
     borderRadius: 8,
-    border: "1px solid #ddd",
+    border: "1px solid #e5e7eb",
+    marginBottom: 12,
+    fontSize: 14,
   },
-  btn: {
+
+  button: {
+    width: "100%",
     padding: 14,
-    background: "#0B5ED7",
+    background: "#2563eb",
     color: "#fff",
     border: "none",
     borderRadius: 10,
-    fontSize: 16,
     fontWeight: 600,
+    fontSize: 15,
   },
-  link: {
-    marginTop: 10,
+
+  footer: {
+    marginTop: 14,
+    fontSize: 14,
     textAlign: "center",
-    color: "#0B5ED7",
-    cursor: "pointer",
+  },
+
+  link: {
+    color: "#2563eb",
+    fontWeight: 600,
+    textDecoration: "none",
+  },
+
+  lock: {
+    marginTop: 10,
+    fontSize: 12,
+    textAlign: "center",
+    color: "#6b7280",
+  },
+
+  error: {
+    background: "#fee2e2",
+    color: "#b91c1c",
+    padding: 10,
+    borderRadius: 8,
+    fontSize: 13,
+    marginBottom: 10,
+    textAlign: "center",
   },
 };
