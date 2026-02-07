@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import Header from "../components/Header";
 import SearchBar from "../components/SearchBar";
 import BottomNav from "../components/BottomNav";
-import MenuDrawer from "../components/DMenuDrawer";
+import MenuDrawer from "../components/MenuDrawer";
 
 const HIDE_NAV = ["/login", "/checkout", "/payment"];
 
