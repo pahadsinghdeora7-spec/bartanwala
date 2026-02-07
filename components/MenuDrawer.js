@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useRouter } from "next/router";
 import {
   FaTimes,
   FaHome,
@@ -10,18 +11,26 @@ import {
   FaWhatsapp,
   FaInfoCircle,
   FaPhone,
+  FaUserShield,
 } from "react-icons/fa";
+import { getSupabase } from "../lib/supabase";
 
-/**
- * DrawerMenu
- * open  : boolean
- * onClose : function
- * user : object | null
- */
-export default function DrawerMenu({ open, onClose, user }) {
+const ADMIN_EMAIL = "pahadsinghdeora7@gmail.com";
+
+export default function MenuDrawer({ open, onClose, user }) {
   if (!open) return null;
 
+  const router = useRouter();
+  const supabase = getSupabase();
+
   const isLoggedIn = !!user;
+  const isAdmin = user?.email === ADMIN_EMAIL;
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    onClose();
+    router.push("/login");
+  };
 
   return (
     <>
@@ -31,14 +40,14 @@ export default function DrawerMenu({ open, onClose, user }) {
       {/* DRAWER */}
       <div
         style={styles.drawer}
-        onClick={(e) => e.stopPropagation()} // 🔥 VERY IMPORTANT
+        onClick={(e) => e.stopPropagation()}
       >
         {/* TOP */}
         <div style={styles.top}>
           <div>
             <strong>Bartanwala</strong>
             <div style={styles.sub}>
-              {isLoggedIn ? `Hi, ${user?.name || "Customer"}` : "Guest User"}
+              {isLoggedIn ? user.email : "Guest User"}
             </div>
           </div>
 
@@ -50,7 +59,11 @@ export default function DrawerMenu({ open, onClose, user }) {
         {/* MAIN MENU */}
         <div style={styles.menu}>
           <MenuItem href="/" icon={<FaHome />} label="Home" />
-          <MenuItem href="/categories" icon={<FaThLarge />} label="Categories" />
+          <MenuItem
+            href="/categories"
+            icon={<FaThLarge />}
+            label="Categories"
+          />
 
           {isLoggedIn && (
             <MenuItem
@@ -61,7 +74,20 @@ export default function DrawerMenu({ open, onClose, user }) {
           )}
 
           {isLoggedIn && (
-            <MenuItem href="/account" icon={<FaUser />} label="My Account" />
+            <MenuItem
+              href="/account"
+              icon={<FaUser />}
+              label="My Account"
+            />
+          )}
+
+          {/* 🔐 ADMIN ONLY */}
+          {isAdmin && (
+            <MenuItem
+              href="/admin"
+              icon={<FaUserShield />}
+              label="Admin Dashboard"
+            />
           )}
 
           {!isLoggedIn && (
@@ -75,8 +101,16 @@ export default function DrawerMenu({ open, onClose, user }) {
 
         {/* INFO */}
         <div style={styles.menu}>
-          <MenuItem href="/about" icon={<FaInfoCircle />} label="About Us" />
-          <MenuItem href="/contact" icon={<FaPhone />} label="Contact Us" />
+          <MenuItem
+            href="/about"
+            icon={<FaInfoCircle />}
+            label="About Us"
+          />
+          <MenuItem
+            href="/contact"
+            icon={<FaPhone />}
+            label="Contact Us"
+          />
         </div>
 
         {/* FOOTER */}
@@ -90,7 +124,7 @@ export default function DrawerMenu({ open, onClose, user }) {
         </a>
 
         {isLoggedIn && (
-          <button style={styles.logout}>
+          <button style={styles.logout} onClick={handleLogout}>
             <FaSignOutAlt /> Logout
           </button>
         )}
@@ -127,7 +161,7 @@ const styles = {
     width: 270,
     height: "100vh",
     background: "#fff",
-    zIndex: 10000, // 🔥 header se bhi upar
+    zIndex: 10000,
     padding: 16,
     display: "flex",
     flexDirection: "column",
