@@ -1,54 +1,32 @@
 import { useState } from "react";
-import Head from "next/head";
-import Link from "next/link";
 import { useRouter } from "next/router";
-import { getSupabase } from "../lib/supabase";
+import Head from "next/head";
+import { supabase } from "../lib/supabase";
 
 export default function SignupPage() {
-  const supabase = getSupabase();
   const router = useRouter();
 
   const [form, setForm] = useState({
-    business: "",
     name: "",
-    email: "",
     mobile: "",
+    email: "",
     password: "",
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  function handleChange(e) {
+  const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
-  }
 
-  async function handleSignup(e) {
+  const handleSignup = async (e) => {
     e.preventDefault();
     setError("");
-
-    if (!form.email || !form.mobile || !form.password) {
-      setError("Please fill all required fields");
-      return;
-    }
-
-    if (form.password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
-
     setLoading(true);
 
     const { data, error } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
-      options: {
-        data: {
-          business: form.business,
-          name: form.name,
-          mobile: form.mobile,
-        },
-      },
     });
 
     if (error) {
@@ -57,9 +35,17 @@ export default function SignupPage() {
       return;
     }
 
+    // 👇 Insert into customers table
+    await supabase.from("customers").insert({
+      user_id: data.user.id,
+      name: form.name,
+      mobile: form.mobile,
+      email: form.email,
+    });
+
     setLoading(false);
-    router.push("/account");
-  }
+    router.replace("/account");
+  };
 
   return (
     <>
@@ -69,163 +55,118 @@ export default function SignupPage() {
 
       <div style={styles.page}>
         <form style={styles.card} onSubmit={handleSignup}>
-          <h1 style={styles.title}>Create Your Bartanwala Account</h1>
-          <p style={styles.subtitle}>
-            Wholesale steel & aluminium utensils for bulk buyers
-          </p>
+          <h2>Create Account</h2>
+          <p style={styles.sub}>B2B wholesale ordering made easy</p>
 
-          {error && <div style={styles.error}>{error}</div>}
-
-          <input
-            name="business"
-            placeholder="Business / Shop Name (optional)"
-            onChange={handleChange}
-            style={styles.input}
-          />
+          {error && <p style={styles.error}>{error}</p>}
 
           <input
             name="name"
-            placeholder="Contact Person Name (optional)"
+            placeholder="Full Name *"
             onChange={handleChange}
-            style={styles.input}
-          />
-
-          <input
-            name="email"
-            placeholder="Email Address *"
-            type="email"
-            onChange={handleChange}
-            style={styles.input}
             required
+            style={styles.input}
           />
 
           <input
             name="mobile"
             placeholder="Mobile Number *"
-            type="tel"
             onChange={handleChange}
-            style={styles.input}
             required
+            style={styles.input}
+          />
+
+          <input
+            name="email"
+            type="email"
+            placeholder="Email Address *"
+            onChange={handleChange}
+            required
+            style={styles.input}
           />
 
           <input
             name="password"
-            placeholder="Create Password *"
             type="password"
+            placeholder="Password *"
             onChange={handleChange}
-            style={styles.input}
             required
+            style={styles.input}
           />
 
-          <small style={styles.hint}>
-            Password must be at least 6 characters
-          </small>
-
-          <button style={styles.button} disabled={loading}>
-            {loading ? "Creating Account..." : "Create Account"}
+          <button disabled={loading} style={styles.btn}>
+            {loading ? "Creating account..." : "Create Account"}
           </button>
 
-          <p style={styles.footer}>
-            Already have an account?{" "}
-            <Link href="/login">
-              <a style={styles.link}>Login</a>
-            </Link>
+          <p style={styles.link} onClick={() => router.push("/login")}>
+            Already have an account? Login
           </p>
 
-          <p style={styles.lock}>🔒 Your details are safe & secure</p>
+          <p style={styles.note}>
+            🔐 Address & GST details required only during checkout.
+          </p>
         </form>
       </div>
     </>
   );
 }
 
-/* ================= STYLES ================= */
-
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#f5f6f8",
     display: "flex",
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
+    background: "#f5f6f8",
     padding: 16,
   },
-
   card: {
+    width: "100%",
+    maxWidth: 400,
     background: "#fff",
     padding: 24,
-    borderRadius: 14,
-    maxWidth: 420,
-    width: "100%",
+    borderRadius: 16,
+    textAlign: "center",
     boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
   },
-
-  title: {
-    fontSize: 22,
-    fontWeight: 700,
-    textAlign: "center",
-    marginBottom: 6,
-  },
-
-  subtitle: {
+  sub: {
     fontSize: 13,
-    textAlign: "center",
     color: "#6b7280",
     marginBottom: 18,
   },
-
   input: {
     width: "100%",
-    padding: 12,
-    borderRadius: 8,
-    border: "1px solid #e5e7eb",
-    marginBottom: 10,
-    fontSize: 14,
+    padding: 14,
+    marginBottom: 14,
+    borderRadius: 10,
+    border: "1px solid #d1d5db",
+    fontSize: 15,
   },
-
-  hint: {
-    fontSize: 12,
-    color: "#6b7280",
-  },
-
-  button: {
+  btn: {
     width: "100%",
-    marginTop: 14,
     padding: 14,
     background: "#16a34a",
     color: "#fff",
     border: "none",
-    borderRadius: 10,
+    borderRadius: 12,
     fontWeight: 600,
-    fontSize: 15,
+    fontSize: 16,
+    cursor: "pointer",
   },
-
-  footer: {
-    marginTop: 14,
-    fontSize: 14,
-    textAlign: "center",
-  },
-
-  link: {
-    color: "#2563eb",
-    fontWeight: 600,
-    textDecoration: "none",
-  },
-
-  lock: {
-    marginTop: 10,
-    fontSize: 12,
-    textAlign: "center",
-    color: "#6b7280",
-  },
-
   error: {
-    background: "#fee2e2",
-    color: "#b91c1c",
-    padding: 10,
-    borderRadius: 8,
+    color: "#dc2626",
     fontSize: 13,
-    marginBottom: 10,
-    textAlign: "center",
+    marginBottom: 12,
+  },
+  link: {
+    marginTop: 14,
+    color: "#2563eb",
+    cursor: "pointer",
+    fontSize: 14,
+  },
+  note: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginTop: 12,
   },
 };
