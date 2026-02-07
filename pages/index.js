@@ -2,10 +2,6 @@ import { useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
-import {
-  FaRupeeSign,
-  FaBoxOpen,
-} from "react-icons/fa";
 
 /* SUPABASE */
 const supabase = createClient(
@@ -37,8 +33,12 @@ export default function Home() {
 
       {/* HERO */}
       <section style={styles.hero}>
-        <h1>Wholesale Steel & Aluminium Utensils</h1>
-        <p>B2B Wholesale · Factory Price · All India Delivery</p>
+        <h1 style={styles.heroTitle}>
+          Wholesale Steel & Aluminium Utensils
+        </h1>
+        <p style={styles.heroSub}>
+          B2B Wholesale · Factory Price · All India Delivery
+        </p>
       </section>
 
       {/* PRODUCTS */}
@@ -57,22 +57,28 @@ export default function Home() {
                   {p.image ? (
                     <img src={p.image} alt={p.name} style={styles.image} />
                   ) : (
-                    <div style={styles.placeholder}>No Image</div>
+                    <div style={styles.noImage}>No Image</div>
                   )}
                 </div>
 
-                <h3 style={styles.pName}>{p.name}</h3>
+                <h3 style={styles.name}>{p.name}</h3>
 
-                <div style={styles.price}>
-                  <FaRupeeSign size={12} />
-                  <strong>{p.price}</strong> / {p.price_unit}
+                <div style={styles.priceRow}>
+                  <span style={styles.price}>₹ {p.price}</span>
+                  <span style={styles.unit}>/ {p.price_unit}</span>
                 </div>
 
-                <div style={styles.meta}>
-                  <FaBoxOpen /> Bulk Available
-                </div>
+                <span style={styles.badge}>Bulk Available</span>
 
-                <span style={styles.details}>View Details →</span>
+                <button
+                  style={styles.addToCart}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    alert("Added to cart");
+                  }}
+                >
+                  🛒 Add to Cart
+                </button>
               </div>
             </Link>
           ))}
@@ -86,29 +92,41 @@ export default function Home() {
 const styles = {
   hero: {
     background: "#f2f6ff",
-    padding: "22px 14px",
+    padding: "32px 16px",
     textAlign: "center",
   },
+  heroTitle: {
+    fontSize: 26,
+    fontWeight: 700,
+    marginBottom: 8,
+  },
+  heroSub: {
+    fontSize: 14,
+    color: "#555",
+  },
   main: {
-    padding: "12px",
-    paddingBottom: "80px", // bottom nav safe space
+    padding: 16,
+    paddingBottom: 80, // bottom nav space
   },
   heading: {
+    fontSize: 20,
     marginBottom: 12,
   },
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)", // MOBILE 2 COLUMN
-    gap: 12,
+    gridTemplateColumns: "repeat(2, 1fr)", // mobile 2 cards
+    gap: 14,
   },
   card: {
     border: "1px solid #E5E7EB",
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 10,
     background: "#fff",
+    display: "flex",
+    flexDirection: "column",
   },
   imageWrap: {
-    height: 130,
+    height: 120,
     marginBottom: 8,
   },
   image: {
@@ -116,37 +134,54 @@ const styles = {
     height: "100%",
     objectFit: "contain",
   },
-  placeholder: {
+  noImage: {
     height: "100%",
     background: "#f3f4f6",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontSize: 12,
-    color: "#777",
+    color: "#999",
   },
-  pName: {
-    fontSize: 13,
+  name: {
+    fontSize: 14,
     fontWeight: 600,
+    marginBottom: 6,
+  },
+  priceRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
     marginBottom: 4,
   },
   price: {
     color: "#0B5ED7",
-    fontSize: 14,
-    display: "flex",
-    gap: 4,
-    alignItems: "center",
+    fontWeight: 700,
+    fontSize: 15,
   },
-  meta: {
+  unit: {
     fontSize: 12,
-    marginTop: 4,
     color: "#555",
   },
-  details: {
-    display: "block",
-    marginTop: 6,
-    fontSize: 13,
-    color: "#0B5ED7",
+  badge: {
+    fontSize: 11,
+    color: "#065f46",
+    background: "#d1fae5",
+    padding: "2px 6px",
+    borderRadius: 6,
+    width: "fit-content",
+    marginBottom: 8,
+  },
+  addToCart: {
+    marginTop: "auto",
+    width: "100%",
+    background: "#0B5ED7",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    padding: "8px",
+    fontSize: 14,
     fontWeight: 600,
+    cursor: "pointer",
   },
 };
