@@ -11,15 +11,15 @@ import {
 export async function getServerSideProps({ params }) {
   const supabase = getSupabase();
 
-  const { data: product } = await supabase
+  const { data, error } = await supabase
     .from("products")
-    .select(
-      "id, name, slug, description, price, price_unit, image, moq, in_stock"
-    )
+    .select("*")
     .eq("slug", params.slug)
-    .single();
+    .limit(1);
 
-  if (!product) {
+  const product = data?.[0];
+
+  if (!product || error) {
     return { notFound: true };
   }
 
@@ -31,7 +31,7 @@ export async function getServerSideProps({ params }) {
 export default function ProductPage({ product }) {
   const [qty, setQty] = useState(1);
 
-  // Add to Cart (localStorage)
+  // ADD TO CART (localStorage)
   function addToCart() {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
@@ -53,7 +53,7 @@ export default function ProductPage({ product }) {
     alert("Product added to cart");
   }
 
-  // WhatsApp bulk message
+  // WHATSAPP BULK MESSAGE
   const whatsappMessage = encodeURIComponent(
     `Hello Bartanwala,
 
@@ -121,13 +121,12 @@ Quantity: ${qty} ${product.price_unit}`
 
         {/* META */}
         <div style={{ marginTop: 8, fontSize: 13 }}>
-          {product.moq && (
-            <div>
-              <FaBoxOpen /> MOQ: {product.moq}
-            </div>
-          )}
+          {product.size && <div>Size: {product.size}</div>}
+          {product.gauge && <div>Gauge: {product.gauge}</div>}
+          {product.weight && <div>Weight: {product.weight}</div>}
+
           <div>
-            Status:{" "}
+            <FaBoxOpen /> Status:{" "}
             {product.in_stock ? (
               <strong style={{ color: "green" }}>In Stock</strong>
             ) : (
@@ -200,4 +199,4 @@ Quantity: ${qty} ${product.price_unit}`
       </main>
     </>
   );
-                    }
+              }
