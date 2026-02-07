@@ -26,6 +26,7 @@ export default function Header({ onMenuClick, cartCount = 0 }) {
         <a
           href="https://wa.me/919873670361"
           target="_blank"
+          rel="noreferrer"
           style={styles.whatsapp}
         >
           <FaWhatsapp size={18} />
@@ -55,12 +56,13 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: "0 12px",
+    padding: "0 14px", // ⬅ thoda breathable
   },
 
   iconBtn: {
     background: "none",
     border: "none",
+    padding: 6,
   },
 
   logo: {
@@ -76,19 +78,21 @@ const styles = {
   logoImg: {
     width: 28,
     height: 28,
+    objectFit: "contain",
   },
 
   right: {
     display: "flex",
     alignItems: "center",
-    gap: 12,
+    gap: 10,          // ⬅ icons closer
+    marginRight: 6,  // ⬅ left shift effect
   },
 
   whatsapp: {
     background: "#25D366",
     color: "#fff",
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     borderRadius: "50%",
     display: "flex",
     alignItems: "center",
@@ -98,16 +102,18 @@ const styles = {
   cart: {
     position: "relative",
     color: "#111",
+    padding: 6,
   },
 
   badge: {
     position: "absolute",
-    top: -6,
-    right: -6,
+    top: -4,
+    right: -4,
     background: "#dc2626",
     color: "#fff",
     fontSize: 10,
     padding: "2px 5px",
     borderRadius: 999,
+    lineHeight: 1,
   },
 };
