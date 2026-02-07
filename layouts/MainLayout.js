@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import Header from "../components/Header";
 import SearchBar from "../components/SearchBar";
 import BottomNav from "../components/BottomNav";
-import DrawerMenu from "../components/DrawerMenu"; // ✅ ab sahi
+import MenuDrawer from "../components/MenuDrawer"; // ✅ CORRECT NAME
 
 const HIDE_NAV = ["/login", "/checkout", "/payment"];
 
@@ -28,10 +28,10 @@ export default function MainLayout({ children }) {
       <SearchBar />
 
       {/* DRAWER */}
-      <DrawerMenu
+      <MenuDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        user={null} // login ke baad yaha user aayega
+        user={null}
       />
 
       {/* PAGE CONTENT */}
@@ -43,4 +43,4 @@ export default function MainLayout({ children }) {
       {!hideBottomNav && <BottomNav />}
     </>
   );
-          }
+    }
