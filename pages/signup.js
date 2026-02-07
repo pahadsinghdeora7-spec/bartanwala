@@ -24,9 +24,15 @@ export default function SignupPage() {
     setError("");
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
+      options: {
+        data: {
+          name: form.name,
+          mobile: form.mobile,
+        },
+      },
     });
 
     if (error) {
@@ -35,16 +41,9 @@ export default function SignupPage() {
       return;
     }
 
-    // 👇 Insert into customers table
-    await supabase.from("customers").insert({
-      user_id: data.user.id,
-      name: form.name,
-      mobile: form.mobile,
-      email: form.email,
-    });
-
+    // ✅ profile auto-create by trigger
     setLoading(false);
-    router.replace("/account");
+    router.replace("/login");
   };
 
   return (
@@ -56,7 +55,7 @@ export default function SignupPage() {
       <div style={styles.page}>
         <form style={styles.card} onSubmit={handleSignup}>
           <h2>Create Account</h2>
-          <p style={styles.sub}>B2B wholesale ordering made easy</p>
+          <p style={styles.sub}>Wholesale ordering made easy</p>
 
           {error && <p style={styles.error}>{error}</p>}
 
@@ -103,7 +102,7 @@ export default function SignupPage() {
           </p>
 
           <p style={styles.note}>
-            🔐 Address & GST details required only during checkout.
+            🔐 Address & GST details required only at order time
           </p>
         </form>
       </div>
@@ -129,11 +128,7 @@ const styles = {
     textAlign: "center",
     boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
   },
-  sub: {
-    fontSize: 13,
-    color: "#6b7280",
-    marginBottom: 18,
-  },
+  sub: { fontSize: 13, color: "#6b7280", marginBottom: 18 },
   input: {
     width: "100%",
     padding: 14,
@@ -151,22 +146,8 @@ const styles = {
     borderRadius: 12,
     fontWeight: 600,
     fontSize: 16,
-    cursor: "pointer",
   },
-  error: {
-    color: "#dc2626",
-    fontSize: 13,
-    marginBottom: 12,
-  },
-  link: {
-    marginTop: 14,
-    color: "#2563eb",
-    cursor: "pointer",
-    fontSize: 14,
-  },
-  note: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 12,
-  },
+  error: { color: "#dc2626", fontSize: 13, marginBottom: 12 },
+  link: { marginTop: 14, color: "#2563eb", cursor: "pointer" },
+  note: { fontSize: 12, color: "#6b7280", marginTop: 12 },
 };
