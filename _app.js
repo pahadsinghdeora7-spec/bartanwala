@@ -1,23 +1,15 @@
-import BottomNav from "../components/BottomNav";
 import "../styles/globals.css";
+import BottomNav from "../components/BottomNav";
 
-const HIDE_NAV_PAGES = [
-  "/login",
-  "/register",
-  "/checkout",
-  "/payment",
-  "/success",
-];
+const HIDE_NAV = ["/login", "/checkout", "/payment", "/success"];
 
 export default function MyApp({ Component, pageProps, router }) {
-  const hideBottomNav = HIDE_NAV_PAGES.some((path) =>
-    router.pathname.startsWith(path)
-  );
+  const hide = HIDE_NAV.some((p) => router.pathname.startsWith(p));
 
   return (
     <>
       <Component {...pageProps} />
-      {!hideBottomNav && <BottomNav />}
+      {!hide && <BottomNav />}
     </>
   );
 }
