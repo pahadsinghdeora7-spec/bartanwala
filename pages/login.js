@@ -1,247 +1,137 @@
 import { useState } from "react";
-import Head from "next/head";
 import { useRouter } from "next/router";
+import Head from "next/head";
 import { supabase } from "../lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
 
-  const [mode, setMode] = useState("login"); // login | signup
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const [form, setForm] = useState({
-    name: "",
-    mobile: "",
-    email: "",
-    password: "",
-  });
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  /* ================= LOGIN ================= */
-  const handleLogin = async () => {
-    if (!form.email || !form.password) {
-      alert("Email & password required");
-      return;
-    }
-
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: form.email,
-      password: form.password,
-    });
-
-    setLoading(false);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    router.push("/account");
-  };
-
-  /* ================= SIGNUP ================= */
-  const handleSignup = async () => {
-    if (!form.name || !form.mobile || !form.email || !form.password) {
-      alert("All fields required");
-      return;
-    }
-
-    setLoading(true);
-
-    const { data, error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     });
 
     if (error) {
+      setError(error.message);
       setLoading(false);
-      alert(error.message);
       return;
     }
 
-    const user = data.user;
-
-    // 👉 create basic customer record
-    await supabase.from("customers").insert([
-      {
-        user_id: user.id,
-        name: form.name,
-        mobile: form.mobile,
-        email: form.email,
-      },
-    ]);
-
-    setLoading(false);
-    router.push("/account");
+    // ✅ LOGIN SUCCESS
+    router.replace("/account");
   };
 
   return (
     <>
       <Head>
-        <title>{mode === "login" ? "Login" : "Create Account"} | Bartanwala</title>
+        <title>Login | Bartanwala</title>
       </Head>
 
       <div style={styles.page}>
-        <div style={styles.card}>
-          <h1 style={styles.title}>
-            {mode === "login" ? "Welcome Back" : "Create Account"}
-          </h1>
+        <form style={styles.card} onSubmit={handleLogin}>
+          <h2 style={{ marginBottom: 4 }}>Welcome Back</h2>
+          <p style={styles.sub}>Login to continue ordering</p>
 
-          <p style={styles.subtitle}>
-            {mode === "login"
-              ? "Login to continue ordering"
-              : "Register once, order easily on WhatsApp"}
-          </p>
-
-          {mode === "signup" && (
-            <>
-              <input
-                name="name"
-                placeholder="Full Name *"
-                onChange={handleChange}
-                style={styles.input}
-              />
-
-              <input
-                name="mobile"
-                placeholder="Mobile Number *"
-                onChange={handleChange}
-                style={styles.input}
-              />
-            </>
-          )}
+          {error && <p style={styles.error}>{error}</p>}
 
           <input
-            name="email"
             type="email"
-            placeholder="Email Address *"
-            onChange={handleChange}
+            placeholder="Email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
             style={styles.input}
           />
 
           <input
-            name="password"
             type="password"
-            placeholder="Password *"
-            onChange={handleChange}
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
             style={styles.input}
           />
 
-          {mode === "login" ? (
-            <button
-              onClick={handleLogin}
-              style={styles.primaryBtn}
-              disabled={loading}
-            >
-              {loading ? "Logging in..." : "Login"}
-            </button>
-          ) : (
-            <button
-              onClick={handleSignup}
-              style={styles.primaryBtn}
-              disabled={loading}
-            >
-              {loading ? "Creating account..." : "Create Account"}
-            </button>
-          )}
+          <button style={styles.btn} disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
+          </button>
 
-          <div style={styles.switch}>
-            {mode === "login" ? (
-              <>
-                New to Bartanwala?{" "}
-                <span onClick={() => setMode("signup")}>
-                  Create account
-                </span>
-              </>
-            ) : (
-              <>
-                Already have an account?{" "}
-                <span onClick={() => setMode("login")}>Login</span>
-              </>
-            )}
-          </div>
+          <p style={styles.link} onClick={() => router.push("/signup")}>
+            New to Bartanwala? Create account
+          </p>
 
           <p style={styles.note}>
-            🔒 Your details are safe. Address is required only at order time.
+            🔒 Your details are safe. Address required only at order time.
           </p>
-        </div>
+        </form>
       </div>
     </>
   );
 }
 
-/* ================= STYLES ================= */
-
+/* ===== STYLES ===== */
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#f5f6f8",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    padding: 16,
+    background: "#f5f6f8",
   },
-
   card: {
-    background: "#fff",
     width: "100%",
-    maxWidth: 420,
-    padding: 24,
-    borderRadius: 16,
-    boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
-  },
-
-  title: {
+    maxWidth: 360,
+    background: "#fff",
+    padding: 20,
+    borderRadius: 14,
     textAlign: "center",
-    fontSize: 22,
-    fontWeight: 700,
-    marginBottom: 6,
   },
-
-  subtitle: {
-    textAlign: "center",
-    fontSize: 14,
+  sub: {
+    fontSize: 13,
     color: "#6b7280",
-    marginBottom: 18,
+    marginBottom: 16,
   },
-
   input: {
     width: "100%",
-    padding: 14,
-    borderRadius: 10,
-    border: "1px solid #e5e7eb",
+    padding: 12,
     marginBottom: 12,
-    fontSize: 15,
+    borderRadius: 8,
+    border: "1px solid #d1d5db",
   },
-
-  primaryBtn: {
+  btn: {
     width: "100%",
-    padding: 14,
+    padding: 12,
     background: "#16a34a",
     color: "#fff",
     border: "none",
     borderRadius: 10,
-    fontSize: 16,
     fontWeight: 600,
     cursor: "pointer",
-    marginTop: 6,
   },
-
-  switch: {
-    textAlign: "center",
-    marginTop: 14,
+  error: {
+    color: "#dc2626",
+    fontSize: 13,
+    marginBottom: 10,
+  },
+  link: {
+    marginTop: 12,
+    color: "#2563eb",
+    cursor: "pointer",
     fontSize: 14,
   },
-
   note: {
-    marginTop: 14,
     fontSize: 12,
     color: "#6b7280",
-    textAlign: "center",
+    marginTop: 10,
   },
 };
