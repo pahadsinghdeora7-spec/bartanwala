@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
+import { FaRupeeSign, FaBoxOpen, FaShoppingCart } from "react-icons/fa";
 
 /* SUPABASE */
 const supabase = createClient(
@@ -33,12 +34,8 @@ export default function Home() {
 
       {/* HERO */}
       <section style={styles.hero}>
-        <h1 style={styles.heroTitle}>
-          Wholesale Steel & Aluminium Utensils
-        </h1>
-        <p style={styles.heroSub}>
-          B2B Wholesale · Factory Price · All India Delivery
-        </p>
+        <h1>Wholesale Steel & Aluminium Utensils</h1>
+        <p>B2B Wholesale · Factory Price · All India Delivery</p>
       </section>
 
       {/* PRODUCTS */}
@@ -53,32 +50,46 @@ export default function Home() {
               style={{ textDecoration: "none", color: "inherit" }}
             >
               <div style={styles.card}>
-                <div style={styles.imageWrap}>
+                {/* IMAGE SECTION */}
+                <div style={styles.imageSection}>
                   {p.image ? (
-                    <img src={p.image} alt={p.name} style={styles.image} />
+                    <img
+                      src={p.image}
+                      alt={p.name}
+                      style={styles.image}
+                    />
                   ) : (
                     <div style={styles.noImage}>No Image</div>
                   )}
                 </div>
 
-                <h3 style={styles.name}>{p.name}</h3>
+                {/* DETAILS SECTION */}
+                <div style={styles.detailsSection}>
+                  <h3 style={styles.name}>{p.name}</h3>
 
-                <div style={styles.priceRow}>
-                  <span style={styles.price}>₹ {p.price}</span>
-                  <span style={styles.unit}>/ {p.price_unit}</span>
+                  <div style={styles.priceRow}>
+                    <FaRupeeSign size={12} />
+                    <strong>{p.price}</strong>
+                    <span>/ {p.price_unit}</span>
+                  </div>
+
+                  <div style={styles.badge}>
+                    <FaBoxOpen size={12} /> Bulk Available
+                  </div>
                 </div>
 
-                <span style={styles.badge}>Bulk Available</span>
-
-                <button
-                  style={styles.addToCart}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    alert("Added to cart");
-                  }}
-                >
-                  🛒 Add to Cart
-                </button>
+                {/* BUTTON SECTION */}
+                <div style={styles.actionSection}>
+                  <button
+                    style={styles.addToCart}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      alert("Added to cart");
+                    }}
+                  >
+                    <FaShoppingCart /> Add to Cart
+                  </button>
+                </div>
               </div>
             </Link>
           ))}
@@ -95,18 +106,9 @@ const styles = {
     padding: "32px 16px",
     textAlign: "center",
   },
-  heroTitle: {
-    fontSize: 26,
-    fontWeight: 700,
-    marginBottom: 8,
-  },
-  heroSub: {
-    fontSize: 14,
-    color: "#555",
-  },
   main: {
     padding: 16,
-    paddingBottom: 80, // bottom nav space
+    paddingBottom: 90, // bottom nav space
   },
   heading: {
     fontSize: 20,
@@ -114,20 +116,25 @@ const styles = {
   },
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)", // mobile 2 cards
+    gridTemplateColumns: "repeat(2, 1fr)", // mobile: 2 cards
     gap: 14,
   },
   card: {
-    border: "1px solid #E5E7EB",
-    borderRadius: 12,
-    padding: 10,
     background: "#fff",
+    borderRadius: 12,
+    border: "1px solid #E5E7EB",
     display: "flex",
     flexDirection: "column",
+    overflow: "hidden",
   },
-  imageWrap: {
-    height: 120,
-    marginBottom: 8,
+
+  /* IMAGE */
+  imageSection: {
+    height: 140,
+    background: "#f9fafb",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   image: {
     width: "100%",
@@ -135,13 +142,13 @@ const styles = {
     objectFit: "contain",
   },
   noImage: {
-    height: "100%",
-    background: "#f3f4f6",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
     fontSize: 12,
-    color: "#999",
+    color: "#9CA3AF",
+  },
+
+  /* DETAILS */
+  detailsSection: {
+    padding: 10,
   },
   name: {
     fontSize: 14,
@@ -152,28 +159,27 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: 4,
-    marginBottom: 4,
-  },
-  price: {
     color: "#0B5ED7",
-    fontWeight: 700,
-    fontSize: 15,
-  },
-  unit: {
-    fontSize: 12,
-    color: "#555",
+    fontSize: 14,
   },
   badge: {
+    marginTop: 6,
     fontSize: 11,
-    color: "#065f46",
-    background: "#d1fae5",
-    padding: "2px 6px",
+    background: "#E6F4EA",
+    color: "#137333",
+    padding: "3px 6px",
     borderRadius: 6,
-    width: "fit-content",
-    marginBottom: 8,
+    display: "inline-flex",
+    gap: 4,
+    alignItems: "center",
+  },
+
+  /* ACTION */
+  actionSection: {
+    padding: 10,
+    borderTop: "1px solid #E5E7EB",
   },
   addToCart: {
-    marginTop: "auto",
     width: "100%",
     background: "#0B5ED7",
     color: "#fff",
@@ -183,5 +189,9 @@ const styles = {
     fontSize: 14,
     fontWeight: 600,
     cursor: "pointer",
+    display: "flex",
+    justifyContent: "center",
+    gap: 6,
+    alignItems: "center",
   },
 };
