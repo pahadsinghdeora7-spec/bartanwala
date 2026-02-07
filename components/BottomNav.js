@@ -7,33 +7,28 @@ import {
   FaClipboardList,
   FaUser,
 } from "react-icons/fa";
+import styles from "../styles/bottomNav.module.css";
 
-const navItems = [
-  { label: "Home", path: "/", icon: <FaHome /> },
-  { label: "Category", path: "/category", icon: <FaThLarge /> },
-  { label: "Cart", path: "/cart", icon: <FaShoppingCart /> },
-  { label: "Orders", path: "/orders", icon: <FaClipboardList /> },
-  { label: "Account", path: "/account", icon: <FaUser /> },
+const items = [
+  { name: "Home", href: "/", icon: <FaHome /> },
+  { name: "Category", href: "/category", icon: <FaThLarge /> },
+  { name: "Cart", href: "/cart", icon: <FaShoppingCart /> },
+  { name: "Orders", href: "/orders", icon: <FaClipboardList /> },
+  { name: "Account", href: "/account", icon: <FaUser /> },
 ];
 
 export default function BottomNav() {
   const router = useRouter();
 
   return (
-    <nav style={styles.nav}>
-      {navItems.map((item) => {
-        const active = router.pathname === item.path;
-
+    <nav className={styles.nav}>
+      {items.map((item) => {
+        const active = router.pathname === item.href;
         return (
-          <Link key={item.path} href={item.path} style={styles.link}>
-            <div
-              style={{
-                ...styles.item,
-                color: active ? "#0B5ED7" : "#9CA3AF",
-              }}
-            >
-              <div style={{ fontSize: 18 }}>{item.icon}</div>
-              <small>{item.label}</small>
+          <Link key={item.href} href={item.href} className={styles.link}>
+            <div className={`${styles.item} ${active ? styles.active : ""}`}>
+              {item.icon}
+              <span>{item.name}</span>
             </div>
           </Link>
         );
@@ -41,27 +36,3 @@ export default function BottomNav() {
     </nav>
   );
 }
-
-const styles = {
-  nav: {
-    position: "fixed",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 56,
-    background: "#fff",
-    borderTop: "1px solid #E5E7EB",
-    display: "flex",
-    justifyContent: "space-around",
-    alignItems: "center",
-    zIndex: 100,
-  },
-  link: {
-    textDecoration: "none",
-    flex: 1,
-  },
-  item: {
-    textAlign: "center",
-    fontSize: 12,
-  },
-};
