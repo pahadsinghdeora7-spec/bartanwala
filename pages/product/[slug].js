@@ -21,10 +21,18 @@ export async function getServerSideProps({ params }) {
   const product = data?.[0];
   if (!product) return { notFound: true };
 
-  return { props: { product } };
+  // related products (same category)
+  const { data: related } = await supabase
+    .from("products")
+    .select("id,name,slug,image,price,price_unit")
+    .eq("category_id", product.category_id)
+    .neq("id", product.id)
+    .limit(6);
+
+  return { props: { product, related: related || [] } };
 }
 
-export default function ProductPage({ product }) {
+export default function ProductPage({ product, related }) {
   const images = [
     product.image,
     product.image1,
@@ -54,44 +62,46 @@ export default function ProductPage({ product }) {
         {/* IMAGE */}
         <div style={styles.imageWrap}>
           <img src={activeImg} style={styles.mainImage} />
-
-          {images.length > 1 && (
-            <div style={styles.thumbRow}>
-              {images.map((img, i) => (
-                <img
-                  key={i}
-                  src={img}
-                  onClick={() => setActiveImg(img)}
-                  style={{
-                    ...styles.thumb,
-                    border:
-                      img === activeImg
-                        ? "2px solid #0B5ED7"
-                        : "1px solid #e5e7eb",
-                  }}
-                />
-              ))}
-            </div>
-          )}
+          <div style={styles.thumbRow}>
+            {images.map((img, i) => (
+              <img
+                key={i}
+                src={img}
+                onClick={() => setActiveImg(img)}
+                style={{
+                  ...styles.thumb,
+                  border:
+                    img === activeImg
+                      ? "2px solid #0B5ED7"
+                      : "1px solid #e5e7eb",
+                }}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* PRODUCT CARD */}
+        {/* CARD */}
         <div style={styles.card}>
           <h1 style={styles.title}>{product.name}</h1>
 
-          <div style={styles.priceRow}>
-            <FaRupeeSign />
-            <strong>{product.price}</strong>
-            <span>/ {product.price_unit}</span>
+          {/* PRICE + STOCK */}
+          <div style={styles.row}>
+            <div style={styles.price}>
+              <FaRupeeSign /> {product.price} / {product.price_unit}
+            </div>
+            <div style={styles.stock}>
+              <FaCheckCircle /> In Stock
+            </div>
           </div>
 
-          <div style={styles.stock}>
-            <FaCheckCircle color="green" /> In Stock
-          </div>
-
-          <div style={styles.specs}>
+          {/* SIZE / GAUGE */}
+          <div style={styles.row}>
             <div>📏 Size: {product.size}</div>
             <div>⚙️ Gauge: {product.gauge}</div>
+          </div>
+
+          {/* WEIGHT / BULK */}
+          <div style={styles.row}>
             <div>⚖️ Weight: {product.weight}</div>
             <div>
               <FaBoxOpen /> Bulk Available
@@ -101,16 +111,19 @@ export default function ProductPage({ product }) {
           {/* QUANTITY */}
           <div style={styles.qtyRow}>
             <span>Quantity</span>
-            <div style={styles.qty}>
+            <div style={styles.qtyBox}>
               <button onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
-              <strong>{qty}</strong>
+              <input
+                type="number"
+                value={qty}
+                min="1"
+                onChange={(e) => setQty(Number(e.target.value) || 1)}
+              />
               <button onClick={() => setQty(qty + 1)}>+</button>
             </div>
           </div>
 
-          <p style={styles.desc}>{product.description}</p>
-
-          {/* ACTION BUTTONS (NOT TOO LOW) */}
+          {/* BUTTONS */}
           <div style={styles.actionRow}>
             <button style={styles.cartBtn} onClick={addToCart}>
               <FaShoppingCart /> Add to Cart
@@ -124,7 +137,32 @@ export default function ProductPage({ product }) {
               <FaWhatsapp /> Get Bulk Price
             </a>
           </div>
+
+          {/* DESCRIPTION */}
+          <p style={styles.desc}>{product.description}</p>
         </div>
+
+        {/* RELATED PRODUCTS */}
+        {related.length > 0 && (
+          <div style={styles.related}>
+            <h3>Related Products</h3>
+            <div style={styles.relatedRow}>
+              {related.map((p) => (
+                <a
+                  key={p.id}
+                  href={`/product/${p.slug}`}
+                  style={styles.relatedCard}
+                >
+                  <img src={p.image} />
+                  <div>{p.name}</div>
+                  <strong>
+                    ₹{p.price}/{p.price_unit}
+                  </strong>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
@@ -133,15 +171,9 @@ export default function ProductPage({ product }) {
 /* ================= STYLES ================= */
 
 const styles = {
-  page: {
-    background: "#f5f6f8",
-    paddingBottom: 30,
-  },
+  page: { background: "#f5f6f8", paddingBottom: 30 },
 
-  imageWrap: {
-    background: "#fff",
-    padding: 16,
-  },
+  imageWrap: { background: "#fff", padding: 16 },
 
   mainImage: {
     width: "100%",
@@ -150,12 +182,7 @@ const styles = {
     borderRadius: 12,
   },
 
-  thumbRow: {
-    display: "flex",
-    gap: 8,
-    marginTop: 10,
-    justifyContent: "center",
-  },
+  thumbRow: { display: "flex", gap: 8, marginTop: 10 },
 
   thumb: {
     width: 56,
@@ -168,69 +195,38 @@ const styles = {
 
   card: {
     background: "#fff",
-    margin: "12px",
-    padding: "18px",
+    margin: 12,
+    padding: 18,
     borderRadius: 16,
   },
 
-  title: {
-    fontSize: 20,
-    fontWeight: 700,
-    lineHeight: 1.3,
-    textAlign: "center",
-  },
+  title: { textAlign: "center", fontSize: 20, fontWeight: 700 },
 
-  priceRow: {
+  row: {
     display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 6,
-    fontSize: 22,
-    color: "#0B5ED7",
-    marginTop: 8,
-  },
-
-  stock: {
-    textAlign: "center",
-    marginTop: 6,
+    justifyContent: "space-between",
+    marginTop: 10,
     fontSize: 14,
   },
 
-  specs: {
-    marginTop: 14,
-    display: "grid",
-    gap: 6,
-    fontSize: 14,
-    color: "#374151",
-    textAlign: "center",
-  },
+  price: { color: "#0B5ED7", fontWeight: 700 },
+
+  stock: { color: "green", display: "flex", gap: 4 },
 
   qtyRow: {
-    marginTop: 16,
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-  },
-
-  qty: {
-    display: "flex",
-    gap: 12,
-    alignItems: "center",
-  },
-
-  desc: {
     marginTop: 14,
-    fontSize: 14,
-    lineHeight: 1.6,
-    color: "#4b5563",
-    textAlign: "center",
   },
 
-  actionRow: {
+  qtyBox: {
     display: "flex",
-    gap: 10,
-    marginTop: 18,
+    alignItems: "center",
+    gap: 6,
   },
+
+  actionRow: { display: "flex", gap: 10, marginTop: 18 },
 
   cartBtn: {
     flex: 1,
@@ -251,5 +247,29 @@ const styles = {
     fontWeight: 600,
     textAlign: "center",
     textDecoration: "none",
+  },
+
+  desc: {
+    marginTop: 16,
+    fontSize: 14,
+    lineHeight: 1.6,
+    color: "#4b5563",
+  },
+
+  related: { padding: 12 },
+
+  relatedRow: {
+    display: "flex",
+    gap: 12,
+    overflowX: "auto",
+  },
+
+  relatedCard: {
+    minWidth: 140,
+    background: "#fff",
+    padding: 10,
+    borderRadius: 12,
+    textDecoration: "none",
+    color: "#000",
   },
 };
