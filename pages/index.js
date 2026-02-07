@@ -3,14 +3,6 @@ import Head from "next/head";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import {
-  FaBars,
-  FaSearch,
-  FaWhatsapp,
-  FaHome,
-  FaThLarge,
-  FaShoppingCart,
-  FaClipboardList,
-  FaUser,
   FaRupeeSign,
   FaBoxOpen,
 } from "react-icons/fa";
@@ -21,18 +13,8 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-/* COLORS */
-const COLORS = {
-  primary: "#0B5ED7",
-  dark: "#333333",
-  muted: "#9CA3AF",
-  border: "#E5E7EB",
-  success: "#25D366",
-};
-
 export default function Home() {
   const [products, setProducts] = useState([]);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     async function loadProducts() {
@@ -53,29 +35,15 @@ export default function Home() {
         <title>Bartanwala | Wholesale Steel & Aluminium Utensils</title>
       </Head>
 
-      <header style={styles.header}>
-        <FaBars size={20} onClick={() => setMenuOpen(!menuOpen)} />
-        <strong>Bartanwala</strong>
-        <a href="https://wa.me/919873670361" style={styles.whatsapp}>
-          <FaWhatsapp /> WhatsApp
-        </a>
-      </header>
-
-      {menuOpen && (
-        <div style={styles.drawer}>
-          <Link href="/">Home</Link>
-          <Link href="/category/steel-bartan">Steel Bartan</Link>
-          <Link href="/category/aluminium-bartan">Aluminium Bartan</Link>
-        </div>
-      )}
-
+      {/* HERO */}
       <section style={styles.hero}>
         <h1>Wholesale Steel & Aluminium Utensils</h1>
         <p>B2B Wholesale · Factory Price · All India Delivery</p>
       </section>
 
+      {/* PRODUCTS */}
       <main style={styles.main}>
-        <h2>Products</h2>
+        <h2 style={styles.heading}>Products</h2>
 
         <div style={styles.grid}>
           {products.map((p) => (
@@ -84,16 +52,12 @@ export default function Home() {
               href={`/product/${p.slug}`}
               style={{ textDecoration: "none", color: "inherit" }}
             >
-              <a style={styles.card}>
+              <div style={styles.card}>
                 <div style={styles.imageWrap}>
                   {p.image ? (
-                    <img
-                      src={p.image}
-                      alt={p.name}
-                      style={styles.image}
-                    />
+                    <img src={p.image} alt={p.name} style={styles.image} />
                   ) : (
-                    <div style={styles.placeholder}>Image</div>
+                    <div style={styles.placeholder}>No Image</div>
                   )}
                 </div>
 
@@ -109,7 +73,7 @@ export default function Home() {
                 </div>
 
                 <span style={styles.details}>View Details →</span>
-              </a>
+              </div>
             </Link>
           ))}
         </div>
@@ -118,46 +82,33 @@ export default function Home() {
   );
 }
 
+/* STYLES */
 const styles = {
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: 12,
-    borderBottom: "1px solid #E5E7EB",
-  },
-  whatsapp: {
-    background: "#25D366",
-    color: "#fff",
-    padding: "6px 10px",
-    borderRadius: 4,
-    textDecoration: "none",
-  },
-  drawer: {
-    padding: 16,
-    background: "#f9fafb",
-  },
   hero: {
     background: "#f2f6ff",
-    padding: 24,
+    padding: "22px 14px",
     textAlign: "center",
   },
   main: {
-    padding: 16,
+    padding: "12px",
+    paddingBottom: "80px", // bottom nav safe space
+  },
+  heading: {
+    marginBottom: 12,
   },
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-    gap: 14,
+    gridTemplateColumns: "repeat(2, 1fr)", // MOBILE 2 COLUMN
+    gap: 12,
   },
   card: {
-    display: "block",
     border: "1px solid #E5E7EB",
-    borderRadius: 6,
+    borderRadius: 10,
     padding: 10,
     background: "#fff",
   },
   imageWrap: {
-    height: 120,
+    height: 130,
     marginBottom: 8,
   },
   image: {
@@ -171,24 +122,31 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    fontSize: 12,
+    color: "#777",
   },
   pName: {
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: 600,
+    marginBottom: 4,
   },
   price: {
     color: "#0B5ED7",
     fontSize: 14,
     display: "flex",
     gap: 4,
+    alignItems: "center",
   },
   meta: {
     fontSize: 12,
     marginTop: 4,
+    color: "#555",
   },
   details: {
+    display: "block",
     marginTop: 6,
     fontSize: 13,
     color: "#0B5ED7",
-    fontWeight: "bold",
+    fontWeight: 600,
   },
 };
