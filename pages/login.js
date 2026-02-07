@@ -27,8 +27,8 @@ export default function LoginPage() {
       return;
     }
 
-    setLoading(false);
     router.replace("/account");
+    router.reload(); // ✅ important
   };
 
   return (
@@ -62,7 +62,7 @@ export default function LoginPage() {
             style={styles.input}
           />
 
-          <button disabled={loading} style={styles.btn}>
+          <button style={styles.btn} disabled={loading}>
             {loading ? "Logging in..." : "Login"}
           </button>
 
@@ -86,55 +86,33 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
     background: "#f5f6f8",
-    padding: 16,
   },
   card: {
     width: "100%",
-    maxWidth: 380,
+    maxWidth: 360,
     background: "#fff",
-    padding: 24,
-    borderRadius: 16,
+    padding: 20,
+    borderRadius: 14,
     textAlign: "center",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
   },
-  sub: {
-    fontSize: 13,
-    color: "#6b7280",
-    marginBottom: 18,
-  },
+  sub: { fontSize: 13, color: "#6b7280", marginBottom: 16 },
   input: {
     width: "100%",
-    padding: 14,
-    marginBottom: 14,
-    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    borderRadius: 8,
     border: "1px solid #d1d5db",
-    fontSize: 15,
   },
   btn: {
     width: "100%",
-    padding: 14,
+    padding: 12,
     background: "#16a34a",
     color: "#fff",
     border: "none",
-    borderRadius: 12,
+    borderRadius: 10,
     fontWeight: 600,
-    fontSize: 16,
-    cursor: "pointer",
   },
-  error: {
-    color: "#dc2626",
-    fontSize: 13,
-    marginBottom: 12,
-  },
-  link: {
-    marginTop: 14,
-    color: "#2563eb",
-    cursor: "pointer",
-    fontSize: 14,
-  },
-  note: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 12,
-  },
+  error: { color: "#dc2626", fontSize: 13, marginBottom: 10 },
+  link: { marginTop: 12, color: "#2563eb", cursor: "pointer" },
+  note: { fontSize: 12, color: "#6b7280", marginTop: 10 },
 };
