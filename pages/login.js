@@ -27,8 +27,8 @@ export default function LoginPage() {
       return;
     }
 
-    router.replace("/account");
-    router.reload(); // ✅ important
+    // ✅ LOGIN SUCCESS → HOME PAGE
+    router.replace("/"); // 👈 bas itna hi
   };
 
   return (
