@@ -6,14 +6,19 @@ import { FaRupeeSign } from "react-icons/fa";
 export async function getServerSideProps({ params }) {
   const supabase = getSupabase();
 
+  // ✅ slug safety (string only)
+  const slug = Array.isArray(params.slug)
+    ? params.slug[0]
+    : params.slug;
+
   /* 1️⃣ MAIN CATEGORY */
-  const { data: category } = await supabase
+  const { data: category, error: catError } = await supabase
     .from("categories")
     .select("id, name, slug, description")
-    .eq("slug", params.slug)
+    .eq("slug", slug)
     .single();
 
-  if (!category) {
+  if (!category || catError) {
     return { notFound: true };
   }
 
@@ -24,7 +29,7 @@ export async function getServerSideProps({ params }) {
     .eq("category_id", category.id)
     .order("name");
 
-  /* 3️⃣ PRODUCTS (category + in_stock) */
+  /* 3️⃣ PRODUCTS */
   const { data: products } = await supabase
     .from("products")
     .select(`
@@ -64,7 +69,6 @@ export default function CategoryPage({ category, subcategories, products }) {
       </Head>
 
       <main style={styles.page}>
-        {/* TITLE */}
         <h1 style={styles.title}>{category.name}</h1>
 
         {/* SUB CATEGORIES */}
