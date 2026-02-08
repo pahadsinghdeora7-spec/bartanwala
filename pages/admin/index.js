@@ -7,7 +7,9 @@ import {
   FaUsers,
   FaClipboardList,
   FaTruck,
+  FaFolderOpen,
 } from "react-icons/fa";
+import AdminLayout from "../../components/admin/AdminLayout";
 
 const ADMIN_EMAIL = "pahadsinghdeora7@gmail.com";
 
@@ -18,49 +20,44 @@ export default function AdminDashboard() {
 
   const [stats, setStats] = useState({
     products: 0,
+    categories: 0,
     orders: 0,
-    pending: 0,
     customers: 0,
   });
 
   useEffect(() => {
     async function init() {
-      const { data, error } = await supabase.auth.getUser();
+      const { data } = await supabase.auth.getUser();
 
-      if (error || !data?.user || data.user.email !== ADMIN_EMAIL) {
+      if (!data?.user || data.user.email !== ADMIN_EMAIL) {
         router.replace("/");
         return;
       }
 
       setUser(data.user);
 
-      try {
-        const { count: productCount } = await supabase
-          .from("products")
-          .select("*", { count: "exact", head: true });
+      const { count: productCount } = await supabase
+        .from("products")
+        .select("*", { count: "exact", head: true });
 
-        const { count: orderCount } = await supabase
-          .from("orders")
-          .select("*", { count: "exact", head: true });
+      const { count: categoryCount } = await supabase
+        .from("categories")
+        .select("*", { count: "exact", head: true });
 
-        const { count: pendingCount } = await supabase
-          .from("orders")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "pending");
+      const { count: orderCount } = await supabase
+        .from("orders")
+        .select("*", { count: "exact", head: true });
 
-        const { count: customerCount } = await supabase
-          .from("customers")
-          .select("*", { count: "exact", head: true });
+      const { count: customerCount } = await supabase
+        .from("customers")
+        .select("*", { count: "exact", head: true });
 
-        setStats({
-          products: productCount || 0,
-          orders: orderCount || 0,
-          pending: pendingCount || 0,
-          customers: customerCount || 0,
-        });
-      } catch (err) {
-        console.error("Admin stats error:", err);
-      }
+      setStats({
+        products: productCount || 0,
+        categories: categoryCount || 0,
+        orders: orderCount || 0,
+        customers: customerCount || 0,
+      });
 
       setLoading(false);
     }
@@ -71,100 +68,59 @@ export default function AdminDashboard() {
   if (loading || !user) return null;
 
   return (
-    <>
+    <AdminLayout>
       <Head>
         <title>Admin Dashboard | Bartanwala</title>
       </Head>
 
-      <div style={styles.page}>
-        <h2 style={styles.title}>Admin Dashboard</h2>
-        <p style={styles.sub}>Welcome, {user.email}</p>
+      <h2 style={{ marginBottom: 6 }}>Admin Dashboard</h2>
+      <p style={{ color: "#6b7280", fontSize: 13 }}>
+        Welcome, {user.email}
+      </p>
 
-        {/* STATS */}
-        <div style={styles.grid}>
-          <StatCard
-            icon={<FaBoxOpen />}
-            label="Products"
-            value={stats.products}
-            onClick={() => router.push("/admin/products")}
-          />
+      {/* 🔥 MAIN CARDS */}
+      <div style={styles.grid}>
+        <Card
+          icon={<FaBoxOpen />}
+          label="Products"
+          value={stats.products}
+          onClick={() => router.push("/admin/products")}
+        />
 
-          <StatCard
-            icon={<FaClipboardList />}
-            label="Total Orders"
-            value={stats.orders}
-            onClick={() => router.push("/admin/orders")}
-          />
+        <Card
+          icon={<FaFolderOpen />}
+          label="Categories"
+          value={stats.categories}
+          onClick={() => router.push("/admin/categories")}
+        />
 
-          <StatCard
-            icon={<FaTruck />}
-            label="Pending Orders"
-            value={stats.pending}
-            onClick={() => router.push("/admin/orders?status=pending")}
-          />
+        <Card
+          icon={<FaClipboardList />}
+          label="Orders"
+          value={stats.orders}
+          onClick={() => router.push("/admin/orders")}
+        />
 
-          <StatCard
-            icon={<FaUsers />}
-            label="Customers"
-            value={stats.customers}
-            onClick={() => router.push("/admin/customers")}
-          />
-        </div>
-
-        {/* QUICK ACTIONS */}
-        <div style={styles.card}>
-          <h3>Quick Actions</h3>
-
-          <button
-            style={styles.btn}
-            onClick={() => router.push("/admin/products/add")}
-          >
-            ➕ Add New Product
-          </button>
-
-          {/* ✅ NEW ADDED */}
-          <button
-            style={styles.btn}
-            onClick={() => router.push("/admin/categories/add")}
-          >
-            ➕ Add Main Category
-          </button>
-
-          <button
-            style={styles.btn}
-            onClick={() => router.push("/admin/categories/add-sub")}
-          >
-            ➕ Add Sub Category
-          </button>
-
-          <button
-            style={styles.btn}
-            onClick={() => router.push("/admin/orders")}
-          >
-            📦 Manage Orders
-          </button>
-
-          <button
-            style={styles.btn}
-            onClick={() => router.push("/admin/policies")}
-          >
-            📜 Manage Policies
-          </button>
-        </div>
+        <Card
+          icon={<FaUsers />}
+          label="Customers"
+          value={stats.customers}
+          onClick={() => router.push("/admin/customers")}
+        />
       </div>
-    </>
+    </AdminLayout>
   );
 }
 
-/* ================= COMPONENT ================= */
+/* ================= CARD ================= */
 
-function StatCard({ icon, label, value, onClick }) {
+function Card({ icon, label, value, onClick }) {
   return (
-    <div style={styles.stat} onClick={onClick}>
+    <div style={styles.card} onClick={onClick}>
       <div style={styles.icon}>{icon}</div>
       <div>
-        <div style={styles.statValue}>{value}</div>
-        <div style={styles.statLabel}>{label}</div>
+        <div style={styles.value}>{value}</div>
+        <div style={styles.label}>{label}</div>
       </div>
     </div>
   );
@@ -173,39 +129,22 @@ function StatCard({ icon, label, value, onClick }) {
 /* ================= STYLES ================= */
 
 const styles = {
-  page: {
-    padding: 16,
-    background: "#f5f6f8",
-    minHeight: "100vh",
-  },
-
-  title: {
-    fontSize: 20,
-    fontWeight: 700,
-  },
-
-  sub: {
-    fontSize: 13,
-    color: "#6b7280",
-    marginBottom: 16,
-  },
-
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
     gap: 12,
-    marginBottom: 16,
+    marginTop: 16,
   },
 
-  stat: {
+  card: {
     background: "#fff",
-    padding: 14,
     borderRadius: 12,
+    padding: 16,
     display: "flex",
-    gap: 12,
     alignItems: "center",
-    cursor: "pointer",
+    gap: 12,
     border: "1px solid #e5e7eb",
+    cursor: "pointer",
   },
 
   icon: {
@@ -213,31 +152,13 @@ const styles = {
     color: "#0B5ED7",
   },
 
-  statValue: {
+  value: {
     fontSize: 18,
     fontWeight: 700,
   },
 
-  statLabel: {
+  label: {
     fontSize: 13,
     color: "#6b7280",
-  },
-
-  card: {
-    background: "#fff",
-    borderRadius: 12,
-    padding: 16,
-  },
-
-  btn: {
-    width: "100%",
-    padding: 12,
-    marginTop: 10,
-    borderRadius: 10,
-    border: "1px solid #0B5ED7",
-    background: "#fff",
-    color: "#0B5ED7",
-    fontWeight: 600,
-    fontSize: 15,
   },
 };
