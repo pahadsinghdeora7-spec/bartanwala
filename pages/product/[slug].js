@@ -13,30 +13,38 @@ import {
 /* ================= SERVER ================= */
 
 export async function getServerSideProps({ params }) {
-  const supabase = getSupabase();
+  try {
+    const supabase = getSupabase();
 
-  const { data } = await supabase
-    .from("products")
-    .select("*")
-    .eq("slug", params.slug)
-    .limit(1);
+    // ✅ MAIN PRODUCT
+    const { data: product, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("slug", params.slug)
+      .single();
 
-  const product = data?.[0];
-  if (!product) return { notFound: true };
+    if (error || !product) {
+      return { notFound: true };
+    }
 
-  const { data: related } = await supabase
-    .from("products")
-    .select("id,name,slug,image,price,price_unit")
-    .eq("category_id", product.category_id)
-    .neq("id", product.id)
-    .limit(6);
+    // ✅ RELATED PRODUCTS
+    const { data: related } = await supabase
+      .from("products")
+      .select("id,name,slug,image,price,price_unit")
+      .eq("category_id", product.category_id)
+      .neq("id", product.id)
+      .limit(6);
 
-  return {
-    props: {
-      product,
-      related: related || [],
-    },
-  };
+    return {
+      props: {
+        product,
+        related: related || [],
+      },
+    };
+  } catch (err) {
+    console.error("Product page error:", err);
+    return { notFound: true };
+  }
 }
 
 /* ================= PAGE ================= */
@@ -53,12 +61,11 @@ export default function ProductPage({ product, related }) {
 
   /* ================= QUANTITY LOGIC ================= */
 
-  const unit = product.unit_type || "kg"; // kg | pcs | set
-  const cartonSize = product.carton_size || 1; // backend use only
+  const unit = product.unit_type || "kg";
+  const cartonSize = product.carton_size || 1;
 
   let quantityOptions = [];
 
-  // KG LOGIC
   if (unit === "kg") {
     quantityOptions = [
       { label: "40 KG (Minimum Order)", value: 40 },
@@ -69,13 +76,12 @@ export default function ProductPage({ product, related }) {
     ];
   }
 
-  // PCS / SET → CARTON ONLY (NO PCS SHOWN)
   if (unit === "pcs" || unit === "set") {
     quantityOptions = Array.from({ length: 5 }).map((_, i) => {
       const cartons = i + 1;
       return {
         label: `${cartons} Carton`,
-        value: cartons * cartonSize, // real qty (hidden)
+        value: cartons * cartonSize,
         cartons,
       };
     });
@@ -120,7 +126,6 @@ export default function ProductPage({ product, related }) {
       </Head>
 
       <div style={styles.page}>
-        {/* IMAGE SECTION */}
         <div style={styles.imageWrap}>
           <img src={activeImg} style={styles.mainImage} />
           <div style={styles.thumbRow}>
@@ -141,7 +146,6 @@ export default function ProductPage({ product, related }) {
           </div>
         </div>
 
-        {/* DETAILS CARD */}
         <div style={styles.card}>
           <h1 style={styles.title}>{product.name}</h1>
 
@@ -161,7 +165,6 @@ export default function ProductPage({ product, related }) {
             </div>
           </div>
 
-          {/* QUANTITY */}
           <div style={styles.qtyRow}>
             <span>Quantity</span>
             <select
@@ -177,7 +180,6 @@ export default function ProductPage({ product, related }) {
             </select>
           </div>
 
-          {/* ACTION BUTTONS */}
           <div style={styles.actionRow}>
             <button style={styles.cartBtn} onClick={addToCart}>
               <FaShoppingCart /> Add to Cart
@@ -185,6 +187,7 @@ export default function ProductPage({ product, related }) {
             <a
               href="https://wa.me/919873670361"
               target="_blank"
+              rel="noreferrer"
               style={styles.whatsappBtn}
             >
               <FaWhatsapp /> Get Bulk Price
@@ -194,7 +197,6 @@ export default function ProductPage({ product, related }) {
           <p style={styles.desc}>{product.description}</p>
         </div>
 
-        {/* RELATED PRODUCTS */}
         {related.length > 0 && (
           <div style={styles.related}>
             <h3>Related Products</h3>
@@ -263,7 +265,6 @@ const styles = {
     padding: 8,
     borderRadius: 8,
     border: "1px solid #e5e7eb",
-    fontSize: 14,
   },
   actionRow: { display: "flex", gap: 10, marginTop: 18 },
   cartBtn: {
