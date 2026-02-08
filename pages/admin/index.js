@@ -7,7 +7,6 @@ import {
   FaUsers,
   FaClipboardList,
   FaTruck,
-  FaTimesCircle,
 } from "react-icons/fa";
 
 const ADMIN_EMAIL = "pahadsinghdeora7@gmail.com";
@@ -15,6 +14,8 @@ const ADMIN_EMAIL = "pahadsinghdeora7@gmail.com";
 export default function AdminDashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   const [stats, setStats] = useState({
     products: 0,
     orders: 0,
@@ -24,46 +25,50 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     async function init() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data, error } = await supabase.auth.getUser();
 
-      if (!user || user.email !== ADMIN_EMAIL) {
+      if (error || !data?.user || data.user.email !== ADMIN_EMAIL) {
         router.replace("/");
         return;
       }
 
-      setUser(user);
+      setUser(data.user);
 
-      /* STATS */
-      const { count: productCount } = await supabase
-        .from("products")
-        .select("*", { count: "exact", head: true });
+      try {
+        const { count: productCount } = await supabase
+          .from("products")
+          .select("*", { count: "exact", head: true });
 
-      const { count: orderCount } = await supabase
-        .from("orders")
-        .select("*", { count: "exact", head: true });
+        const { count: orderCount } = await supabase
+          .from("orders")
+          .select("*", { count: "exact", head: true });
 
-      const { count: pendingCount } = await supabase
-        .from("orders")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "pending");
+        const { count: pendingCount } = await supabase
+          .from("orders")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "pending");
 
-      const { count: customerCount } = await supabase
-        .from("customers")
-        .select("*", { count: "exact", head: true });
+        const { count: customerCount } = await supabase
+          .from("customers")
+          .select("*", { count: "exact", head: true });
 
-      setStats({
-        products: productCount || 0,
-        orders: orderCount || 0,
-        pending: pendingCount || 0,
-        customers: customerCount || 0,
-      });
+        setStats({
+          products: productCount || 0,
+          orders: orderCount || 0,
+          pending: pendingCount || 0,
+          customers: customerCount || 0,
+        });
+      } catch (err) {
+        console.error("Admin stats error:", err);
+      }
+
+      setLoading(false);
     }
 
     init();
   }, []);
 
+  if (loading) return null;
   if (!user) return null;
 
   return (
