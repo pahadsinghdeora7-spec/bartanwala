@@ -1,25 +1,28 @@
 import { useEffect, useState } from "react";
-import Head from "next/head";
 import { useRouter } from "next/router";
-import { supabase } from "../../lib/supabase";
-import { FaPlus, FaImage, FaSave } from "react-icons/fa";
+import Head from "next/head";
+import { createClient } from "@supabase/supabase-js";
 
-export default function AddProductPage() {
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
+export default function AddProduct() {
   const router = useRouter();
 
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
 
   const [form, setForm] = useState({
     name: "",
+    slug: "",
     category_id: "",
-    category_slug: "",
-    size: "",
-    gauge: "",
-    weight: "",
     price: "",
     price_unit: "kg",
+    unit_type: "kg",
     description: "",
+    in_stock: true,
   });
 
   const [images, setImages] = useState([]);
@@ -28,81 +31,90 @@ export default function AddProductPage() {
   useEffect(() => {
     supabase
       .from("categories")
-      .select("id,name,slug")
+      .select("id,name")
       .then(({ data }) => setCategories(data || []));
   }, []);
 
   /* ================= HELPERS ================= */
-
-  const slugify = (text) =>
+  const makeSlug = (text) =>
     text
       .toLowerCase()
-      .trim()
       .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)+/g, "");
+      .replace(/(^-|-$)/g, "");
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((p) => ({
+      ...p,
+      [name]: value,
+      ...(name === "name" && { slug: makeSlug(value) }),
+    }));
+  };
 
-  /* ================= IMAGE UPLOAD ================= */
-  const uploadImage = async (file) => {
-    const ext = file.name.split(".").pop();
-    const fileName = `${Date.now()}-${Math.random()}.${ext}`;
-
-    const { error } = await supabase.storage
-      .from("products")
-      .upload(fileName, file);
-
-    if (error) throw error;
-
-    const { data } = supabase.storage
-      .from("products")
-      .getPublicUrl(fileName);
-
-    return data.publicUrl;
+  /* ================= IMAGE SELECT ================= */
+  const handleImages = (e) => {
+    setImages([...e.target.files]);
   };
 
   /* ================= SUBMIT ================= */
   const handleSubmit = async () => {
-    if (!form.name || !form.category_id || !form.price) {
-      alert("Name, Category & Price required");
+    if (!form.name || !form.category_id || !form.price || images.length === 0) {
+      alert("Please fill all required fields");
       return;
     }
 
     try {
       setLoading(true);
 
-      const uploadedUrls = [];
-      for (let file of images.slice(0, 4)) {
-        const url = await uploadImage(file);
-        uploadedUrls.push(url);
-      }
-
-      const slug = slugify(form.name);
-      const search_text = `${form.name} ${form.size} ${form.gauge} ${form.weight}`;
-
-      const { error } = await supabase.from("products").insert({
-        ...form,
-        slug,
-        search_text,
-        image: uploadedUrls[0] || null,
-        image1: uploadedUrls[1] || null,
-        image2: uploadedUrls[2] || null,
-        image3: uploadedUrls[3] || null,
-      });
+      /* 1️⃣ INSERT PRODUCT */
+      const { data: product, error } = await supabase
+        .from("products")
+        .insert({
+          ...form,
+          search_text: form.name,
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      /* 2️⃣ UPLOAD IMAGES */
+      const uploadedImages = [];
+
+      for (let i = 0; i < images.length; i++) {
+        const file = images[i];
+        const path = `products/${product.id}/${Date.now()}-${file.name}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("products")
+          .upload(path, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage
+          .from("products")
+          .getPublicUrl(path);
+
+        uploadedImages.push({
+          product_id: product.id,
+          image_url: data.publicUrl,
+          position: i + 1,
+        });
+      }
+
+      /* 3️⃣ SAVE IMAGE URLs */
+      await supabase.from("product_images").insert(uploadedImages);
 
       alert("✅ Product added successfully");
       router.push("/admin");
     } catch (err) {
-      alert(err.message);
+      console.error(err);
+      alert("❌ Error adding product");
     } finally {
       setLoading(false);
     }
   };
 
-  /* ================= UI ================= */
   return (
     <>
       <Head>
@@ -110,163 +122,118 @@ export default function AddProductPage() {
       </Head>
 
       <div style={styles.page}>
-        <h1 style={styles.title}>➕ Add New Product</h1>
+        <h2>Add New Product</h2>
 
-        <div style={styles.card}>
+        <input
+          placeholder="Product Name *"
+          name="name"
+          value={form.name}
+          onChange={handleChange}
+          style={styles.input}
+        />
+
+        <input
+          placeholder="Slug"
+          value={form.slug}
+          disabled
+          style={{ ...styles.input, background: "#f3f4f6" }}
+        />
+
+        <select
+          name="category_id"
+          value={form.category_id}
+          onChange={handleChange}
+          style={styles.input}
+        >
+          <option value="">Select Category *</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+
+        <div style={styles.row}>
           <input
-            placeholder="Product Name *"
-            name="name"
+            placeholder="Price *"
+            name="price"
+            type="number"
+            value={form.price}
             onChange={handleChange}
             style={styles.input}
           />
 
           <select
-            name="category_id"
-            onChange={(e) => {
-              const cat = categories.find(
-                (c) => c.id == e.target.value
-              );
-              setForm({
-                ...form,
-                category_id: cat.id,
-                category_slug: cat.slug,
-              });
-            }}
+            name="price_unit"
+            value={form.price_unit}
+            onChange={handleChange}
             style={styles.input}
           >
-            <option value="">Select Category *</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
+            <option value="kg">KG</option>
+            <option value="pcs">PCS</option>
+            <option value="set">SET</option>
           </select>
-
-          <div style={styles.row}>
-            <input
-              placeholder="Size"
-              name="size"
-              onChange={handleChange}
-              style={styles.input}
-            />
-            <input
-              placeholder="Gauge"
-              name="gauge"
-              onChange={handleChange}
-              style={styles.input}
-            />
-          </div>
-
-          <input
-            placeholder="Weight"
-            name="weight"
-            onChange={handleChange}
-            style={styles.input}
-          />
-
-          <div style={styles.row}>
-            <input
-              type="number"
-              placeholder="Price *"
-              name="price"
-              onChange={handleChange}
-              style={styles.input}
-            />
-            <select
-              name="price_unit"
-              onChange={handleChange}
-              style={styles.input}
-            >
-              <option value="kg">per KG</option>
-              <option value="pcs">per PCS</option>
-              <option value="set">per SET</option>
-            </select>
-          </div>
-
-          <textarea
-            placeholder="Product Description"
-            name="description"
-            rows={4}
-            onChange={handleChange}
-            style={styles.textarea}
-          />
-
-          {/* IMAGE PICKER */}
-          <label style={styles.imageBox}>
-            <FaImage /> Select Images (max 4)
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              hidden
-              onChange={(e) => setImages([...e.target.files])}
-            />
-          </label>
-
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            style={styles.btn}
-          >
-            <FaSave /> {loading ? "Saving..." : "Save Product"}
-          </button>
         </div>
+
+        <textarea
+          placeholder="Description"
+          name="description"
+          value={form.description}
+          onChange={handleChange}
+          style={styles.textarea}
+        />
+
+        <input
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={handleImages}
+        />
+
+        <button onClick={handleSubmit} disabled={loading} style={styles.btn}>
+          {loading ? "Uploading..." : "Add Product"}
+        </button>
       </div>
     </>
   );
 }
 
 /* ================= STYLES ================= */
-
 const styles = {
   page: {
+    maxWidth: 520,
+    margin: "auto",
     padding: 16,
-    background: "#f4f6f8",
-    minHeight: "100vh",
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 700,
-    marginBottom: 12,
-  },
-  card: {
     background: "#fff",
-    padding: 16,
     borderRadius: 16,
+  },
+  input: {
+    width: "100%",
+    padding: 12,
+    marginBottom: 12,
+    borderRadius: 10,
+    border: "1px solid #d1d5db",
+  },
+  textarea: {
+    width: "100%",
+    padding: 12,
+    minHeight: 80,
+    borderRadius: 10,
+    border: "1px solid #d1d5db",
+    marginBottom: 12,
   },
   row: {
     display: "flex",
     gap: 10,
   },
-  input: {
-    width: "100%",
-    padding: 12,
-    borderRadius: 10,
-    border: "1px solid #d1d5db",
-    marginBottom: 12,
-  },
-  textarea: {
-    width: "100%",
-    padding: 12,
-    borderRadius: 10,
-    border: "1px solid #d1d5db",
-    marginBottom: 12,
-  },
-  imageBox: {
-    border: "1px dashed #9ca3af",
-    padding: 14,
-    borderRadius: 12,
-    textAlign: "center",
-    cursor: "pointer",
-    marginBottom: 14,
-  },
   btn: {
     width: "100%",
     padding: 14,
     borderRadius: 12,
+    border: "none",
     background: "#0B5ED7",
     color: "#fff",
-    border: "none",
     fontWeight: 700,
+    fontSize: 16,
   },
 };
