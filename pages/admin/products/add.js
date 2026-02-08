@@ -19,9 +19,7 @@ export default function AddProduct() {
     name: "",
     slug: "",
     category_id: "",
-    category_slug: "",
     price: "",
-    price_unit: "pcs",
     size: "",
     gauge: "",
     weight: "",
@@ -33,7 +31,8 @@ export default function AddProduct() {
   useEffect(() => {
     supabase
       .from("categories")
-      .select("id, slug, name")
+      .select("id,name")
+      .order("name")
       .then(({ data }) => setCategories(data || []));
   }, []);
 
@@ -42,81 +41,89 @@ export default function AddProduct() {
     text
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
+      .replace(/(^-|-$)+/g, "");
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
-    setForm((prev) => ({
-      ...prev,
+    setForm((p) => ({
+      ...p,
       [name]: type === "checkbox" ? checked : value,
       ...(name === "name" ? { slug: makeSlug(value) } : {}),
     }));
   };
 
   const handleImages = (e) => {
-    setImages([...e.target.files]); // 📱 gallery se select
+    setImages([...e.target.files]);
   };
 
   /* ================= SUBMIT ================= */
   const handleSubmit = async () => {
     if (!form.name || !form.category_id || !form.price) {
-      alert("Required fields missing");
+      alert("Required fields fill karo");
       return;
     }
 
     try {
       setLoading(true);
 
-      /* 1️⃣ INSERT PRODUCT */
+      /* INSERT PRODUCT (ONLY EXISTING COLUMNS) */
       const { data: product, error } = await supabase
         .from("products")
         .insert({
-          ...form,
+          name: form.name,
+          slug: form.slug,
+          category_id: form.category_id,
           price: Number(form.price),
-          search_text: `${form.name} ${form.size} ${form.gauge}`,
+          size: form.size,
+          gauge: form.gauge,
+          weight: form.weight,
+          description: form.description,
+          in_stock: form.in_stock,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      /* 2️⃣ UPLOAD IMAGES */
-      const uploaded = [];
+      /* UPLOAD IMAGES */
+      let imageUrls = [];
 
       for (let i = 0; i < images.length; i++) {
         const file = images[i];
-        const path = `products/${product.id}/${Date.now()}-${file.name}`;
+        const filePath = `products/${product.id}/${Date.now()}-${file.name}`;
 
         const { error: uploadError } = await supabase.storage
           .from("products")
-          .upload(path, file);
+          .upload(filePath, file);
 
         if (uploadError) throw uploadError;
 
         const { data } = supabase.storage
           .from("products")
-          .getPublicUrl(path);
+          .getPublicUrl(filePath);
 
-        uploaded.push(data.publicUrl);
+        imageUrls.push(data.publicUrl);
       }
 
-      /* 3️⃣ UPDATE IMAGE COLUMNS */
-      await supabase
-        .from("products")
-        .update({
-          image: uploaded[0] || null,
-          image1: uploaded[1] || null,
-          image2: uploaded[2] || null,
-          image3: uploaded[3] || null,
-        })
-        .eq("id", product.id);
+      /* UPDATE IMAGE FIELDS */
+      if (imageUrls.length) {
+        await supabase
+          .from("products")
+          .update({
+            image: imageUrls[0] || null,
+            image1: imageUrls[1] || null,
+            image2: imageUrls[2] || null,
+            image3: imageUrls[3] || null,
+          })
+          .eq("id", product.id);
+      }
 
-      alert("✅ Product added successfully");
-      router.push("/admin/products");
+      alert("✅ Product Added Successfully");
+      router.push("/admin");
 
     } catch (err) {
-      alert("❌ " + err.message);
+      console.error(err);
+      alert(err.message || "Error aaya");
     } finally {
       setLoading(false);
     }
@@ -125,61 +132,148 @@ export default function AddProduct() {
   return (
     <>
       <Head>
-        <title>Add Product | Admin</title>
+        <title>Add Product | Bartanwala</title>
       </Head>
 
-      <div style={{ padding: 16 }}>
-        <h2>Add New Product</h2>
+      <div style={styles.container}>
+        <h2 style={styles.heading}>Add New Product</h2>
 
-        <input name="name" placeholder="Product name" onChange={handleChange} />
-        <input name="slug" value={form.slug} disabled />
+        <div style={styles.card}>
+          <label style={styles.label}>Product Name *</label>
+          <input style={styles.input} name="name" onChange={handleChange} />
 
-        <select
-          name="category_id"
-          onChange={(e) => {
-            const cat = categories.find((c) => c.id == e.target.value);
-            setForm((p) => ({
-              ...p,
-              category_id: cat.id,
-              category_slug: cat.slug,
-            }));
-          }}
-        >
-          <option value="">Select Category</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+          <label style={styles.label}>Slug</label>
+          <input style={styles.input} value={form.slug} disabled />
 
-        <input name="price" placeholder="Price" onChange={handleChange} />
-        <input name="size" placeholder="Size" onChange={handleChange} />
-        <input name="gauge" placeholder="Gauge" onChange={handleChange} />
-        <input name="weight" placeholder="Weight" onChange={handleChange} />
+          <label style={styles.label}>Category *</label>
+          <select
+            style={styles.input}
+            value={form.category_id}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, category_id: e.target.value }))
+            }
+          >
+            <option value="">Select Category</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
 
-        <textarea
-          name="description"
-          placeholder="Description"
-          onChange={handleChange}
-        />
+          <div style={styles.row}>
+            <div style={{ flex: 1 }}>
+              <label style={styles.label}>Price *</label>
+              <input style={styles.input} name="price" onChange={handleChange} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={styles.label}>Size</label>
+              <input style={styles.input} name="size" onChange={handleChange} />
+            </div>
+          </div>
 
-        <label>
-          <input
-            type="checkbox"
-            name="in_stock"
-            checked={form.in_stock}
+          <div style={styles.row}>
+            <div style={{ flex: 1 }}>
+              <label style={styles.label}>Gauge</label>
+              <input style={styles.input} name="gauge" onChange={handleChange} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={styles.label}>Weight</label>
+              <input style={styles.input} name="weight" onChange={handleChange} />
+            </div>
+          </div>
+
+          <label style={styles.label}>Description</label>
+          <textarea
+            style={styles.textarea}
+            name="description"
             onChange={handleChange}
-          />{" "}
-          In Stock
-        </label>
+          />
 
-        <input type="file" multiple onChange={handleImages} />
+          <label style={styles.checkbox}>
+            <input
+              type="checkbox"
+              name="in_stock"
+              checked={form.in_stock}
+              onChange={handleChange}
+            />
+            In Stock
+          </label>
 
-        <button onClick={handleSubmit} disabled={loading}>
-          {loading ? "Saving..." : "Add Product"}
-        </button>
+          <input type="file" multiple onChange={handleImages} />
+
+          <button
+            style={styles.button}
+            onClick={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? "Saving..." : "➕ Add Product"}
+          </button>
+        </div>
       </div>
     </>
   );
-                          }
+}
+
+/* ================= STYLES ================= */
+
+const styles = {
+  container: {
+    padding: 16,
+    background: "#f5f6f8",
+    minHeight: "100vh",
+  },
+  heading: {
+    fontSize: 20,
+    fontWeight: 700,
+    marginBottom: 12,
+  },
+  card: {
+    background: "#fff",
+    borderRadius: 12,
+    padding: 16,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: 600,
+    marginTop: 12,
+    display: "block",
+  },
+  input: {
+    width: "100%",
+    padding: 10,
+    marginTop: 6,
+    borderRadius: 8,
+    border: "1px solid #d1d5db",
+  },
+  textarea: {
+    width: "100%",
+    minHeight: 80,
+    padding: 10,
+    marginTop: 6,
+    borderRadius: 8,
+    border: "1px solid #d1d5db",
+  },
+  row: {
+    display: "flex",
+    gap: 10,
+  },
+  checkbox: {
+    display: "flex",
+    gap: 8,
+    marginTop: 12,
+    alignItems: "center",
+    fontSize: 14,
+  },
+  button: {
+    width: "100%",
+    marginTop: 16,
+    padding: 12,
+    background: "#0B5ED7",
+    color: "#fff",
+    border: "none",
+    borderRadius: 10,
+    fontWeight: 600,
+    fontSize: 15,
+  },
+};
