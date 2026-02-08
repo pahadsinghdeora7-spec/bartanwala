@@ -15,55 +15,47 @@ export default function MainLayout({ children }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [user, setUser] = useState(null);
 
-  // hide bottom nav on auth / checkout pages
   const hideBottomNav = HIDE_NAV.some((p) =>
     router.pathname.startsWith(p)
   );
 
-  // ✅ AUTH STATE (CORRECT & SAFE)
+  // ✅ AUTH STATE
   useEffect(() => {
-    // get initial session
     supabase.auth.getSession().then(({ data }) => {
-      setUser(data?.session?.user || null);
+      setUser(data?.session?.user ?? null);
     });
 
-    // listen to auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
 
     return () => {
-      subscription.unsubscribe();
+      subscription?.subscription?.unsubscribe();
     };
   }, []);
 
   return (
     <>
-      {/* HEADER */}
       <Header
         onMenuClick={() => setDrawerOpen(true)}
         cartCount={0}
         user={user}
       />
 
-      {/* SEARCH */}
       <SearchBar />
 
-      {/* DRAWER */}
       <MenuDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         user={user}
       />
 
-      {/* PAGE CONTENT */}
       <main style={{ paddingBottom: hideBottomNav ? 0 : 72 }}>
         {children}
       </main>
 
-      {/* BOTTOM NAV */}
       {!hideBottomNav && <BottomNav />}
     </>
   );
