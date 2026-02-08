@@ -15,6 +15,7 @@ export default function AddProduct() {
     name: "",
     slug: "",
     category_id: "",
+    category_slug: "", // ✅ IMPORTANT
     subcategory_id: "",
     price: "",
     size: "",
@@ -28,7 +29,7 @@ export default function AddProduct() {
   useEffect(() => {
     supabase
       .from("categories")
-      .select("id, name")
+      .select("id, name, slug")
       .order("name")
       .then(({ data }) => setCategories(data || []));
   }, []);
@@ -53,10 +54,12 @@ export default function AddProduct() {
   /* ================= CATEGORY CHANGE ================= */
   const handleCategoryChange = async (e) => {
     const categoryId = e.target.value;
+    const cat = categories.find((c) => c.id == categoryId);
 
     setForm((p) => ({
       ...p,
       category_id: categoryId,
+      category_slug: cat ? cat.slug : "", // ✅ FIX
       subcategory_id: "",
     }));
 
@@ -94,6 +97,7 @@ export default function AddProduct() {
           name: form.name,
           slug: form.slug,
           category_id: form.category_id,
+          category_slug: form.category_slug, // ✅ MUST
           subcategory_id: form.subcategory_id || null,
           price: Number(form.price),
           size: form.size,
@@ -107,10 +111,8 @@ export default function AddProduct() {
 
       if (error) throw error;
 
-      /* IMAGE UPLOAD (optional) */
+      /* IMAGE UPLOAD */
       if (images.length > 0) {
-        const uploaded = [];
-
         for (let i = 0; i < images.length; i++) {
           const file = images[i];
           const path = `products/${product.id}/${Date.now()}-${file.name}`;
@@ -124,15 +126,12 @@ export default function AddProduct() {
               .from("product-images")
               .getPublicUrl(path);
 
-            uploaded.push(data.publicUrl);
+            await supabase
+              .from("products")
+              .update({ image: data.publicUrl })
+              .eq("id", product.id);
+            break;
           }
-        }
-
-        if (uploaded.length > 0) {
-          await supabase
-            .from("products")
-            .update({ image: uploaded[0] })
-            .eq("id", product.id);
         }
       }
 
