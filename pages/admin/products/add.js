@@ -1,24 +1,21 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+import { supabase } from "../../../lib/supabase";
 
 export default function AddProduct() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
   const [images, setImages] = useState([]);
 
   const [form, setForm] = useState({
     name: "",
     slug: "",
     category_id: "",
+    subcategory_id: "",
     price: "",
     size: "",
     gauge: "",
@@ -27,11 +24,11 @@ export default function AddProduct() {
     in_stock: true,
   });
 
-  /* ================= LOAD CATEGORIES ================= */
+  /* ================= LOAD MAIN CATEGORIES ================= */
   useEffect(() => {
     supabase
       .from("categories")
-      .select("id,name")
+      .select("id, name")
       .order("name")
       .then(({ data }) => setCategories(data || []));
   }, []);
@@ -41,15 +38,40 @@ export default function AddProduct() {
     text
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)+/g, "");
+      .replace(/(^-|-$)/g, "");
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
     setForm((p) => ({
       ...p,
       [name]: type === "checkbox" ? checked : value,
       ...(name === "name" ? { slug: makeSlug(value) } : {}),
     }));
+  };
+
+  /* ================= CATEGORY CHANGE ================= */
+  const handleCategoryChange = async (e) => {
+    const categoryId = e.target.value;
+
+    setForm((p) => ({
+      ...p,
+      category_id: categoryId,
+      subcategory_id: "",
+    }));
+
+    if (!categoryId) {
+      setSubcategories([]);
+      return;
+    }
+
+    const { data } = await supabase
+      .from("subcategories")
+      .select("id, name")
+      .eq("category_id", categoryId)
+      .order("name");
+
+    setSubcategories(data || []);
   };
 
   const handleImages = (e) => {
@@ -66,13 +88,13 @@ export default function AddProduct() {
     try {
       setLoading(true);
 
-      /* INSERT PRODUCT (ONLY EXISTING COLUMNS) */
       const { data: product, error } = await supabase
         .from("products")
         .insert({
           name: form.name,
           slug: form.slug,
           category_id: form.category_id,
+          subcategory_id: form.subcategory_id || null,
           price: Number(form.price),
           size: form.size,
           gauge: form.gauge,
@@ -85,45 +107,39 @@ export default function AddProduct() {
 
       if (error) throw error;
 
-      /* UPLOAD IMAGES */
-      let imageUrls = [];
+      /* IMAGE UPLOAD (optional) */
+      if (images.length > 0) {
+        const uploaded = [];
 
-      for (let i = 0; i < images.length; i++) {
-        const file = images[i];
-        const filePath = `products/${product.id}/${Date.now()}-${file.name}`;
+        for (let i = 0; i < images.length; i++) {
+          const file = images[i];
+          const path = `products/${product.id}/${Date.now()}-${file.name}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from("products")
-          .upload(filePath, file);
+          const { error: uploadError } = await supabase.storage
+            .from("product-images")
+            .upload(path, file);
 
-        if (uploadError) throw uploadError;
+          if (!uploadError) {
+            const { data } = supabase.storage
+              .from("product-images")
+              .getPublicUrl(path);
 
-        const { data } = supabase.storage
-          .from("products")
-          .getPublicUrl(filePath);
+            uploaded.push(data.publicUrl);
+          }
+        }
 
-        imageUrls.push(data.publicUrl);
+        if (uploaded.length > 0) {
+          await supabase
+            .from("products")
+            .update({ image: uploaded[0] })
+            .eq("id", product.id);
+        }
       }
 
-      /* UPDATE IMAGE FIELDS */
-      if (imageUrls.length) {
-        await supabase
-          .from("products")
-          .update({
-            image: imageUrls[0] || null,
-            image1: imageUrls[1] || null,
-            image2: imageUrls[2] || null,
-            image3: imageUrls[3] || null,
-          })
-          .eq("id", product.id);
-      }
-
-      alert("✅ Product Added Successfully");
-      router.push("/admin");
-
+      alert("✅ Product added successfully");
+      router.push("/admin/products");
     } catch (err) {
-      console.error(err);
-      alert(err.message || "Error aaya");
+      alert(err.message);
     } finally {
       setLoading(false);
     }
@@ -132,7 +148,7 @@ export default function AddProduct() {
   return (
     <>
       <Head>
-        <title>Add Product | Bartanwala</title>
+        <title>Add Product | Admin</title>
       </Head>
 
       <div style={styles.container}>
@@ -149,9 +165,7 @@ export default function AddProduct() {
           <select
             style={styles.input}
             value={form.category_id}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, category_id: e.target.value }))
-            }
+            onChange={handleCategoryChange}
           >
             <option value="">Select Category</option>
             {categories.map((c) => (
@@ -161,23 +175,46 @@ export default function AddProduct() {
             ))}
           </select>
 
+          {subcategories.length > 0 && (
+            <>
+              <label style={styles.label}>Sub Category</label>
+              <select
+                style={styles.input}
+                value={form.subcategory_id}
+                onChange={(e) =>
+                  setForm((p) => ({
+                    ...p,
+                    subcategory_id: e.target.value,
+                  }))
+                }
+              >
+                <option value="">Select Sub Category</option>
+                {subcategories.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+
           <div style={styles.row}>
-            <div style={{ flex: 1 }}>
+            <div>
               <label style={styles.label}>Price *</label>
               <input style={styles.input} name="price" onChange={handleChange} />
             </div>
-            <div style={{ flex: 1 }}>
+            <div>
               <label style={styles.label}>Size</label>
               <input style={styles.input} name="size" onChange={handleChange} />
             </div>
           </div>
 
           <div style={styles.row}>
-            <div style={{ flex: 1 }}>
+            <div>
               <label style={styles.label}>Gauge</label>
               <input style={styles.input} name="gauge" onChange={handleChange} />
             </div>
-            <div style={{ flex: 1 }}>
+            <div>
               <label style={styles.label}>Weight</label>
               <input style={styles.input} name="weight" onChange={handleChange} />
             </div>
@@ -204,8 +241,8 @@ export default function AddProduct() {
 
           <button
             style={styles.button}
-            onClick={handleSubmit}
             disabled={loading}
+            onClick={handleSubmit}
           >
             {loading ? "Saving..." : "➕ Add Product"}
           </button>
@@ -232,17 +269,18 @@ const styles = {
     background: "#fff",
     borderRadius: 12,
     padding: 16,
+    maxWidth: 600,
   },
   label: {
     fontSize: 13,
     fontWeight: 600,
-    marginTop: 12,
     display: "block",
+    marginTop: 10,
   },
   input: {
     width: "100%",
     padding: 10,
-    marginTop: 6,
+    marginTop: 4,
     borderRadius: 8,
     border: "1px solid #d1d5db",
   },
@@ -250,30 +288,30 @@ const styles = {
     width: "100%",
     minHeight: 80,
     padding: 10,
-    marginTop: 6,
+    marginTop: 4,
     borderRadius: 8,
     border: "1px solid #d1d5db",
   },
   row: {
-    display: "flex",
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
     gap: 10,
   },
   checkbox: {
+    marginTop: 10,
     display: "flex",
-    gap: 8,
-    marginTop: 12,
+    gap: 6,
     alignItems: "center",
-    fontSize: 14,
   },
   button: {
+    marginTop: 14,
     width: "100%",
-    marginTop: 16,
     padding: 12,
+    borderRadius: 10,
+    border: "none",
     background: "#0B5ED7",
     color: "#fff",
-    border: "none",
-    borderRadius: 10,
-    fontWeight: 600,
+    fontWeight: 700,
     fontSize: 15,
   },
 };
