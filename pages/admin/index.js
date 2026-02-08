@@ -68,8 +68,7 @@ export default function AdminDashboard() {
     init();
   }, []);
 
-  if (loading) return null;
-  if (!user) return null;
+  if (loading || !user) return null;
 
   return (
     <>
@@ -121,6 +120,21 @@ export default function AdminDashboard() {
             onClick={() => router.push("/admin/products/add")}
           >
             ➕ Add New Product
+          </button>
+
+          {/* ✅ NEW ADDED */}
+          <button
+            style={styles.btn}
+            onClick={() => router.push("/admin/categories/add")}
+          >
+            ➕ Add Main Category
+          </button>
+
+          <button
+            style={styles.btn}
+            onClick={() => router.push("/admin/categories/add-sub")}
+          >
+            ➕ Add Sub Category
           </button>
 
           <button
