@@ -19,9 +19,12 @@ export default function AddProduct() {
     name: "",
     slug: "",
     category_id: "",
+    category_slug: "",
     price: "",
-    price_unit: "kg",
-    unit_type: "kg",
+    price_unit: "pcs",
+    size: "",
+    gauge: "",
+    weight: "",
     description: "",
     in_stock: true,
   });
@@ -30,7 +33,7 @@ export default function AddProduct() {
   useEffect(() => {
     supabase
       .from("categories")
-      .select("id,name")
+      .select("id, slug, name")
       .then(({ data }) => setCategories(data || []));
   }, []);
 
@@ -39,25 +42,26 @@ export default function AddProduct() {
     text
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)+/g, "");
+      .replace(/(^-|-$)/g, "");
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm((p) => ({
-      ...p,
+
+    setForm((prev) => ({
+      ...prev,
       [name]: type === "checkbox" ? checked : value,
       ...(name === "name" ? { slug: makeSlug(value) } : {}),
     }));
   };
 
   const handleImages = (e) => {
-    setImages([...e.target.files]); // 📸 gallery se select
+    setImages([...e.target.files]); // 📱 gallery se select
   };
 
   /* ================= SUBMIT ================= */
   const handleSubmit = async () => {
-    if (!form.name || !form.category_id || !form.price || images.length === 0) {
-      alert("All required fields fill karo");
+    if (!form.name || !form.category_id || !form.price) {
+      alert("Required fields missing");
       return;
     }
 
@@ -70,6 +74,7 @@ export default function AddProduct() {
         .insert({
           ...form,
           price: Number(form.price),
+          search_text: `${form.name} ${form.size} ${form.gauge}`,
         })
         .select()
         .single();
@@ -93,22 +98,25 @@ export default function AddProduct() {
           .from("products")
           .getPublicUrl(path);
 
-        uploaded.push({
-          product_id: product.id,
-          image_url: data.publicUrl,
-          position: i + 1,
-        });
+        uploaded.push(data.publicUrl);
       }
 
-      /* 3️⃣ SAVE IMAGE URLS */
-      await supabase.from("product_images").insert(uploaded);
+      /* 3️⃣ UPDATE IMAGE COLUMNS */
+      await supabase
+        .from("products")
+        .update({
+          image: uploaded[0] || null,
+          image1: uploaded[1] || null,
+          image2: uploaded[2] || null,
+          image3: uploaded[3] || null,
+        })
+        .eq("id", product.id);
 
-      alert("✅ Product Added Successfully");
-      router.push("/admin");
+      alert("✅ Product added successfully");
+      router.push("/admin/products");
 
     } catch (err) {
-      console.error(err);
-      alert("❌ Error: " + err.message);
+      alert("❌ " + err.message);
     } finally {
       setLoading(false);
     }
@@ -117,32 +125,25 @@ export default function AddProduct() {
   return (
     <>
       <Head>
-        <title>Add Product | Bartanwala</title>
+        <title>Add Product | Admin</title>
       </Head>
 
-      <div style={styles.page}>
+      <div style={{ padding: 16 }}>
         <h2>Add New Product</h2>
 
-        <input
-          style={styles.input}
-          name="name"
-          placeholder="Product Name"
-          value={form.name}
-          onChange={handleChange}
-        />
-
-        <input
-          style={styles.input}
-          placeholder="Slug"
-          value={form.slug}
-          disabled
-        />
+        <input name="name" placeholder="Product name" onChange={handleChange} />
+        <input name="slug" value={form.slug} disabled />
 
         <select
-          style={styles.input}
           name="category_id"
-          value={form.category_id}
-          onChange={handleChange}
+          onChange={(e) => {
+            const cat = categories.find((c) => c.id == e.target.value);
+            setForm((p) => ({
+              ...p,
+              category_id: cat.id,
+              category_slug: cat.slug,
+            }));
+          }}
         >
           <option value="">Select Category</option>
           {categories.map((c) => (
@@ -152,79 +153,33 @@ export default function AddProduct() {
           ))}
         </select>
 
-        <input
-          style={styles.input}
-          name="price"
-          type="number"
-          placeholder="Price"
-          value={form.price}
-          onChange={handleChange}
-        />
+        <input name="price" placeholder="Price" onChange={handleChange} />
+        <input name="size" placeholder="Size" onChange={handleChange} />
+        <input name="gauge" placeholder="Gauge" onChange={handleChange} />
+        <input name="weight" placeholder="Weight" onChange={handleChange} />
 
         <textarea
-          style={{ ...styles.input, height: 90 }}
           name="description"
           placeholder="Description"
-          value={form.description}
           onChange={handleChange}
         />
 
-        <label style={styles.checkbox}>
+        <label>
           <input
             type="checkbox"
             name="in_stock"
             checked={form.in_stock}
             onChange={handleChange}
-          />
+          />{" "}
           In Stock
         </label>
 
-        <input
-          style={styles.input}
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleImages}
-        />
+        <input type="file" multiple onChange={handleImages} />
 
-        <button style={styles.btn} onClick={handleSubmit} disabled={loading}>
+        <button onClick={handleSubmit} disabled={loading}>
           {loading ? "Saving..." : "Add Product"}
         </button>
       </div>
     </>
   );
-}
-
-/* ================= STYLES ================= */
-
-const styles = {
-  page: {
-    padding: 16,
-    background: "#f4f6f8",
-    minHeight: "100vh",
-  },
-  input: {
-    width: "100%",
-    padding: 12,
-    marginBottom: 12,
-    borderRadius: 10,
-    border: "1px solid #d1d5db",
-    fontSize: 14,
-  },
-  checkbox: {
-    display: "flex",
-    gap: 8,
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  btn: {
-    width: "100%",
-    padding: 14,
-    borderRadius: 12,
-    border: "none",
-    background: "#0B5ED7",
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: 700,
-  },
-};
+                          }
