@@ -157,7 +157,7 @@ export default function ProductPage({ product, related }) {
   );
 }
 
-
+const styles = { ... }
         const styles = {
   page: {
     background: "#f4f6f8",
