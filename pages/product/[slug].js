@@ -156,3 +156,170 @@ export default function ProductPage({ product, related }) {
     </>
   );
 }
+
+
+        const styles = {
+  page: {
+    background: "#f4f6f8",
+    paddingBottom: 90,
+  },
+
+  /* IMAGE SECTION */
+  imageWrap: {
+    background: "#fff",
+    padding: 16,
+    borderBottom: "1px solid #e5e7eb",
+  },
+
+  mainImage: {
+    width: "100%",
+    height: 260,
+    objectFit: "contain",
+    borderRadius: 12,
+  },
+
+  thumbRow: {
+    display: "flex",
+    gap: 10,
+    marginTop: 12,
+    overflowX: "auto",
+  },
+
+  thumb: {
+    width: 64,
+    height: 64,
+    objectFit: "contain",
+    borderRadius: 10,
+    padding: 6,
+    background: "#fff",
+    border: "1px solid #e5e7eb",
+    cursor: "pointer",
+  },
+
+  /* PRODUCT CARD */
+  card: {
+    background: "#fff",
+    margin: "12px",
+    padding: 18,
+    borderRadius: 18,
+    boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
+  },
+
+  title: {
+    fontSize: 20,
+    fontWeight: 700,
+    marginBottom: 8,
+    lineHeight: 1.3,
+  },
+
+  row: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 10,
+    fontSize: 14,
+    color: "#374151",
+  },
+
+  price: {
+    color: "#0B5ED7",
+    fontWeight: 700,
+    fontSize: 16,
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+  },
+
+  stock: {
+    color: "#16a34a",
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    fontWeight: 600,
+  },
+
+  /* QUANTITY */
+  qtyRow: {
+    marginTop: 16,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+  },
+
+  select: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 10,
+    border: "1px solid #d1d5db",
+    fontSize: 14,
+    background: "#fff",
+  },
+
+  /* ACTION BUTTONS */
+  actionRow: {
+    display: "flex",
+    gap: 12,
+    marginTop: 20,
+  },
+
+  cartBtn: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 12,
+    border: "1.5px solid #0B5ED7",
+    background: "#fff",
+    color: "#0B5ED7",
+    fontWeight: 700,
+    fontSize: 15,
+    cursor: "pointer",
+  },
+
+  whatsappBtn: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 12,
+    background: "#25D366",
+    color: "#fff",
+    fontWeight: 700,
+    fontSize: 15,
+    textAlign: "center",
+    textDecoration: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+
+  /* DESCRIPTION */
+  desc: {
+    marginTop: 18,
+    fontSize: 14,
+    lineHeight: 1.7,
+    color: "#4b5563",
+    borderTop: "1px dashed #e5e7eb",
+    paddingTop: 12,
+  },
+
+  /* RELATED */
+  related: {
+    padding: 12,
+  },
+
+  relatedGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gap: 12,
+    marginTop: 10,
+  },
+
+  relatedCard: {
+    background: "#fff",
+    padding: 12,
+    borderRadius: 14,
+    textDecoration: "none",
+    color: "#111",
+    fontSize: 14,
+    boxShadow: "0 4px 14px rgba(0,0,0,0.05)",
+  },
+};
