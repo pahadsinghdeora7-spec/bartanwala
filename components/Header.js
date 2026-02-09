@@ -1,49 +1,26 @@
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { FaBars, FaWhatsapp, FaShoppingCart } from "react-icons/fa";
 import { useRouter } from "next/router";
+import { useCart } from "../context/CartContext";
 
 export default function Header({ onMenuClick }) {
   const router = useRouter();
-  const [cartCount, setCartCount] = useState(0);
+  const { cartCount } = useCart();
 
-  /* ================= LOAD + LIVE UPDATE CART COUNT ================= */
-  useEffect(() => {
-    const loadCount = () => {
-      const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-      const totalQty = cart.reduce((sum, i) => sum + (i.qty || 1), 0);
-      setCartCount(totalQty);
-    };
-
-    loadCount(); // first load
-
-    // 🔥 listen from cart page
-    window.addEventListener("cartUpdated", loadCount);
-
-    return () => {
-      window.removeEventListener("cartUpdated", loadCount);
-    };
-  }, []);
-
-  /* ================= HIDE HEADER ON ADMIN ================= */
-  if (router.pathname.startsWith("/admin")) {
-    return null;
-  }
+  // ❌ Admin pages par header hide
+  if (router.pathname.startsWith("/admin")) return null;
 
   return (
     <header style={styles.header}>
-      {/* MENU */}
       <button onClick={onMenuClick} style={styles.iconBtn}>
         <FaBars size={20} />
       </button>
 
-      {/* LOGO */}
       <Link href="/" style={styles.logo}>
         <span style={styles.logoIcon}>🍽️</span>
         <span>Bartanwala</span>
       </Link>
 
-      {/* ACTIONS */}
       <div style={styles.right}>
         <a
           href="https://wa.me/919873670361"
@@ -65,28 +42,24 @@ export default function Header({ onMenuClick }) {
   );
 }
 
-/* ================= STYLES ================= */
-
 const styles = {
   header: {
     position: "sticky",
     top: 0,
     zIndex: 1000,
     height: 56,
-    background: "#2563eb", // 🔵 blue header
+    background: "#2563eb",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
     padding: "0 14px",
     color: "#fff",
   },
-
   iconBtn: {
     background: "none",
     border: "none",
     color: "#fff",
   },
-
   logo: {
     display: "flex",
     alignItems: "center",
@@ -96,17 +69,12 @@ const styles = {
     textDecoration: "none",
     color: "#fff",
   },
-
-  logoIcon: {
-    fontSize: 20,
-  },
-
+  logoIcon: { fontSize: 20 },
   right: {
     display: "flex",
     alignItems: "center",
     gap: 10,
   },
-
   whatsapp: {
     background: "#25D366",
     color: "#fff",
@@ -117,12 +85,10 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
   },
-
   cart: {
     position: "relative",
     color: "#fff",
   },
-
   badge: {
     position: "absolute",
     top: -6,
