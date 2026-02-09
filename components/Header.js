@@ -7,42 +7,52 @@ export default function Header({ onMenuClick }) {
   const router = useRouter();
   const [cartCount, setCartCount] = useState(0);
 
-  // ❌ ADMIN PAGES PAR HEADER HIDE
-  if (router.pathname.startsWith("/admin")) {
-    return null;
-  }
+  // ❌ ADMIN PAGES PAR HEADER NA DIKHE
+  if (router.pathname.startsWith("/admin")) return null;
 
-  // 🛒 CART COUNT LOGIC
-  const updateCartCount = () => {
-    if (typeof window === "undefined") return;
+  const getCartCount = () => {
+    if (typeof window === "undefined") return 0;
 
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-    const totalQty = cart.reduce(
-      (sum, item) => sum + (Number(item.qty) || 0),
+    return cart.reduce(
+      (sum, item) => sum + Number(item.qty || 0),
       0
     );
-    setCartCount(totalQty);
   };
 
   useEffect(() => {
-    updateCartCount();
+    // initial load
+    setCartCount(getCartCount());
 
-    // custom event listener (add to cart ke baad)
-    window.addEventListener("cart-updated", updateCartCount);
+    // 🔥 custom event
+    const onCartUpdate = () => {
+      setCartCount(getCartCount());
+    };
+
+    // 🔥 storage event (backup)
+    const onStorage = (e) => {
+      if (e.key === "cart") {
+        setCartCount(getCartCount());
+      }
+    };
+
+    window.addEventListener("cart-updated", onCartUpdate);
+    window.addEventListener("storage", onStorage);
 
     return () => {
-      window.removeEventListener("cart-updated", updateCartCount);
+      window.removeEventListener("cart-updated", onCartUpdate);
+      window.removeEventListener("storage", onStorage);
     };
   }, []);
 
   return (
     <header style={styles.header}>
-      {/* LEFT */}
+      {/* MENU */}
       <button onClick={onMenuClick} style={styles.iconBtn}>
         <FaBars size={20} color="#fff" />
       </button>
 
-      {/* CENTER */}
+      {/* LOGO */}
       <Link href="/">
         <a style={styles.logo}>
           <span style={styles.logoIcon}>🍽️</span>
@@ -50,7 +60,7 @@ export default function Header({ onMenuClick }) {
         </a>
       </Link>
 
-      {/* RIGHT */}
+      {/* ACTIONS */}
       <div style={styles.right}>
         <a
           href="https://wa.me/919873670361"
@@ -74,7 +84,7 @@ export default function Header({ onMenuClick }) {
   );
 }
 
-/* ================= STYLES ================= */
+/* ===== STYLES ===== */
 
 const styles = {
   header: {
@@ -88,49 +98,29 @@ const styles = {
     justifyContent: "space-between",
     padding: "0 14px",
   },
-
-  iconBtn: {
-    background: "none",
-    border: "none",
-    padding: 6,
-  },
-
+  iconBtn: { background: "none", border: "none" },
   logo: {
     display: "flex",
     alignItems: "center",
     gap: 8,
+    color: "#fff",
     fontWeight: 700,
     fontSize: 18,
     textDecoration: "none",
-    color: "#fff",
   },
-
-  logoIcon: {
-    fontSize: 26,
-  },
-
-  right: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-  },
-
+  logoIcon: { fontSize: 26 },
+  right: { display: "flex", alignItems: "center", gap: 12 },
   whatsapp: {
     background: "#25D366",
-    color: "#fff",
     width: 34,
     height: 34,
     borderRadius: "50%",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    color: "#fff",
   },
-
-  cart: {
-    position: "relative",
-    padding: 6,
-  },
-
+  cart: { position: "relative", padding: 6 },
   badge: {
     position: "absolute",
     top: -4,
@@ -140,7 +130,6 @@ const styles = {
     fontSize: 10,
     padding: "2px 6px",
     borderRadius: 999,
-    lineHeight: 1,
     fontWeight: 700,
   },
 };
