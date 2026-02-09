@@ -6,17 +6,13 @@ export default function Header({ onMenuClick, cartCount = 0 }) {
     <header style={styles.header}>
       {/* LEFT : MENU */}
       <button onClick={onMenuClick} style={styles.iconBtn}>
-        <FaBars size={20} />
+        <FaBars size={20} color="#fff" />
       </button>
 
       {/* CENTER : LOGO */}
       <Link href="/">
         <a style={styles.logo}>
-          <img
-            src="/logo.png"
-            alt="Bartanwala"
-            style={styles.logoImg}
-          />
+          <span style={styles.logoIcon}>🍽️</span>
           <span>Bartanwala</span>
         </a>
       </Link>
@@ -34,7 +30,7 @@ export default function Header({ onMenuClick, cartCount = 0 }) {
 
         <Link href="/cart">
           <a style={styles.cart}>
-            <FaShoppingCart size={18} />
+            <FaShoppingCart size={18} color="#fff" />
             {cartCount > 0 && (
               <span style={styles.badge}>{cartCount}</span>
             )}
@@ -45,18 +41,19 @@ export default function Header({ onMenuClick, cartCount = 0 }) {
   );
 }
 
+/* ================= STYLES ================= */
+
 const styles = {
   header: {
     position: "sticky",
     top: 0,
     zIndex: 1000,
     height: 56,
-    background: "#fff",
-    borderBottom: "1px solid #e5e7eb",
+    background: "#0B5ED7", // ✅ BLUE HEADER
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: "0 14px", // ⬅ thoda breathable
+    padding: "0 14px",
   },
 
   iconBtn: {
@@ -70,22 +67,20 @@ const styles = {
     alignItems: "center",
     gap: 8,
     fontWeight: 700,
-    fontSize: 16,
+    fontSize: 18,
     textDecoration: "none",
-    color: "#111",
+    color: "#fff",
   },
 
-  logoImg: {
-    width: 28,
-    height: 28,
-    objectFit: "contain",
+  logoIcon: {
+    fontSize: 26, // 🍽️ utensil icon
+    lineHeight: 1,
   },
 
   right: {
     display: "flex",
     alignItems: "center",
-    gap: 10,          // ⬅ icons closer
-    marginRight: 6,  // ⬅ left shift effect
+    gap: 12,
   },
 
   whatsapp: {
@@ -101,7 +96,6 @@ const styles = {
 
   cart: {
     position: "relative",
-    color: "#111",
     padding: 6,
   },
 
