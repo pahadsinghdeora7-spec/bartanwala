@@ -1,33 +1,35 @@
-import { useEffect, useState } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { FaMinus, FaPlus, FaTrash } from "react-icons/fa";
+import { useCart } from "../context/CartContext";
 
 export default function CartPage() {
   const router = useRouter();
-  const [cart, setCart] = useState([]);
+  const { cart, addToCart } = useCart();
 
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("cart") || "[]");
-    setCart(saved);
-  }, []);
-
+  /* ================= UPDATE QTY ================= */
   const updateQty = (id, qty) => {
-    const updated = cart.map((item) =>
-      item.id === id ? { ...item, qty: Math.max(1, qty) } : item
-    );
-    setCart(updated);
-    localStorage.setItem("cart", JSON.stringify(updated));
+    if (qty < 1) return;
+
+    const updatedItem = cart.find((i) => i.id === id);
+    if (!updatedItem) return;
+
+    addToCart({
+      ...updatedItem,
+      qty: qty - updatedItem.qty, // 🔥 delta logic
+    });
   };
 
+  /* ================= REMOVE ITEM ================= */
   const removeItem = (id) => {
     const updated = cart.filter((i) => i.id !== id);
-    setCart(updated);
     localStorage.setItem("cart", JSON.stringify(updated));
+    window.dispatchEvent(new Event("storage")); // fallback safety
   };
 
+  /* ================= TOTAL ================= */
   const subtotal = cart.reduce(
-    (sum, i) => sum + i.price * i.qty,
+    (sum, i) => sum + Number(i.price) * Number(i.qty),
     0
   );
 
@@ -38,16 +40,16 @@ export default function CartPage() {
       </Head>
 
       <div style={styles.page}>
-        {/* TITLE */}
+        {/* HEADER */}
         <div style={styles.header}>
           <h2>Shopping Cart</h2>
           <span>{cart.length} items</span>
         </div>
 
-        {/* EMPTY CART */}
+        {/* EMPTY */}
         {cart.length === 0 && (
           <div style={styles.empty}>
-            Your cart is empty
+            🛒 Your cart is empty
           </div>
         )}
 
@@ -57,6 +59,7 @@ export default function CartPage() {
             <img
               src={item.image || "/placeholder.png"}
               style={styles.image}
+              alt={item.name}
             />
 
             <div style={styles.info}>
@@ -68,9 +71,7 @@ export default function CartPage() {
               <div style={styles.qtyRow}>
                 <button
                   style={styles.qtyBtn}
-                  onClick={() =>
-                    updateQty(item.id, item.qty - 1)
-                  }
+                  onClick={() => updateQty(item.id, item.qty - 1)}
                 >
                   <FaMinus />
                 </button>
@@ -79,9 +80,7 @@ export default function CartPage() {
 
                 <button
                   style={styles.qtyBtn}
-                  onClick={() =>
-                    updateQty(item.id, item.qty + 1)
-                  }
+                  onClick={() => updateQty(item.id, item.qty + 1)}
                 >
                   <FaPlus />
                 </button>
@@ -97,7 +96,7 @@ export default function CartPage() {
           </div>
         ))}
 
-        {/* ORDER SUMMARY */}
+        {/* SUMMARY */}
         {cart.length > 0 && (
           <div style={styles.summary}>
             <h3>Order Summary</h3>
@@ -108,7 +107,7 @@ export default function CartPage() {
             </div>
 
             <div style={styles.rowMuted}>
-              <span>Courier Charges</span>
+              <span>Packing / Transport</span>
               <span>As applicable</span>
             </div>
 
@@ -119,7 +118,6 @@ export default function CartPage() {
               <strong>₹ {subtotal}</strong>
             </div>
 
-            {/* CHECKOUT BUTTON */}
             <button
               style={styles.checkout}
               onClick={() => router.push("/checkout")}
@@ -153,10 +151,11 @@ const styles = {
 
   empty: {
     background: "#fff",
-    padding: 20,
-    borderRadius: 12,
+    padding: 24,
+    borderRadius: 14,
     textAlign: "center",
     color: "#6b7280",
+    fontSize: 15,
   },
 
   card: {
@@ -164,7 +163,7 @@ const styles = {
     gap: 12,
     background: "#fff",
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 14,
     marginBottom: 10,
     alignItems: "center",
   },
@@ -177,9 +176,7 @@ const styles = {
     borderRadius: 8,
   },
 
-  info: {
-    flex: 1,
-  },
+  info: { flex: 1 },
 
   name: {
     fontSize: 14,
@@ -204,10 +201,11 @@ const styles = {
     background: "#fff",
     padding: "4px 8px",
     borderRadius: 6,
+    cursor: "pointer",
   },
 
   qty: {
-    minWidth: 20,
+    minWidth: 22,
     textAlign: "center",
     fontWeight: 600,
   },
@@ -217,11 +215,12 @@ const styles = {
     border: "none",
     color: "#dc2626",
     fontSize: 16,
+    cursor: "pointer",
   },
 
   summary: {
     background: "#fff",
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     marginTop: 14,
   },
@@ -252,10 +251,10 @@ const styles = {
     background: "#2563eb",
     color: "#fff",
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     border: "none",
     fontSize: 16,
-    fontWeight: 600,
+    fontWeight: 700,
     cursor: "pointer",
   },
 };
