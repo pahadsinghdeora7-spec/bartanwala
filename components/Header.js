@@ -1,15 +1,48 @@
 import Link from "next/link";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import { FaBars, FaWhatsapp, FaShoppingCart } from "react-icons/fa";
 
-export default function Header({ onMenuClick, cartCount = 0 }) {
+export default function Header({ onMenuClick }) {
+  const router = useRouter();
+  const [cartCount, setCartCount] = useState(0);
+
+  // ❌ ADMIN PAGES PAR HEADER HIDE
+  if (router.pathname.startsWith("/admin")) {
+    return null;
+  }
+
+  // 🛒 CART COUNT LOGIC
+  const updateCartCount = () => {
+    if (typeof window === "undefined") return;
+
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    const totalQty = cart.reduce(
+      (sum, item) => sum + (Number(item.qty) || 0),
+      0
+    );
+    setCartCount(totalQty);
+  };
+
+  useEffect(() => {
+    updateCartCount();
+
+    // custom event listener (add to cart ke baad)
+    window.addEventListener("cart-updated", updateCartCount);
+
+    return () => {
+      window.removeEventListener("cart-updated", updateCartCount);
+    };
+  }, []);
+
   return (
     <header style={styles.header}>
-      {/* LEFT : MENU */}
+      {/* LEFT */}
       <button onClick={onMenuClick} style={styles.iconBtn}>
         <FaBars size={20} color="#fff" />
       </button>
 
-      {/* CENTER : LOGO */}
+      {/* CENTER */}
       <Link href="/">
         <a style={styles.logo}>
           <span style={styles.logoIcon}>🍽️</span>
@@ -17,7 +50,7 @@ export default function Header({ onMenuClick, cartCount = 0 }) {
         </a>
       </Link>
 
-      {/* RIGHT : ACTIONS */}
+      {/* RIGHT */}
       <div style={styles.right}>
         <a
           href="https://wa.me/919873670361"
@@ -49,7 +82,7 @@ const styles = {
     top: 0,
     zIndex: 1000,
     height: 56,
-    background: "#0B5ED7", // ✅ BLUE HEADER
+    background: "#0B5ED7",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
@@ -73,8 +106,7 @@ const styles = {
   },
 
   logoIcon: {
-    fontSize: 26, // 🍽️ utensil icon
-    lineHeight: 1,
+    fontSize: 26,
   },
 
   right: {
@@ -106,8 +138,9 @@ const styles = {
     background: "#dc2626",
     color: "#fff",
     fontSize: 10,
-    padding: "2px 5px",
+    padding: "2px 6px",
     borderRadius: 999,
     lineHeight: 1,
+    fontWeight: 700,
   },
 };
