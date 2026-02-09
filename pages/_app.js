@@ -1,16 +1,23 @@
 import "../styles/globals.css";
 import MainLayout from "../layouts/MainLayout";
+import { CartProvider } from "../context/CartContext";
 
 export default function MyApp({ Component, pageProps }) {
-  // 👉 agar admin page hai
+  // 👉 agar admin page hai (AdminLayout use karta hai)
   if (Component.getLayout) {
-    return Component.getLayout(<Component {...pageProps} />);
+    return (
+      <CartProvider>
+        {Component.getLayout(<Component {...pageProps} />)}
+      </CartProvider>
+    );
   }
 
   // 👉 normal app pages
   return (
-    <MainLayout>
-      <Component {...pageProps} />
-    </MainLayout>
+    <CartProvider>
+      <MainLayout>
+        <Component {...pageProps} />
+      </MainLayout>
+    </CartProvider>
   );
 }
