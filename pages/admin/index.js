@@ -6,7 +6,6 @@ import {
   FaBoxOpen,
   FaUsers,
   FaClipboardList,
-  FaTruck,
   FaFolderOpen,
 } from "react-icons/fa";
 import AdminLayout from "../../components/admin/AdminLayout";
@@ -73,12 +72,12 @@ export default function AdminDashboard() {
         <title>Admin Dashboard | Bartanwala</title>
       </Head>
 
-      <h2 style={{ marginBottom: 6 }}>Admin Dashboard</h2>
-      <p style={{ color: "#6b7280", fontSize: 13 }}>
+      <h2 style={{ marginBottom: 4 }}>Admin Dashboard</h2>
+      <p style={{ fontSize: 13, color: "#6b7280" }}>
         Welcome, {user.email}
       </p>
 
-      {/* 🔥 MAIN CARDS */}
+      {/* 🔥 DASHBOARD CARDS */}
       <div style={styles.grid}>
         <Card
           icon={<FaBoxOpen />}
@@ -87,6 +86,7 @@ export default function AdminDashboard() {
           onClick={() => router.push("/admin/products")}
         />
 
+        {/* ✅ CATEGORY CARD */}
         <Card
           icon={<FaFolderOpen />}
           label="Categories"
@@ -112,7 +112,7 @@ export default function AdminDashboard() {
   );
 }
 
-/* ================= CARD ================= */
+/* ================= CARD COMPONENT ================= */
 
 function Card({ icon, label, value, onClick }) {
   return (
@@ -130,30 +130,30 @@ function Card({ icon, label, value, onClick }) {
 
 const styles = {
   grid: {
+    marginTop: 16,
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
-    gap: 12,
-    marginTop: 16,
+    gap: 14,
   },
 
   card: {
     background: "#fff",
-    borderRadius: 12,
+    border: "1px solid #e5e7eb",
+    borderRadius: 14,
     padding: 16,
     display: "flex",
     alignItems: "center",
     gap: 12,
-    border: "1px solid #e5e7eb",
     cursor: "pointer",
   },
 
   icon: {
-    fontSize: 22,
+    fontSize: 24,
     color: "#0B5ED7",
   },
 
   value: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 700,
   },
 
