@@ -1,30 +1,51 @@
+import { useEffect, useState } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { FaMinus, FaPlus, FaTrash } from "react-icons/fa";
-import { useCart } from "../context/CartContext";
 
 export default function CartPage() {
   const router = useRouter();
-  const { cart, addToCart } = useCart();
+  const [cart, setCart] = useState([]);
+
+  /* ================= LOAD CART ================= */
+  useEffect(() => {
+    const loadCart = () => {
+      const saved = JSON.parse(localStorage.getItem("cart") || "[]");
+      setCart(saved);
+    };
+
+    loadCart();
+
+    // 🔥 LISTEN FOR LIVE UPDATES
+    window.addEventListener("cartUpdated", loadCart);
+
+    return () => {
+      window.removeEventListener("cartUpdated", loadCart);
+    };
+  }, []);
 
   /* ================= UPDATE QTY ================= */
   const updateQty = (id, qty) => {
-    if (qty < 1) return;
+    const updated = cart.map((item) =>
+      item.id === id ? { ...item, qty: Math.max(1, qty) } : item
+    );
 
-    const updatedItem = cart.find((i) => i.id === id);
-    if (!updatedItem) return;
+    setCart(updated);
+    localStorage.setItem("cart", JSON.stringify(updated));
 
-    addToCart({
-      ...updatedItem,
-      qty: qty - updatedItem.qty, // 🔥 delta logic
-    });
+    // 🔥 notify header
+    window.dispatchEvent(new Event("cartUpdated"));
   };
 
   /* ================= REMOVE ITEM ================= */
   const removeItem = (id) => {
     const updated = cart.filter((i) => i.id !== id);
+
+    setCart(updated);
     localStorage.setItem("cart", JSON.stringify(updated));
-    window.dispatchEvent(new Event("storage")); // fallback safety
+
+    // 🔥 notify header
+    window.dispatchEvent(new Event("cartUpdated"));
   };
 
   /* ================= TOTAL ================= */
@@ -46,7 +67,7 @@ export default function CartPage() {
           <span>{cart.length} items</span>
         </div>
 
-        {/* EMPTY */}
+        {/* EMPTY CART */}
         {cart.length === 0 && (
           <div style={styles.empty}>
             🛒 Your cart is empty
@@ -107,7 +128,7 @@ export default function CartPage() {
             </div>
 
             <div style={styles.rowMuted}>
-              <span>Packing / Transport</span>
+              <span>Courier Charges</span>
               <span>As applicable</span>
             </div>
 
@@ -151,11 +172,10 @@ const styles = {
 
   empty: {
     background: "#fff",
-    padding: 24,
-    borderRadius: 14,
+    padding: 20,
+    borderRadius: 12,
     textAlign: "center",
     color: "#6b7280",
-    fontSize: 15,
   },
 
   card: {
@@ -163,7 +183,7 @@ const styles = {
     gap: 12,
     background: "#fff",
     padding: 12,
-    borderRadius: 14,
+    borderRadius: 12,
     marginBottom: 10,
     alignItems: "center",
   },
@@ -201,11 +221,10 @@ const styles = {
     background: "#fff",
     padding: "4px 8px",
     borderRadius: 6,
-    cursor: "pointer",
   },
 
   qty: {
-    minWidth: 22,
+    minWidth: 20,
     textAlign: "center",
     fontWeight: 600,
   },
@@ -215,12 +234,11 @@ const styles = {
     border: "none",
     color: "#dc2626",
     fontSize: 16,
-    cursor: "pointer",
   },
 
   summary: {
     background: "#fff",
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 16,
     marginTop: 14,
   },
@@ -251,10 +269,9 @@ const styles = {
     background: "#2563eb",
     color: "#fff",
     padding: 16,
-    borderRadius: 14,
+    borderRadius: 12,
     border: "none",
     fontSize: 16,
-    fontWeight: 700,
-    cursor: "pointer",
+    fontWeight: 600,
   },
 };
