@@ -9,6 +9,7 @@ import {
   FaCheckCircle,
   FaBoxOpen,
 } from "react-icons/fa";
+import { useCart } from "../../context/CartContext";
 
 /* ================= SERVER ================= */
 
@@ -44,6 +45,8 @@ export async function getServerSideProps({ params }) {
 /* ================= PAGE ================= */
 
 export default function ProductPage({ product, related }) {
+  const { addToCart } = useCart(); // ✅ CONTEXT
+
   const images = [
     product.image,
     product.image1,
@@ -79,28 +82,6 @@ export default function ProductPage({ product, related }) {
 
   const [qty, setQty] = useState(quantityOptions[0]?.value || 1);
 
-  /* ✅ FIXED ADD TO CART */
-  const addToCart = () => {
-    if (typeof window === "undefined") return;
-
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-
-    const existing = cart.find((item) => item.id === product.id);
-
-    if (existing) {
-      existing.qty += qty;
-    } else {
-      cart.push({ ...product, qty, unit });
-    }
-
-    localStorage.setItem("cart", JSON.stringify(cart));
-
-    // 🔥 IMPORTANT — notify header instantly
-    window.dispatchEvent(new Event("cartUpdated"));
-
-    alert("Product added to cart");
-  };
-
   return (
     <>
       <Head>
@@ -108,7 +89,6 @@ export default function ProductPage({ product, related }) {
       </Head>
 
       <div style={styles.page}>
-        {/* IMAGE */}
         <div style={styles.imageWrap}>
           <img src={activeImg} style={styles.mainImage} />
           <div style={styles.thumbRow}>
@@ -129,7 +109,6 @@ export default function ProductPage({ product, related }) {
           </div>
         </div>
 
-        {/* DETAILS */}
         <div style={styles.card}>
           <h1 style={styles.title}>{product.name}</h1>
 
@@ -149,7 +128,6 @@ export default function ProductPage({ product, related }) {
             </div>
           </div>
 
-          {/* QUANTITY */}
           <div style={styles.qtyRow}>
             <span>Quantity</span>
             <select
@@ -165,11 +143,14 @@ export default function ProductPage({ product, related }) {
             </select>
           </div>
 
-          {/* ACTIONS */}
           <div style={styles.actionRow}>
-            <button style={styles.cartBtn} onClick={addToCart}>
+            <button
+              style={styles.cartBtn}
+              onClick={() => addToCart(product, qty, unit)} // ✅ FIXED
+            >
               <FaShoppingCart /> Add to Cart
             </button>
+
             <a
               href="https://wa.me/919873670361"
               target="_blank"
@@ -182,11 +163,9 @@ export default function ProductPage({ product, related }) {
           <p style={styles.desc}>{product.description}</p>
         </div>
 
-        {/* RELATED PRODUCTS */}
         {related.length > 0 && (
           <div style={styles.related}>
             <h3 style={styles.relatedTitle}>Related Products</h3>
-
             <div style={styles.relatedGrid}>
               {related.map((p) => (
                 <Link key={p.id} href={`/product/${p.slug}`}>
@@ -205,4 +184,4 @@ export default function ProductPage({ product, related }) {
       </div>
     </>
   );
-    }
+                  }
