@@ -13,11 +13,11 @@ export default function Header({ onMenuClick }) {
       </button>
 
       {/* CENTER : LOGO */}
-      <Link href="/" style={styles.logo}>
-        <div style={styles.logoWrap}>
+      <Link href="/">
+        <a style={styles.logo}>
           <div style={styles.logoIcon}>BW</div>
           <span style={styles.logoText}>Bartanwala</span>
-        </div>
+        </a>
       </Link>
 
       {/* RIGHT : ACTIONS */}
@@ -31,13 +31,13 @@ export default function Header({ onMenuClick }) {
           <FaWhatsapp size={18} />
         </a>
 
-        <Link href="/cart" style={styles.cart}>
-          <div style={styles.cart}>
+        <Link href="/cart">
+          <a style={styles.cart}>
             <FaShoppingCart size={18} />
             {cartCount > 0 && (
               <span style={styles.badge}>{cartCount}</span>
             )}
-          </div>
+          </a>
         </Link>
       </div>
     </header>
@@ -63,12 +63,15 @@ const styles = {
     border: "none",
     color: "#fff",
     padding: 6,
+    cursor: "pointer",
   },
 
-  logoWrap: {
+  logo: {
     display: "flex",
     alignItems: "center",
     gap: 8,
+    textDecoration: "none",
+    color: "#fff",
   },
 
   logoIcon: {
@@ -109,6 +112,8 @@ const styles = {
   cart: {
     position: "relative",
     color: "#fff",
+    display: "flex",
+    alignItems: "center",
   },
 
   badge: {
