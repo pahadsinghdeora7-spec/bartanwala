@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
+import { useRouter } from "next/router";
 import { supabase } from "../lib/supabase";
-import {
-  FaUser,
-  FaPhone,
-  FaStore,
-  FaMapMarkerAlt,
-  FaSave,
-} from "react-icons/fa";
+import { FaSave } from "react-icons/fa";
 
 export default function AccountPage() {
+  const router = useRouter();
+
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -24,39 +21,43 @@ export default function AccountPage() {
     pin_code: "",
   });
 
-  /* LOAD USER + CUSTOMER DATA */
   useEffect(() => {
     async function loadData() {
-      const { data } = await supabase.auth.getUser();
-      const currentUser = data?.user;
-      if (!currentUser) return;
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      setUser(currentUser);
+      if (!user) {
+        router.push("/login"); // 🔥 redirect if not logged in
+        return;
+      }
 
-      const { data: customer } = await supabase
+      setUser(user);
+
+      const { data, error } = await supabase
         .from("customers")
         .select("*")
-        .eq("user_id", currentUser.id)
-        .single();
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-      if (customer) {
+      if (data) {
         setForm({
-          name: customer.name || "",
-          mobile: customer.mobile || "",
-          business_name: customer.business_name || "",
-          email: customer.email || currentUser.email,
-          address: customer.address || "",
-          city: customer.city || "",
-          pin_code: customer.pin_code || "",
+          name: data.name || "",
+          mobile: data.mobile || "",
+          business_name: data.business_name || "",
+          email: data.email || user.email,
+          address: data.address || "",
+          city: data.city || "",
+          pin_code: data.pin_code || "",
         });
       } else {
         setForm((prev) => ({
           ...prev,
-          email: currentUser.email,
+          email: user.email,
         }));
       }
 
-      setLoading(false);
+      setLoading(false); // ✅ always stop loading
     }
 
     loadData();
@@ -66,7 +67,6 @@ export default function AccountPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  /* SAVE DATA */
   const handleSave = async () => {
     if (!user) return;
 
@@ -87,7 +87,13 @@ export default function AccountPage() {
     setSaving(false);
   };
 
-  if (loading) return <div style={styles.loading}>Loading...</div>;
+  if (loading) {
+    return (
+      <div style={{ padding: 20, textAlign: "center" }}>
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <>
@@ -99,62 +105,13 @@ export default function AccountPage() {
         <h2 style={styles.heading}>My Account</h2>
 
         <div style={styles.card}>
-          <Input
-            icon={<FaUser />}
-            label="Full Name"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-          />
-
-          <Input
-            icon={<FaPhone />}
-            label="Mobile Number"
-            name="mobile"
-            value={form.mobile}
-            onChange={handleChange}
-          />
-
-          <Input
-            icon={<FaStore />}
-            label="Business / Shop Name"
-            name="business_name"
-            value={form.business_name}
-            onChange={handleChange}
-          />
-
-          <Input
-            label="Email"
-            name="email"
-            value={form.email}
-            disabled
-          />
-        </div>
-
-        <h3 style={styles.subHeading}>Delivery Address</h3>
-
-        <div style={styles.card}>
-          <Input
-            icon={<FaMapMarkerAlt />}
-            label="Full Address"
-            name="address"
-            value={form.address}
-            onChange={handleChange}
-          />
-
-          <Input
-            label="City"
-            name="city"
-            value={form.city}
-            onChange={handleChange}
-          />
-
-          <Input
-            label="Pincode"
-            name="pin_code"
-            value={form.pin_code}
-            onChange={handleChange}
-          />
+          <Input label="Full Name" name="name" value={form.name} onChange={handleChange} />
+          <Input label="Mobile" name="mobile" value={form.mobile} onChange={handleChange} />
+          <Input label="Business Name" name="business_name" value={form.business_name} onChange={handleChange} />
+          <Input label="Email" name="email" value={form.email} disabled />
+          <Input label="Address" name="address" value={form.address} onChange={handleChange} />
+          <Input label="City" name="city" value={form.city} onChange={handleChange} />
+          <Input label="Pincode" name="pin_code" value={form.pin_code} onChange={handleChange} />
         </div>
 
         <button style={styles.saveBtn} onClick={handleSave}>
@@ -165,20 +122,24 @@ export default function AccountPage() {
   );
 }
 
-/* INPUT COMPONENT */
-function Input({ icon, label, ...props }) {
+function Input({ label, ...props }) {
   return (
-    <div style={styles.inputWrap}>
-      <label style={styles.label}>{label}</label>
-      <div style={styles.inputBox}>
-        {icon && <span style={styles.icon}>{icon}</span>}
-        <input style={styles.input} {...props} />
-      </div>
+    <div style={{ marginBottom: 12 }}>
+      <label style={{ fontSize: 12, color: "#6b7280" }}>{label}</label>
+      <input
+        style={{
+          width: "100%",
+          padding: 10,
+          borderRadius: 8,
+          border: "1px solid #ddd",
+          marginTop: 4,
+        }}
+        {...props}
+      />
     </div>
   );
 }
 
-/* STYLES */
 const styles = {
   container: {
     padding: 16,
@@ -191,43 +152,11 @@ const styles = {
     fontWeight: 700,
     marginBottom: 12,
   },
-  subHeading: {
-    fontSize: 16,
-    fontWeight: 600,
-    margin: "16px 0 8px",
-  },
   card: {
     background: "#fff",
-    padding: 14,
+    padding: 16,
     borderRadius: 12,
     marginBottom: 12,
-    border: "1px solid #E5E7EB",
-  },
-  inputWrap: {
-    marginBottom: 12,
-  },
-  label: {
-    fontSize: 12,
-    color: "#6b7280",
-  },
-  inputBox: {
-    display: "flex",
-    alignItems: "center",
-    border: "1px solid #ddd",
-    borderRadius: 8,
-    padding: "8px 10px",
-    marginTop: 4,
-  },
-  icon: {
-    marginRight: 8,
-    color: "#6b7280",
-  },
-  input: {
-    border: "none",
-    outline: "none",
-    width: "100%",
-    fontSize: 14,
-    background: "transparent",
   },
   saveBtn: {
     width: "100%",
@@ -237,10 +166,5 @@ const styles = {
     border: "none",
     borderRadius: 10,
     fontWeight: 600,
-    fontSize: 15,
-  },
-  loading: {
-    padding: 20,
-    textAlign: "center",
   },
 };
