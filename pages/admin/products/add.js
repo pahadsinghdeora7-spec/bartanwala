@@ -15,7 +15,7 @@ export default function AddProduct() {
     name: "",
     slug: "",
     category_id: "",
-    category_slug: "", // ✅ IMPORTANT
+    category_slug: "",
     subcategory_id: "",
     price: "",
     size: "",
@@ -25,7 +25,7 @@ export default function AddProduct() {
     in_stock: true,
   });
 
-  /* ================= LOAD MAIN CATEGORIES ================= */
+  /* ================= LOAD CATEGORIES ================= */
   useEffect(() => {
     supabase
       .from("categories")
@@ -59,7 +59,7 @@ export default function AddProduct() {
     setForm((p) => ({
       ...p,
       category_id: categoryId,
-      category_slug: cat ? cat.slug : "", // ✅ FIX
+      category_slug: cat ? cat.slug : "",
       subcategory_id: "",
     }));
 
@@ -91,13 +91,14 @@ export default function AddProduct() {
     try {
       setLoading(true);
 
+      /* 1️⃣ INSERT PRODUCT FIRST */
       const { data: product, error } = await supabase
         .from("products")
         .insert({
           name: form.name,
           slug: form.slug,
           category_id: form.category_id,
-          category_slug: form.category_slug, // ✅ MUST
+          category_slug: form.category_slug,
           subcategory_id: form.subcategory_id || null,
           price: Number(form.price),
           size: form.size,
@@ -111,27 +112,27 @@ export default function AddProduct() {
 
       if (error) throw error;
 
-      /* IMAGE UPLOAD */
+      /* 2️⃣ IMAGE UPLOAD (BUCKET = products) */
       if (images.length > 0) {
-        for (let i = 0; i < images.length; i++) {
-          const file = images[i];
-          const path = `products/${product.id}/${Date.now()}-${file.name}`;
+        const file = images[0]; // first image only
+        const fileName = `${product.id}-${Date.now()}-${file.name}`;
 
-          const { error: uploadError } = await supabase.storage
-            .from("product-images")
-            .upload(path, file);
+        const { error: uploadError } = await supabase.storage
+          .from("products") // ✅ CORRECT BUCKET
+          .upload(fileName, file);
 
-          if (!uploadError) {
-            const { data } = supabase.storage
-              .from("product-images")
-              .getPublicUrl(path);
+        if (uploadError) {
+          console.log(uploadError);
+        } else {
+          const { data } = supabase.storage
+            .from("products")
+            .getPublicUrl(fileName);
 
-            await supabase
-              .from("products")
-              .update({ image: data.publicUrl })
-              .eq("id", product.id);
-            break;
-          }
+          /* 3️⃣ SAVE IMAGE URL IN PRODUCTS TABLE */
+          await supabase
+            .from("products")
+            .update({ image: data.publicUrl })
+            .eq("id", product.id);
         }
       }
 
@@ -174,50 +175,8 @@ export default function AddProduct() {
             ))}
           </select>
 
-          {subcategories.length > 0 && (
-            <>
-              <label style={styles.label}>Sub Category</label>
-              <select
-                style={styles.input}
-                value={form.subcategory_id}
-                onChange={(e) =>
-                  setForm((p) => ({
-                    ...p,
-                    subcategory_id: e.target.value,
-                  }))
-                }
-              >
-                <option value="">Select Sub Category</option>
-                {subcategories.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </>
-          )}
-
-          <div style={styles.row}>
-            <div>
-              <label style={styles.label}>Price *</label>
-              <input style={styles.input} name="price" onChange={handleChange} />
-            </div>
-            <div>
-              <label style={styles.label}>Size</label>
-              <input style={styles.input} name="size" onChange={handleChange} />
-            </div>
-          </div>
-
-          <div style={styles.row}>
-            <div>
-              <label style={styles.label}>Gauge</label>
-              <input style={styles.input} name="gauge" onChange={handleChange} />
-            </div>
-            <div>
-              <label style={styles.label}>Weight</label>
-              <input style={styles.input} name="weight" onChange={handleChange} />
-            </div>
-          </div>
+          <label style={styles.label}>Price *</label>
+          <input style={styles.input} name="price" onChange={handleChange} />
 
           <label style={styles.label}>Description</label>
           <textarea
@@ -236,7 +195,7 @@ export default function AddProduct() {
             In Stock
           </label>
 
-          <input type="file" multiple onChange={handleImages} />
+          <input type="file" onChange={handleImages} />
 
           <button
             style={styles.button}
@@ -290,11 +249,6 @@ const styles = {
     marginTop: 4,
     borderRadius: 8,
     border: "1px solid #d1d5db",
-  },
-  row: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 10,
   },
   checkbox: {
     marginTop: 10,
