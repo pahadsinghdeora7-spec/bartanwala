@@ -1,62 +1,93 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
-import { useRouter } from "next/router";
+import { supabase } from "../lib/supabase";
 import {
   FaUser,
-  FaStore,
   FaPhone,
-  FaEnvelope,
-  FaClipboardList,
-  FaSignOutAlt,
-  FaUserShield,
+  FaStore,
+  FaMapMarkerAlt,
+  FaSave,
 } from "react-icons/fa";
-import { supabase } from "../lib/supabase";
-
-const ADMIN_EMAIL = "pahadsinghdeora7@gmail.com";
 
 export default function AccountPage() {
-  const router = useRouter();
-
   const [user, setUser] = useState(null);
-  const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  /* ================= LOAD USER ================= */
+  const [form, setForm] = useState({
+    name: "",
+    mobile: "",
+    business_name: "",
+    email: "",
+    address: "",
+    city: "",
+    pin_code: "",
+  });
+
+  /* LOAD USER + CUSTOMER DATA */
   useEffect(() => {
-    async function loadUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    async function loadData() {
+      const { data } = await supabase.auth.getUser();
+      const currentUser = data?.user;
+      if (!currentUser) return;
 
-      if (!user) {
-        router.replace("/login");
-        return;
-      }
+      setUser(currentUser);
 
-      setUser(user);
-
-      // fetch customer profile
-      const { data } = await supabase
+      const { data: customer } = await supabase
         .from("customers")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", currentUser.id)
         .single();
 
-      setCustomer(data);
+      if (customer) {
+        setForm({
+          name: customer.name || "",
+          mobile: customer.mobile || "",
+          business_name: customer.business_name || "",
+          email: customer.email || currentUser.email,
+          address: customer.address || "",
+          city: customer.city || "",
+          pin_code: customer.pin_code || "",
+        });
+      } else {
+        setForm((prev) => ({
+          ...prev,
+          email: currentUser.email,
+        }));
+      }
+
       setLoading(false);
     }
 
-    loadUser();
+    loadData();
   }, []);
 
-  const logout = async () => {
-    await supabase.auth.signOut();
-    router.push("/");
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  if (loading) return null;
+  /* SAVE DATA */
+  const handleSave = async () => {
+    if (!user) return;
 
-  const isAdmin = user.email === ADMIN_EMAIL;
+    setSaving(true);
+
+    await supabase.from("customers").upsert({
+      user_id: user.id,
+      name: form.name,
+      mobile: form.mobile,
+      business_name: form.business_name,
+      email: form.email,
+      address: form.address,
+      city: form.city,
+      pin_code: form.pin_code,
+    });
+
+    alert("Profile Updated Successfully ✅");
+    setSaving(false);
+  };
+
+  if (loading) return <div style={styles.loading}>Loading...</div>;
 
   return (
     <>
@@ -64,204 +95,152 @@ export default function AccountPage() {
         <title>My Account | Bartanwala</title>
       </Head>
 
-      <div style={styles.page}>
-        {/* HEADER CARD */}
-        <div style={styles.profileCard}>
-          <div style={styles.avatar}>
-            <FaUser />
-          </div>
+      <div style={styles.container}>
+        <h2 style={styles.heading}>My Account</h2>
 
-          <div>
-            <h2 style={{ margin: 0 }}>
-              {customer?.name || "Customer"}
-            </h2>
-            <p style={styles.muted}>{user.email}</p>
-
-            {isAdmin && (
-              <span style={styles.adminBadge}>
-                <FaUserShield /> Admin
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* INFO CARD */}
         <div style={styles.card}>
-          <InfoRow
-            icon={<FaStore />}
-            label="Business / Shop"
-            value={customer?.business_name || "Not added"}
+          <Input
+            icon={<FaUser />}
+            label="Full Name"
+            name="name"
+            value={form.name}
+            onChange={handleChange}
           />
 
-          <InfoRow
+          <Input
             icon={<FaPhone />}
-            label="Mobile"
-            value={customer?.mobile || "Not added"}
+            label="Mobile Number"
+            name="mobile"
+            value={form.mobile}
+            onChange={handleChange}
           />
 
-          <InfoRow
-            icon={<FaEnvelope />}
+          <Input
+            icon={<FaStore />}
+            label="Business / Shop Name"
+            name="business_name"
+            value={form.business_name}
+            onChange={handleChange}
+          />
+
+          <Input
             label="Email"
-            value={customer?.email || user.email}
+            name="email"
+            value={form.email}
+            disabled
           />
         </div>
 
-        {/* ACTIONS */}
+        <h3 style={styles.subHeading}>Delivery Address</h3>
+
         <div style={styles.card}>
-          <ActionRow
-            icon={<FaClipboardList />}
-            label="My Orders"
-            onClick={() => router.push("/orders")}
+          <Input
+            icon={<FaMapMarkerAlt />}
+            label="Full Address"
+            name="address"
+            value={form.address}
+            onChange={handleChange}
           />
 
-          {isAdmin && (
-            <ActionRow
-              icon={<FaUserShield />}
-              label="Admin Dashboard"
-              onClick={() => router.push("/admin")}
-              highlight
-            />
-          )}
+          <Input
+            label="City"
+            name="city"
+            value={form.city}
+            onChange={handleChange}
+          />
 
-          <ActionRow
-            icon={<FaSignOutAlt />}
-            label="Logout"
-            danger
-            onClick={logout}
+          <Input
+            label="Pincode"
+            name="pin_code"
+            value={form.pin_code}
+            onChange={handleChange}
           />
         </div>
 
-        {/* FOOTER NOTE */}
-        <p style={styles.note}>
-          ℹ️ Address & delivery details will be asked during checkout.
-        </p>
+        <button style={styles.saveBtn} onClick={handleSave}>
+          <FaSave /> {saving ? "Saving..." : "Save Changes"}
+        </button>
       </div>
     </>
   );
 }
 
-/* ================= COMPONENTS ================= */
-
-function InfoRow({ icon, label, value }) {
+/* INPUT COMPONENT */
+function Input({ icon, label, ...props }) {
   return (
-    <div style={styles.infoRow}>
-      <span style={styles.icon}>{icon}</span>
-      <div>
-        <div style={styles.label}>{label}</div>
-        <div style={styles.value}>{value}</div>
+    <div style={styles.inputWrap}>
+      <label style={styles.label}>{label}</label>
+      <div style={styles.inputBox}>
+        {icon && <span style={styles.icon}>{icon}</span>}
+        <input style={styles.input} {...props} />
       </div>
     </div>
   );
 }
 
-function ActionRow({ icon, label, onClick, danger, highlight }) {
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        ...styles.actionRow,
-        color: danger ? "#dc2626" : highlight ? "#2563eb" : "#111",
-        fontWeight: highlight ? 600 : 500,
-      }}
-    >
-      <span style={styles.icon}>{icon}</span>
-      {label}
-    </div>
-  );
-}
-
-/* ================= STYLES ================= */
-
+/* STYLES */
 const styles = {
-  page: {
+  container: {
     padding: 16,
-    background: "#f5f6f8",
+    paddingBottom: 100,
+    background: "#f4f6f8",
     minHeight: "100vh",
   },
-
-  profileCard: {
-    background: "#fff",
-    borderRadius: 14,
-    padding: 16,
-    display: "flex",
-    gap: 14,
-    alignItems: "center",
-    marginBottom: 14,
-  },
-
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: "50%",
-    background: "#e5e7eb",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 22,
-  },
-
-  muted: {
-    fontSize: 13,
-    color: "#6b7280",
-    marginTop: 2,
-  },
-
-  adminBadge: {
-    display: "inline-flex",
-    gap: 6,
-    alignItems: "center",
-    marginTop: 6,
-    background: "#e0f2fe",
-    color: "#0369a1",
-    padding: "4px 8px",
-    borderRadius: 6,
-    fontSize: 12,
-    fontWeight: 600,
-  },
-
-  card: {
-    background: "#fff",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 14,
-  },
-
-  infoRow: {
-    display: "flex",
-    gap: 12,
-    alignItems: "center",
+  heading: {
+    fontSize: 20,
+    fontWeight: 700,
     marginBottom: 12,
   },
-
+  subHeading: {
+    fontSize: 16,
+    fontWeight: 600,
+    margin: "16px 0 8px",
+  },
+  card: {
+    background: "#fff",
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 12,
+    border: "1px solid #E5E7EB",
+  },
+  inputWrap: {
+    marginBottom: 12,
+  },
   label: {
     fontSize: 12,
     color: "#6b7280",
   },
-
-  value: {
-    fontSize: 15,
-    fontWeight: 500,
-  },
-
-  actionRow: {
+  inputBox: {
     display: "flex",
-    gap: 12,
     alignItems: "center",
-    padding: "12px 0",
-    borderBottom: "1px solid #e5e7eb",
-    cursor: "pointer",
+    border: "1px solid #ddd",
+    borderRadius: 8,
+    padding: "8px 10px",
+    marginTop: 4,
   },
-
   icon: {
-    width: 20,
-    display: "flex",
-    justifyContent: "center",
-  },
-
-  note: {
-    fontSize: 12,
+    marginRight: 8,
     color: "#6b7280",
+  },
+  input: {
+    border: "none",
+    outline: "none",
+    width: "100%",
+    fontSize: 14,
+    background: "transparent",
+  },
+  saveBtn: {
+    width: "100%",
+    background: "#0B5ED7",
+    color: "#fff",
+    padding: 14,
+    border: "none",
+    borderRadius: 10,
+    fontWeight: 600,
+    fontSize: 15,
+  },
+  loading: {
+    padding: 20,
     textAlign: "center",
-    marginTop: 20,
   },
 };
