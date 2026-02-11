@@ -26,7 +26,6 @@ export default function Home() {
     loadProducts();
   }, []);
 
-  /* ADD TO CART LOGIC */
   function addToCart(product) {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
     const existing = cart.find((i) => i.id === product.id);
@@ -52,15 +51,33 @@ export default function Home() {
         <p>B2B Wholesale · Factory Price · All India Delivery</p>
       </section>
 
-      {/* CATEGORY SECTION */}
+      {/* MAIN CATEGORIES */}
       <section style={styles.categorySection}>
+        <h2 style={styles.categoryHeading}>Shop By Category</h2>
+
         <div style={styles.categoryRow}>
-          <Link href="/category/stainless-steel" style={styles.categoryCard}>
-            Stainless Steel
+          <Link
+            href="/category/stainless-steel-utensils"
+            style={styles.categoryCard}
+          >
+            <div style={styles.categoryTitle}>
+              Stainless Steel Utensils
+            </div>
+            <div style={styles.categorySub}>
+              Heavy Quality · Bulk Supply
+            </div>
           </Link>
 
-          <Link href="/category/aluminium" style={styles.categoryCard}>
-            Aluminium
+          <Link
+            href="/category/aluminium-utensils"
+            style={styles.categoryCard}
+          >
+            <div style={styles.categoryTitle}>
+              Aluminium Utensils
+            </div>
+            <div style={styles.categorySub}>
+              Factory Price · Wholesale
+            </div>
           </Link>
         </div>
 
@@ -138,25 +155,40 @@ const styles = {
     background: "#ffffff",
   },
 
+  categoryHeading: {
+    fontSize: 18,
+    fontWeight: 700,
+    marginBottom: 14,
+  },
+
   categoryRow: {
     display: "flex",
-    gap: 12,
+    gap: 14,
   },
 
   categoryCard: {
     flex: 1,
-    padding: "16px 12px",
-    background: "#f9fafb",
-    borderRadius: 12,
-    textAlign: "center",
-    fontWeight: 600,
+    padding: 18,
+    background: "#f8fafc",
+    borderRadius: 16,
+    border: "1px solid #E5E7EB",
     textDecoration: "none",
     color: "#111",
-    border: "1px solid #E5E7EB",
+  },
+
+  categoryTitle: {
+    fontSize: 15,
+    fontWeight: 700,
+    marginBottom: 6,
+  },
+
+  categorySub: {
+    fontSize: 12,
+    color: "#6b7280",
   },
 
   viewAllWrap: {
-    marginTop: 10,
+    marginTop: 12,
     textAlign: "right",
   },
 
