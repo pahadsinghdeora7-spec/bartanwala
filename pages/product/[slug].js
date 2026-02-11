@@ -61,6 +61,7 @@ export default function ProductPage({ product, related }) {
 
   let quantityOptions = [];
 
+  /* 🔹 KG LOGIC */
   if (unit === "kg") {
     quantityOptions = [
       { label: "40 KG (Minimum Order)", value: 40 },
@@ -70,6 +71,7 @@ export default function ProductPage({ product, related }) {
     ];
   }
 
+  /* 🔹 PCS / SET LOGIC */
   if (unit === "pcs" || unit === "set") {
     quantityOptions = Array.from({ length: 5 }).map((_, i) => {
       const cartons = i + 1;
@@ -89,6 +91,7 @@ export default function ProductPage({ product, related }) {
       </Head>
 
       <div style={styles.page}>
+        {/* IMAGE SECTION */}
         <div style={styles.imageWrap}>
           <img src={activeImg} style={styles.mainImage} />
           <div style={styles.thumbRow}>
@@ -109,6 +112,7 @@ export default function ProductPage({ product, related }) {
           </div>
         </div>
 
+        {/* PRODUCT DETAILS */}
         <div style={styles.card}>
           <h1 style={styles.title}>{product.name}</h1>
 
@@ -128,6 +132,7 @@ export default function ProductPage({ product, related }) {
             </div>
           </div>
 
+          {/* QUANTITY */}
           <div style={styles.qtyRow}>
             <span>Quantity</span>
             <select
@@ -143,10 +148,11 @@ export default function ProductPage({ product, related }) {
             </select>
           </div>
 
+          {/* ACTION BUTTONS */}
           <div style={styles.actionRow}>
             <button
               style={styles.cartBtn}
-              onClick={() => addToCart(product, qty, unit)} // ✅ FIXED
+              onClick={() => addToCart(product, qty, unit)}
             >
               <FaShoppingCart /> Add to Cart
             </button>
@@ -154,6 +160,7 @@ export default function ProductPage({ product, related }) {
             <a
               href="https://wa.me/919873670361"
               target="_blank"
+              rel="noreferrer"
               style={styles.whatsappBtn}
             >
               <FaWhatsapp /> Get Bulk Price
@@ -163,9 +170,11 @@ export default function ProductPage({ product, related }) {
           <p style={styles.desc}>{product.description}</p>
         </div>
 
+        {/* RELATED PRODUCTS */}
         {related.length > 0 && (
           <div style={styles.related}>
             <h3 style={styles.relatedTitle}>Related Products</h3>
+
             <div style={styles.relatedGrid}>
               {related.map((p) => (
                 <Link key={p.id} href={`/product/${p.slug}`}>
@@ -184,4 +193,118 @@ export default function ProductPage({ product, related }) {
       </div>
     </>
   );
-                  }
+}
+
+/* ================= STYLES ================= */
+
+const styles = {
+  page: { background: "#f4f6f8", paddingBottom: 100 },
+
+  imageWrap: { background: "#fff", padding: 16 },
+  mainImage: {
+    width: "100%",
+    height: 260,
+    objectFit: "contain",
+    borderRadius: 12,
+  },
+  thumbRow: { display: "flex", gap: 10, marginTop: 10 },
+  thumb: {
+    width: 60,
+    height: 60,
+    objectFit: "contain",
+    borderRadius: 8,
+    padding: 4,
+    background: "#fff",
+    cursor: "pointer",
+  },
+
+  card: {
+    background: "#fff",
+    margin: 12,
+    padding: 18,
+    borderRadius: 16,
+  },
+
+  title: { fontSize: 20, fontWeight: 700, marginBottom: 8 },
+  row: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginTop: 10,
+    fontSize: 14,
+  },
+  price: { color: "#0B5ED7", fontWeight: 700 },
+  stock: { color: "#16a34a", display: "flex", gap: 4 },
+
+  qtyRow: {
+    marginTop: 14,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  select: {
+    padding: 10,
+    borderRadius: 8,
+    border: "1px solid #d1d5db",
+  },
+
+  actionRow: { display: "flex", gap: 10, marginTop: 18 },
+
+  cartBtn: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 10,
+    border: "1.5px solid #0B5ED7",
+    background: "#fff",
+    color: "#0B5ED7",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+
+  whatsappBtn: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 10,
+    background: "#25D366",
+    color: "#fff",
+    fontWeight: 700,
+    textAlign: "center",
+    textDecoration: "none",
+  },
+
+  desc: {
+    marginTop: 16,
+    fontSize: 14,
+    lineHeight: 1.6,
+    color: "#4b5563",
+  },
+
+  related: { padding: 12 },
+  relatedTitle: { fontSize: 16, fontWeight: 700, marginBottom: 10 },
+
+  relatedGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gap: 12,
+    maxHeight: 520,
+    overflowY: "auto",
+  },
+
+  relatedCard: {
+    background: "#fff",
+    padding: 10,
+    borderRadius: 14,
+    textDecoration: "none",
+    color: "#111",
+  },
+
+  relatedImg: {
+    width: "100%",
+    height: 120,
+    objectFit: "contain",
+    marginBottom: 6,
+  },
+
+  relatedName: { fontSize: 13, fontWeight: 600 },
+  relatedPrice: { fontSize: 13, fontWeight: 700, color: "#0B5ED7" },
+};
