@@ -6,22 +6,17 @@ export default function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
-
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState(null);
+  const [newImage, setNewImage] = useState(null);
 
-  /* ================= LOAD DATA ================= */
+  /* ================= LOAD PRODUCTS ================= */
 
   const loadProducts = async () => {
     const { data } = await supabase
       .from("products")
       .select(`
-        id,
-        name,
-        price,
-        in_stock,
-        category_id,
-        subcategory_id,
+        *,
         categories(name),
         subcategories(name)
       `)
@@ -45,39 +40,61 @@ export default function AdminProducts() {
   /* ================= DELETE ================= */
 
   const deleteProduct = async (id) => {
-    if (!confirm("Product delete karna sure hai?")) return;
+    if (!confirm("Delete product?")) return;
 
-    const { error } = await supabase.from("products").delete().eq("id", id);
-
-    if (!error) {
-      alert("✅ Product deleted");
-      loadProducts();
-    }
+    await supabase.from("products").delete().eq("id", id);
+    loadProducts();
   };
 
   /* ================= EDIT ================= */
 
   const openEdit = (p) => {
     setEditForm({ ...p });
+    setNewImage(null);
     setEditOpen(true);
   };
 
   const updateProduct = async () => {
-    const { error } = await supabase
-      .from("products")
-      .update({
-        name: editForm.name,
-        price: Number(editForm.price),
-        category_id: editForm.category_id,
-        subcategory_id: editForm.subcategory_id || null,
-        in_stock: editForm.in_stock,
-      })
-      .eq("id", editForm.id);
+    try {
+      /* Update basic fields */
+      await supabase
+        .from("products")
+        .update({
+          name: editForm.name,
+          price: Number(editForm.price),
+          size: editForm.size,
+          gauge: editForm.gauge,
+          weight: editForm.weight,
+          description: editForm.description,
+          category_id: editForm.category_id,
+          subcategory_id: editForm.subcategory_id || null,
+          in_stock: editForm.in_stock,
+        })
+        .eq("id", editForm.id);
 
-    if (!error) {
+      /* If new image selected */
+      if (newImage) {
+        const fileName = `${editForm.id}-${Date.now()}-${newImage.name}`;
+
+        await supabase.storage
+          .from("products")
+          .upload(fileName, newImage);
+
+        const { data } = supabase.storage
+          .from("products")
+          .getPublicUrl(fileName);
+
+        await supabase
+          .from("products")
+          .update({ image: data.publicUrl })
+          .eq("id", editForm.id);
+      }
+
       alert("✅ Product updated");
       setEditOpen(false);
       loadProducts();
+    } catch (err) {
+      alert(err.message);
     }
   };
 
@@ -96,21 +113,22 @@ export default function AdminProducts() {
 
         {products.map((p) => (
           <div key={p.id} style={styles.row}>
-            <div>
-              <strong>{p.name}</strong>
-              <div style={styles.meta}>
-                Category: {p.categories?.name || "-"} <br />
-                Sub: {p.subcategories?.name || "-"} <br />
-                Price: ₹{p.price}
+            <div style={{ display: "flex", gap: 10 }}>
+              {p.image && (
+                <img
+                  src={p.image}
+                  alt=""
+                  style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 8 }}
+                />
+              )}
+              <div>
+                <strong>{p.name}</strong>
+                <div style={styles.meta}>
+                  ₹{p.price} <br />
+                  {p.categories?.name || "-"} <br />
+                  {p.subcategories?.name || "-"}
+                </div>
               </div>
-              <span
-                style={{
-                  color: p.in_stock ? "green" : "red",
-                  fontSize: 12,
-                }}
-              >
-                {p.in_stock ? "In Stock" : "Out of Stock"}
-              </span>
             </div>
 
             <div style={styles.actions}>
@@ -131,6 +149,14 @@ export default function AdminProducts() {
           <div style={styles.modal}>
             <h3>Edit Product</h3>
 
+            {editForm.image && (
+              <img
+                src={editForm.image}
+                alt=""
+                style={{ width: "100%", borderRadius: 8, marginBottom: 10 }}
+              />
+            )}
+
             <input
               style={styles.input}
               value={editForm.name}
@@ -149,44 +175,47 @@ export default function AdminProducts() {
               placeholder="Price"
             />
 
-            <select
+            <input
               style={styles.input}
-              value={editForm.category_id}
+              value={editForm.size || ""}
               onChange={(e) =>
-                setEditForm({
-                  ...editForm,
-                  category_id: Number(e.target.value),
-                  subcategory_id: null,
-                })
+                setEditForm({ ...editForm, size: e.target.value })
               }
-            >
-              <option value="">Select Category</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              placeholder="Size"
+            />
 
-            {filteredSubcats.length > 0 && (
-              <select
-                style={styles.input}
-                value={editForm.subcategory_id || ""}
-                onChange={(e) =>
-                  setEditForm({
-                    ...editForm,
-                    subcategory_id: Number(e.target.value),
-                  })
-                }
-              >
-                <option value="">Select Sub Category</option>
-                {filteredSubcats.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            )}
+            <input
+              style={styles.input}
+              value={editForm.gauge || ""}
+              onChange={(e) =>
+                setEditForm({ ...editForm, gauge: e.target.value })
+              }
+              placeholder="Gauge"
+            />
+
+            <input
+              style={styles.input}
+              value={editForm.weight || ""}
+              onChange={(e) =>
+                setEditForm({ ...editForm, weight: e.target.value })
+              }
+              placeholder="Weight"
+            />
+
+            <textarea
+              style={styles.input}
+              value={editForm.description || ""}
+              onChange={(e) =>
+                setEditForm({ ...editForm, description: e.target.value })
+              }
+              placeholder="Description"
+            />
+
+            <input
+              type="file"
+              onChange={(e) => setNewImage(e.target.files[0])}
+              style={{ marginTop: 10 }}
+            />
 
             <label style={styles.check}>
               <input
@@ -220,11 +249,7 @@ export default function AdminProducts() {
 /* ================= STYLES ================= */
 
 const styles = {
-  page: {
-    padding: 16,
-    background: "#f5f6f8",
-    minHeight: "100vh",
-  },
+  page: { padding: 16, background: "#f5f6f8", minHeight: "100vh" },
   title: { fontSize: 20, fontWeight: 700, marginBottom: 12 },
 
   row: {
@@ -266,8 +291,10 @@ const styles = {
     background: "#fff",
     padding: 16,
     borderRadius: 12,
-    width: "90%",
-    maxWidth: 400,
+    width: "95%",
+    maxWidth: 450,
+    maxHeight: "90vh",
+    overflowY: "auto",
   },
   input: {
     width: "100%",
@@ -282,11 +309,7 @@ const styles = {
     gap: 6,
     alignItems: "center",
   },
-  modalActions: {
-    display: "flex",
-    gap: 10,
-    marginTop: 14,
-  },
+  modalActions: { display: "flex", gap: 10, marginTop: 14 },
   save: {
     flex: 1,
     padding: 10,
