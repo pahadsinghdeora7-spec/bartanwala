@@ -2,6 +2,7 @@ import { useCart } from "../context/CartContext";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { FaMinus, FaPlus, FaTrash } from "react-icons/fa";
+import styles from "../styles/cart.module.css";
 
 export default function CartPage() {
   const router = useRouter();
