@@ -1,1 +1,148 @@
+.page {
+  padding: 16px;
+  background: #f5f6f8;
+  min-height: 100vh;
+  padding-bottom: 90px;
+}
 
+/* HEADER */
+.header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* EMPTY */
+.empty {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 14px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* CART CARD */
+.card {
+  display: flex;
+  gap: 14px;
+  background: #ffffff;
+  padding: 14px;
+  border-radius: 14px;
+  margin-bottom: 12px;
+  align-items: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* IMAGE */
+.image {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  background: #f3f4f6;
+  border-radius: 10px;
+}
+
+/* INFO */
+.info {
+  flex: 1;
+}
+
+.name {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.price {
+  font-size: 13px;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* QTY */
+.qtyRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.qtyBtn {
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.qtyBtn:hover {
+  background: #f3f4f6;
+}
+
+.qty {
+  min-width: 24px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* DELETE */
+.delete {
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* SUMMARY */
+.summary {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px;
+  margin-top: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.rowMuted {
+  display: flex;
+  justify-content: space-between;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.checkout {
+  margin-top: 16px;
+  width: 100%;
+  background: #2563eb;
+  color: #ffffff;
+  padding: 16px;
+  border-radius: 14px;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.checkout:hover {
+  background: #1d4ed8;
+}
