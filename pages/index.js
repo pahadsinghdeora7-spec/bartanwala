@@ -52,6 +52,25 @@ export default function Home() {
         <p>B2B Wholesale · Factory Price · All India Delivery</p>
       </section>
 
+      {/* CATEGORY SECTION */}
+      <section style={styles.categorySection}>
+        <div style={styles.categoryRow}>
+          <Link href="/category/stainless-steel" style={styles.categoryCard}>
+            Stainless Steel
+          </Link>
+
+          <Link href="/category/aluminium" style={styles.categoryCard}>
+            Aluminium
+          </Link>
+        </div>
+
+        <div style={styles.viewAllWrap}>
+          <Link href="/categories" style={styles.viewAll}>
+            View All Categories →
+          </Link>
+        </div>
+      </section>
+
       {/* PRODUCTS */}
       <main style={styles.main}>
         <h2 style={styles.heading}>Products</h2>
@@ -59,26 +78,19 @@ export default function Home() {
         <div style={styles.grid}>
           {products.map((p) => (
             <div key={p.id} style={styles.card}>
-              {/* IMAGE + DETAILS (CLICKABLE) */}
               <Link
                 href={`/product/${p.slug}`}
                 style={{ textDecoration: "none", color: "inherit" }}
               >
                 <div>
-                  {/* IMAGE */}
                   <div style={styles.imageSection}>
                     {p.image ? (
-                      <img
-                        src={p.image}
-                        alt={p.name}
-                        style={styles.image}
-                      />
+                      <img src={p.image} alt={p.name} style={styles.image} />
                     ) : (
                       <div style={styles.noImage}>No Image</div>
                     )}
                   </div>
 
-                  {/* DETAILS */}
                   <div style={styles.detailsSection}>
                     <h3 style={styles.name}>{p.name}</h3>
 
@@ -95,7 +107,6 @@ export default function Home() {
                 </div>
               </Link>
 
-              {/* ACTION BUTTON (NOT CLICKABLE CARD) */}
               <div style={styles.actionSection}>
                 <button
                   style={styles.addToCart}
@@ -121,9 +132,45 @@ const styles = {
     textAlign: "center",
   },
 
+  /* CATEGORY */
+  categorySection: {
+    padding: 16,
+    background: "#ffffff",
+  },
+
+  categoryRow: {
+    display: "flex",
+    gap: 12,
+  },
+
+  categoryCard: {
+    flex: 1,
+    padding: "16px 12px",
+    background: "#f9fafb",
+    borderRadius: 12,
+    textAlign: "center",
+    fontWeight: 600,
+    textDecoration: "none",
+    color: "#111",
+    border: "1px solid #E5E7EB",
+  },
+
+  viewAllWrap: {
+    marginTop: 10,
+    textAlign: "right",
+  },
+
+  viewAll: {
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#0B5ED7",
+    textDecoration: "none",
+  },
+
+  /* MAIN */
   main: {
     padding: 16,
-    paddingBottom: 90, // bottom nav space
+    paddingBottom: 90,
   },
 
   heading: {
@@ -146,7 +193,6 @@ const styles = {
     overflow: "hidden",
   },
 
-  /* IMAGE */
   imageSection: {
     height: 140,
     background: "#f9fafb",
@@ -166,7 +212,6 @@ const styles = {
     color: "#9CA3AF",
   },
 
-  /* DETAILS */
   detailsSection: {
     padding: 10,
   },
@@ -197,7 +242,6 @@ const styles = {
     alignItems: "center",
   },
 
-  /* ACTION */
   actionSection: {
     padding: 10,
     borderTop: "1px solid #E5E7EB",
