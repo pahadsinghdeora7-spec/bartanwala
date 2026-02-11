@@ -1,28 +1,10 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState, useMemo } from "react";
 
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
   const [cart, setCart] = useState([]);
 
-  /* 🔥 LOAD CART FROM LOCAL STORAGE ON START */
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("cart");
-      if (saved) {
-        setCart(JSON.parse(saved));
-      }
-    }
-  }, []);
-
-  /* 🔥 SAVE CART WHENEVER IT CHANGES */
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("cart", JSON.stringify(cart));
-    }
-  }, [cart]);
-
-  /* 🔥 ADD TO CART */
   const addToCart = (product, qty = 1, unit = "kg") => {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
@@ -39,7 +21,6 @@ export function CartProvider({ children }) {
     });
   };
 
-  /* 🔥 UPDATE QTY */
   const updateQty = (id, qty) => {
     setCart((prev) =>
       prev.map((item) =>
@@ -50,26 +31,17 @@ export function CartProvider({ children }) {
     );
   };
 
-  /* 🔥 REMOVE ITEM */
   const removeItem = (id) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
   };
 
-  /* 🔥 LIVE COUNT */
-  const cartCount = cart.reduce(
-    (sum, item) => sum + Number(item.qty),
-    0
-  );
+  const cartCount = useMemo(() => {
+    return cart.reduce((sum, item) => sum + item.qty, 0);
+  }, [cart]);
 
   return (
     <CartContext.Provider
-      value={{
-        cart,
-        addToCart,
-        updateQty,
-        removeItem,
-        cartCount,
-      }}
+      value={{ cart, addToCart, updateQty, removeItem, cartCount }}
     >
       {children}
     </CartContext.Provider>
