@@ -1,61 +1,72 @@
-import { useEffect, useState } from "react";
+import Head from "next/head";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 
-export default function CategoriesPage() {
-  const [categories, setCategories] = useState([]);
+export async function getServerSideProps() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
 
-  useEffect(() => {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    );
+  const { data: categories } = await supabase
+    .from("categories")
+    .select("id, name, slug, image")
+    .order("id", { ascending: true });
 
-    const fetchCategories = async () => {
-      const { data } = await supabase
-        .from("categories")
-        .select("*")
-        .order("id", { ascending: true });
+  return {
+    props: {
+      categories: categories || [],
+    },
+  };
+}
 
-      setCategories(data || []);
-    };
-
-    fetchCategories();
-  }, []);
-
+export default function CategoriesPage({ categories }) {
   return (
-    <div style={styles.page}>
-      <h2 style={styles.title}>All Categories</h2>
+    <>
+      <Head>
+        <title>All Categories | Bartanwala</title>
+      </Head>
 
-      <div style={styles.grid}>
-        {categories.map((cat) => (
-          <Link key={cat.id} href={`/category/${cat.slug}`}>
-            <div style={styles.card}>
-              <img
-                src={cat.image || "/placeholder.png"}
-                style={styles.image}
-                alt={cat.name}
-              />
+      <div style={styles.page}>
+        <h1 style={styles.title}>All Categories</h1>
+
+        <div style={styles.grid}>
+          {categories.map((cat) => (
+            <Link
+              key={cat.id}
+              href={`/category/${cat.slug}`}
+              style={styles.card}
+            >
+              <div style={styles.imageWrap}>
+                <img
+                  src={cat.image || "/placeholder.png"}
+                  alt={cat.name}
+                  style={styles.image}
+                />
+              </div>
+
               <div style={styles.name}>{cat.name}</div>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
+/* ================= PROFESSIONAL STYLES ================= */
+
 const styles = {
   page: {
-    padding: 16,
-    background: "#f5f6f8",
+    padding: "20px 16px 100px",
+    background: "#f4f6f8",
     minHeight: "100vh",
   },
 
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 700,
-    marginBottom: 16,
+    marginBottom: 18,
   },
 
   grid: {
@@ -65,18 +76,29 @@ const styles = {
   },
 
   card: {
-    background: "#fff",
-    borderRadius: 14,
+    background: "#ffffff",
+    borderRadius: 16,
     padding: 14,
     textAlign: "center",
-    cursor: "pointer",
+    textDecoration: "none",
+    color: "#111",
+    boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
+    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+  },
+
+  imageWrap: {
+    width: "100%",
+    height: 110,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
   },
 
   image: {
-    width: "100%",
-    height: 120,
+    maxWidth: "100%",
+    maxHeight: "100%",
     objectFit: "contain",
-    marginBottom: 10,
   },
 
   name: {
