@@ -1,318 +1,259 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import Head from "next/head";
 import { useRouter } from "next/router";
+import { supabase } from "../lib/supabase";
+import { FaSave, FaEdit, FaUser } from "react-icons/fa";
 
-/* ================= PAGE ================= */
-
-export default function Account() {
+export default function AccountPage() {
   const router = useRouter();
 
   const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [editOpen, setEditOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
     mobile: "",
     business_name: "",
+    email: "",
     address: "",
     city: "",
     pin_code: "",
   });
 
-  /* ================= LOAD USER ================= */
-
   useEffect(() => {
-    async function loadUser() {
-      const { data } = await supabase.auth.getUser();
-      if (!data?.user) {
+    async function loadData() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
         router.push("/login");
         return;
       }
 
-      setUser(data.user);
-      await loadProfile(data.user.id);
+      setUser(user);
+
+      const { data } = await supabase
+        .from("customers")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (data) {
+        setForm({
+          name: data.name || "",
+          mobile: data.mobile || "",
+          business_name: data.business_name || "",
+          email: data.email || user.email,
+          address: data.address || "",
+          city: data.city || "",
+          pin_code: data.pin_code || "",
+        });
+      } else {
+        setForm((prev) => ({
+          ...prev,
+          email: user.email,
+        }));
+      }
+
+      setLoading(false);
     }
 
-    loadUser();
+    loadData();
   }, []);
 
-  async function loadProfile(userId) {
-    const { data } = await supabase
-      .from("customers")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-    if (data) {
-      setProfile(data);
-      setForm({
-        name: data.name || "",
-        mobile: data.mobile || "",
-        business_name: data.business_name || "",
-        address: data.address || "",
-        city: data.city || "",
-        pin_code: data.pin_code || "",
-      });
-    }
-
-    setLoading(false);
-  }
-
-  /* ================= SAVE PROFILE ================= */
-
-  async function saveProfile() {
+  const handleSave = async () => {
     if (!user) return;
+
+    setSaving(true);
 
     await supabase.from("customers").upsert({
       user_id: user.id,
-      email: user.email,
-      ...form,
+      name: form.name,
+      mobile: form.mobile,
+      business_name: form.business_name,
+      email: form.email,
+      address: form.address,
+      city: form.city,
+      pin_code: form.pin_code,
     });
 
-    setEditOpen(false);
-    await loadProfile(user.id);
+    setSaving(false);
+    setEditMode(false);
+  };
+
+  if (loading) {
+    return <div style={{ padding: 20, textAlign: "center" }}>Loading...</div>;
   }
 
-  if (loading) return <div style={{ padding: 20 }}>Loading...</div>;
-
-  /* ================= UI ================= */
-
   return (
-    <div style={styles.container}>
-      <h2 style={styles.pageTitle}>My Account</h2>
+    <>
+      <Head>
+        <title>My Account | Bartanwala</title>
+      </Head>
 
-      {/* PROFILE HEADER */}
-      <div style={styles.profileHeader}>
-        <div style={styles.avatar}>
-          {profile?.name
-            ? profile.name.charAt(0).toUpperCase()
-            : user.email.charAt(0).toUpperCase()}
-        </div>
+      <div style={styles.container}>
+        <h2 style={styles.heading}>My Account</h2>
 
-        <div style={{ flex: 1 }}>
-          <div style={styles.profileName}>
-            {profile?.name || "Customer"}
+        <div style={styles.profileCard}>
+          <div style={styles.avatar}>
+            <FaUser size={22} />
           </div>
-          <div style={styles.profileEmail}>{user.email}</div>
-        </div>
-
-        <button style={styles.editSmall} onClick={() => setEditOpen(true)}>
-          Edit
-        </button>
-      </div>
-
-      {/* PERSONAL */}
-      <Section title="Personal Details">
-        <Info label="Mobile" value={profile?.mobile} />
-      </Section>
-
-      {/* BUSINESS */}
-      <Section title="Business Details">
-        <Info label="Business Name" value={profile?.business_name} />
-      </Section>
-
-      {/* ADDRESS */}
-      <Section title="Address Details">
-        <Info label="Address" value={profile?.address} />
-        <Info label="City" value={profile?.city} />
-        <Info label="Pincode" value={profile?.pin_code} />
-      </Section>
-
-      {/* EDIT MODAL */}
-      {editOpen && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <h3>Edit Profile</h3>
-
-            <Input label="Full Name"
-              value={form.name}
-              onChange={(v) => setForm({ ...form, name: v })}
-            />
-
-            <Input label="Mobile"
-              value={form.mobile}
-              onChange={(v) => setForm({ ...form, mobile: v })}
-            />
-
-            <Input label="Business Name"
-              value={form.business_name}
-              onChange={(v) => setForm({ ...form, business_name: v })}
-            />
-
-            <Input label="Address"
-              value={form.address}
-              onChange={(v) => setForm({ ...form, address: v })}
-            />
-
-            <Input label="City"
-              value={form.city}
-              onChange={(v) => setForm({ ...form, city: v })}
-            />
-
-            <Input label="Pincode"
-              value={form.pin_code}
-              onChange={(v) => setForm({ ...form, pin_code: v })}
-            />
-
-            <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-              <button style={styles.saveBtn} onClick={saveProfile}>
-                Save
-              </button>
-              <button
-                style={styles.cancelBtn}
-                onClick={() => setEditOpen(false)}
-              >
-                Cancel
-              </button>
+          <div>
+            <div style={styles.name}>
+              {form.name || "Customer"}
             </div>
+            <div style={styles.email}>{form.email}</div>
           </div>
         </div>
-      )}
-    </div>
+
+        {/* VIEW MODE */}
+        {!editMode && (
+          <div style={styles.card}>
+            <Detail label="Mobile" value={form.mobile} />
+            <Detail label="Business" value={form.business_name} />
+            <Detail label="Address" value={form.address} />
+            <Detail label="City" value={form.city} />
+            <Detail label="Pincode" value={form.pin_code} />
+
+            <button
+              style={styles.editBtn}
+              onClick={() => setEditMode(true)}
+            >
+              <FaEdit /> Edit Profile
+            </button>
+          </div>
+        )}
+
+        {/* EDIT MODE */}
+        {editMode && (
+          <div style={styles.card}>
+            <Input label="Full Name" name="name" value={form.name} onChange={handleChange} />
+            <Input label="Mobile" name="mobile" value={form.mobile} onChange={handleChange} />
+            <Input label="Business Name" name="business_name" value={form.business_name} onChange={handleChange} />
+            <Input label="Address" name="address" value={form.address} onChange={handleChange} />
+            <Input label="City" name="city" value={form.city} onChange={handleChange} />
+            <Input label="Pincode" name="pin_code" value={form.pin_code} onChange={handleChange} />
+
+            <button style={styles.saveBtn} onClick={handleSave}>
+              <FaSave /> {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
-/* ================= COMPONENTS ================= */
-
-function Section({ title, children }) {
+function Detail({ label, value }) {
   return (
-    <div style={styles.section}>
-      <div style={styles.sectionTitle}>{title}</div>
-      {children}
+    <div style={styles.detailRow}>
+      <span style={styles.detailLabel}>{label}</span>
+      <span style={styles.detailValue}>{value || "-"}</span>
     </div>
   );
 }
 
-function Info({ label, value }) {
+function Input({ label, ...props }) {
   return (
-    <div style={styles.infoRow}>
-      <div style={styles.infoLabel}>{label}</div>
-      <div style={styles.infoValue}>{value || "-"}</div>
+    <div style={{ marginBottom: 12 }}>
+      <label style={styles.inputLabel}>{label}</label>
+      <input style={styles.input} {...props} />
     </div>
   );
 }
-
-function Input({ label, value, onChange }) {
-  return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 12, marginBottom: 4 }}>{label}</div>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        style={styles.input}
-      />
-    </div>
-  );
-}
-
-/* ================= STYLES ================= */
 
 const styles = {
   container: {
     padding: 16,
+    paddingBottom: 100,
     background: "#f4f6f8",
     minHeight: "100vh",
   },
-
-  pageTitle: {
-    fontSize: 22,
+  heading: {
+    fontSize: 20,
     fontWeight: 700,
-    marginBottom: 16,
+    marginBottom: 12,
   },
-
-  profileHeader: {
-    background: "#fff",
-    padding: 16,
-    borderRadius: 14,
+  profileCard: {
     display: "flex",
     alignItems: "center",
     gap: 12,
-    marginBottom: 16,
+    background: "#fff",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
   },
-
   avatar: {
-    width: 55,
-    height: 55,
+    width: 44,
+    height: 44,
     borderRadius: "50%",
     background: "#0B5ED7",
     color: "#fff",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 22,
+  },
+  name: {
     fontWeight: 600,
   },
-
-  profileName: { fontSize: 16, fontWeight: 600 },
-  profileEmail: { fontSize: 13, color: "#6b7280" },
-
-  editSmall: {
-    background: "#eef2ff",
-    border: "none",
-    padding: "6px 12px",
-    borderRadius: 20,
-    fontSize: 12,
-    cursor: "pointer",
-  },
-
-  section: {
-    background: "#fff",
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 12,
-  },
-
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: 600,
-    marginBottom: 8,
+  email: {
+    fontSize: 13,
     color: "#6b7280",
   },
-
-  infoRow: { marginBottom: 8 },
-  infoLabel: { fontSize: 12, color: "#9ca3af" },
-  infoValue: { fontSize: 14, fontWeight: 500 },
-
-  modalOverlay: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(0,0,0,0.4)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  modal: {
+  card: {
     background: "#fff",
-    padding: 20,
+    padding: 16,
     borderRadius: 12,
-    width: "90%",
-    maxWidth: 400,
   },
-
-  input: {
+  detailRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "8px 0",
+    borderBottom: "1px solid #f1f1f1",
+  },
+  detailLabel: {
+    color: "#6b7280",
+    fontSize: 13,
+  },
+  detailValue: {
+    fontWeight: 500,
+  },
+  editBtn: {
+    marginTop: 16,
     width: "100%",
-    padding: 8,
-    borderRadius: 6,
-    border: "1px solid #ddd",
-  },
-
-  saveBtn: {
-    flex: 1,
+    padding: 12,
     background: "#0B5ED7",
     color: "#fff",
-    padding: 8,
     border: "none",
-    borderRadius: 6,
+    borderRadius: 8,
+    fontWeight: 600,
   },
-
-  cancelBtn: {
-    flex: 1,
-    background: "#e5e7eb",
-    padding: 8,
+  saveBtn: {
+    marginTop: 12,
+    width: "100%",
+    padding: 12,
+    background: "#16a34a",
+    color: "#fff",
     border: "none",
-    borderRadius: 6,
+    borderRadius: 8,
+    fontWeight: 600,
+  },
+  inputLabel: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
+  input: {
+    width: "100%",
+    padding: 10,
+    borderRadius: 8,
+    border: "1px solid #ddd",
+    marginTop: 4,
   },
 };
