@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useCart } from "../context/CartContext"; // ✅ ADD
+import { useCart } from "../context/CartContext";
 import styles from "../styles/bottomNav.module.css";
 
 export default function BottomNav() {
   const router = useRouter();
-  const { cartCount } = useCart(); // ✅ LIVE COUNT
+  const { cartCount } = useCart(); // ✅ IMPORTANT
 
   const isActive = (path) =>
     router.pathname === path ? styles.active : "";
@@ -13,37 +13,24 @@ export default function BottomNav() {
   return (
     <nav className={styles.nav}>
       <Link href="/" className={isActive("/")}>
-        🏠
-        <span>Home</span>
+        🏠<span>Home</span>
       </Link>
 
       <Link href="/categories" className={isActive("/categories")}>
-        📦
-        <span>Categories</span>
+        📦<span>Categories</span>
       </Link>
 
-      {/* ✅ CART WITH COUNT */}
-      <Link href="/cart" className={`${isActive("/cart")} ${styles.cartWrap}`}>
-        <div className={styles.cartIcon}>
-          🛒
-          {cartCount > 0 && (
-            <span className={styles.badge}>
-              {cartCount}
-            </span>
-          )}
-        </div>
-        <span>Cart</span>
+      <Link href="/cart" className={isActive("/cart")}>
+        🛒<span>Cart {cartCount > 0 && `(${cartCount})`}</span>
       </Link>
 
       <Link href="/orders" className={isActive("/orders")}>
-        📄
-        <span>Orders</span>
+        📄<span>Orders</span>
       </Link>
 
       <Link href="/account" className={isActive("/account")}>
-        👤
-        <span>Account</span>
+        👤<span>Account</span>
       </Link>
     </nav>
   );
-        }
+}
