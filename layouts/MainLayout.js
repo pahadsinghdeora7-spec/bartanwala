@@ -38,9 +38,9 @@ export default function MainLayout({ children }) {
 
   return (
     <>
+      {/* ✅ REMOVE cartCount PROP */}
       <Header
         onMenuClick={() => setDrawerOpen(true)}
-        cartCount={0}
         user={user}
       />
 
@@ -59,4 +59,4 @@ export default function MainLayout({ children }) {
       {!hideBottomNav && <BottomNav />}
     </>
   );
-}
+          }
