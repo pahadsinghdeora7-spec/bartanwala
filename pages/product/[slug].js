@@ -79,10 +79,25 @@ export default function ProductPage({ product, related }) {
 
   const [qty, setQty] = useState(quantityOptions[0]?.value || 1);
 
+  /* ✅ FIXED ADD TO CART */
   const addToCart = () => {
+    if (typeof window === "undefined") return;
+
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-    cart.push({ ...product, qty, unit });
+
+    const existing = cart.find((item) => item.id === product.id);
+
+    if (existing) {
+      existing.qty += qty;
+    } else {
+      cart.push({ ...product, qty, unit });
+    }
+
     localStorage.setItem("cart", JSON.stringify(cart));
+
+    // 🔥 IMPORTANT — notify header instantly
+    window.dispatchEvent(new Event("cartUpdated"));
+
     alert("Product added to cart");
   };
 
@@ -167,7 +182,7 @@ export default function ProductPage({ product, related }) {
           <p style={styles.desc}>{product.description}</p>
         </div>
 
-        {/* RELATED PRODUCTS (VERTICAL SCROLL) */}
+        {/* RELATED PRODUCTS */}
         {related.length > 0 && (
           <div style={styles.related}>
             <h3 style={styles.relatedTitle}>Related Products</h3>
@@ -190,117 +205,4 @@ export default function ProductPage({ product, related }) {
       </div>
     </>
   );
-}
-
-/* ================= STYLES ================= */
-
-const styles = {
-  page: { background: "#f4f6f8", paddingBottom: 100 },
-
-  imageWrap: { background: "#fff", padding: 16 },
-  mainImage: {
-    width: "100%",
-    height: 260,
-    objectFit: "contain",
-    borderRadius: 12,
-  },
-  thumbRow: { display: "flex", gap: 10, marginTop: 10 },
-  thumb: {
-    width: 60,
-    height: 60,
-    objectFit: "contain",
-    borderRadius: 8,
-    padding: 4,
-    background: "#fff",
-    cursor: "pointer",
-  },
-
-  card: {
-    background: "#fff",
-    margin: 12,
-    padding: 18,
-    borderRadius: 16,
-  },
-
-  title: { fontSize: 20, fontWeight: 700, marginBottom: 8 },
-  row: {
-    display: "flex",
-    justifyContent: "space-between",
-    marginTop: 10,
-    fontSize: 14,
-  },
-  price: { color: "#0B5ED7", fontWeight: 700 },
-  stock: { color: "#16a34a", display: "flex", gap: 4 },
-
-  qtyRow: {
-    marginTop: 14,
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  select: {
-    padding: 10,
-    borderRadius: 8,
-    border: "1px solid #d1d5db",
-  },
-
-  actionRow: { display: "flex", gap: 10, marginTop: 18 },
-
-  cartBtn: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 10,
-    border: "1.5px solid #0B5ED7",
-    background: "#fff",
-    color: "#0B5ED7",
-    fontWeight: 700,
-  },
-
-  whatsappBtn: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 10,
-    background: "#25D366",
-    color: "#fff",
-    fontWeight: 700,
-    textAlign: "center",
-    textDecoration: "none",
-  },
-
-  desc: {
-    marginTop: 16,
-    fontSize: 14,
-    lineHeight: 1.6,
-    color: "#4b5563",
-  },
-
-  related: { padding: 12 },
-  relatedTitle: { fontSize: 16, fontWeight: 700, marginBottom: 10 },
-
-  relatedGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    gap: 12,
-    maxHeight: 520,
-    overflowY: "auto",
-  },
-
-  relatedCard: {
-    background: "#fff",
-    padding: 10,
-    borderRadius: 14,
-    textDecoration: "none",
-    color: "#111",
-  },
-
-  relatedImg: {
-    width: "100%",
-    height: 120,
-    objectFit: "contain",
-    marginBottom: 6,
-  },
-
-  relatedName: { fontSize: 13, fontWeight: 600 },
-  relatedPrice: { fontSize: 13, fontWeight: 700, color: "#0B5ED7" },
-};
+    }
