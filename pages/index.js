@@ -63,9 +63,6 @@ export default function Home() {
             <div style={styles.categoryTitle}>
               Stainless Steel Utensils
             </div>
-            <div style={styles.categorySub}>
-              Heavy Quality · Bulk Supply
-            </div>
           </Link>
 
           <Link
@@ -74,9 +71,6 @@ export default function Home() {
           >
             <div style={styles.categoryTitle}>
               Aluminium Utensils
-            </div>
-            <div style={styles.categorySub}>
-              Factory Price · Wholesale
             </div>
           </Link>
         </div>
@@ -149,7 +143,6 @@ const styles = {
     textAlign: "center",
   },
 
-  /* CATEGORY */
   categorySection: {
     padding: 12,
     background: "#ffffff",
@@ -168,23 +161,18 @@ const styles = {
 
   categoryCard: {
     flex: 1,
-    padding: 12,
+    padding: 14,
     background: "#f8fafc",
     borderRadius: 10,
     border: "1px solid #E5E7EB",
     textDecoration: "none",
     color: "#111",
+    textAlign: "center",
   },
 
   categoryTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 600,
-    marginBottom: 4,
-  },
-
-  categorySub: {
-    fontSize: 11,
-    color: "#6b7280",
   },
 
   viewAllWrap: {
@@ -199,7 +187,6 @@ const styles = {
     textDecoration: "none",
   },
 
-  /* MAIN */
   main: {
     padding: 12,
     paddingBottom: 90,
