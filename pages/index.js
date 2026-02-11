@@ -145,55 +145,55 @@ export default function Home() {
 const styles = {
   hero: {
     background: "#f2f6ff",
-    padding: "32px 16px",
+    padding: "20px 12px",
     textAlign: "center",
   },
 
   /* CATEGORY */
   categorySection: {
-    padding: 16,
+    padding: 12,
     background: "#ffffff",
   },
 
   categoryHeading: {
-    fontSize: 18,
-    fontWeight: 700,
-    marginBottom: 14,
+    fontSize: 16,
+    fontWeight: 600,
+    marginBottom: 10,
   },
 
   categoryRow: {
     display: "flex",
-    gap: 14,
+    gap: 10,
   },
 
   categoryCard: {
     flex: 1,
-    padding: 18,
+    padding: 12,
     background: "#f8fafc",
-    borderRadius: 16,
+    borderRadius: 10,
     border: "1px solid #E5E7EB",
     textDecoration: "none",
     color: "#111",
   },
 
   categoryTitle: {
-    fontSize: 15,
-    fontWeight: 700,
-    marginBottom: 6,
+    fontSize: 13,
+    fontWeight: 600,
+    marginBottom: 4,
   },
 
   categorySub: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#6b7280",
   },
 
   viewAllWrap: {
-    marginTop: 12,
+    marginTop: 8,
     textAlign: "right",
   },
 
   viewAll: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 600,
     color: "#0B5ED7",
     textDecoration: "none",
@@ -201,24 +201,24 @@ const styles = {
 
   /* MAIN */
   main: {
-    padding: 16,
+    padding: 12,
     paddingBottom: 90,
   },
 
   heading: {
-    fontSize: 20,
-    marginBottom: 12,
+    fontSize: 16,
+    marginBottom: 10,
   },
 
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
-    gap: 14,
+    gap: 10,
   },
 
   card: {
     background: "#fff",
-    borderRadius: 12,
+    borderRadius: 10,
     border: "1px solid #E5E7EB",
     display: "flex",
     flexDirection: "column",
@@ -226,7 +226,7 @@ const styles = {
   },
 
   imageSection: {
-    height: 140,
+    height: 110,
     background: "#f9fafb",
     display: "flex",
     alignItems: "center",
@@ -240,18 +240,18 @@ const styles = {
   },
 
   noImage: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#9CA3AF",
   },
 
   detailsSection: {
-    padding: 10,
+    padding: 8,
   },
 
   name: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 600,
-    marginBottom: 6,
+    marginBottom: 4,
   },
 
   priceRow: {
@@ -259,15 +259,15 @@ const styles = {
     alignItems: "center",
     gap: 4,
     color: "#0B5ED7",
-    fontSize: 14,
+    fontSize: 12,
   },
 
   badge: {
-    marginTop: 6,
-    fontSize: 11,
+    marginTop: 4,
+    fontSize: 10,
     background: "#E6F4EA",
     color: "#137333",
-    padding: "3px 6px",
+    padding: "2px 6px",
     borderRadius: 6,
     display: "inline-flex",
     gap: 4,
@@ -275,7 +275,7 @@ const styles = {
   },
 
   actionSection: {
-    padding: 10,
+    padding: 8,
     borderTop: "1px solid #E5E7EB",
   },
 
@@ -284,9 +284,9 @@ const styles = {
     background: "#0B5ED7",
     color: "#fff",
     border: "none",
-    borderRadius: 8,
-    padding: "8px",
-    fontSize: 14,
+    borderRadius: 6,
+    padding: "6px",
+    fontSize: 12,
     fontWeight: 600,
     cursor: "pointer",
     display: "flex",
