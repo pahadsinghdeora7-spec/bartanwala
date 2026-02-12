@@ -18,12 +18,13 @@ export default function Home() {
   useEffect(() => {
     async function loadProducts() {
       try {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from("products")
           .select(`
             id,
             name,
             slug,
+            price,
             image,
             size,
             gauge,
@@ -32,7 +33,9 @@ export default function Home() {
           .eq("in_stock", true)
           .order("created_at", { ascending: false });
 
-        if (!error) setProducts(data || []);
+        setProducts(data || []);
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -47,8 +50,11 @@ export default function Home() {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
     const existing = cart.find((i) => i.id === product.id);
 
-    if (existing) existing.qty += 1;
-    else cart.push({ ...product, qty: 1 });
+    if (existing) {
+      existing.qty += 1;
+    } else {
+      cart.push({ ...product, qty: 1 });
+    }
 
     localStorage.setItem("cart", JSON.stringify(cart));
     alert("Product added to cart");
@@ -76,15 +82,11 @@ export default function Home() {
 
         <div style={styles.categoryRow}>
           <Link href="/category/stainless-steel-utensils" style={styles.categoryCard}>
-            <div style={styles.categoryTitle}>
-              Stainless Steel Utensils
-            </div>
+            Stainless Steel Utensils
           </Link>
 
           <Link href="/category/alluminium-utensils" style={styles.categoryCard}>
-            <div style={styles.categoryTitle}>
-              Alluminium Utensils
-            </div>
+            Aluminium Utensils
           </Link>
         </div>
 
@@ -109,6 +111,7 @@ export default function Home() {
                   href={`/product/${p.slug}`}
                   style={{ textDecoration: "none", color: "inherit" }}
                 >
+                  {/* IMAGE */}
                   <div style={styles.imageSection}>
                     {p.image ? (
                       <img src={p.image} alt={p.name} style={styles.image} />
@@ -117,25 +120,32 @@ export default function Home() {
                     )}
                   </div>
 
+                  {/* DETAILS */}
                   <div style={styles.detailsSection}>
                     <h3 style={styles.name}>{p.name}</h3>
 
-                    {p.size && (
-                      <div style={styles.meta}>Size: {p.size}</div>
-                    )}
-
-                    {p.gauge && (
-                      <div style={styles.meta}>Gauge: {p.gauge}</div>
-                    )}
+                    <div style={styles.metaRow}>
+                      {p.size && <span>Size: {p.size}</span>}
+                      {p.gauge && <span>Gauge: {p.gauge}</span>}
+                    </div>
 
                     {p.subcategories?.name && (
-                      <div style={styles.meta}>
+                      <div style={styles.subcat}>
                         {p.subcategories.name}
                       </div>
                     )}
+
+                    <div style={styles.price}>
+                      ₹ {p.price}
+                    </div>
+
+                    <div style={styles.bulkBadge}>
+                      Bulk Available
+                    </div>
                   </div>
                 </Link>
 
+                {/* BUTTON */}
                 <div style={styles.actionSection}>
                   <button
                     style={styles.addToCart}
@@ -178,7 +188,7 @@ const styles = {
   },
 
   categorySection: {
-    padding: 12,
+    padding: 14,
     background: "#ffffff",
   },
 
@@ -190,27 +200,23 @@ const styles = {
 
   categoryRow: {
     display: "flex",
-    gap: 10,
+    gap: 12,
   },
 
   categoryCard: {
     flex: 1,
-    padding: 14,
+    padding: 16,
     background: "#f8fafc",
-    borderRadius: 10,
+    borderRadius: 12,
     border: "1px solid #E5E7EB",
-    textDecoration: "none",
-    color: "#111",
     textAlign: "center",
-  },
-
-  categoryTitle: {
-    fontSize: 14,
     fontWeight: 600,
+    color: "#111",
+    textDecoration: "none",
   },
 
   viewAllWrap: {
-    marginTop: 8,
+    marginTop: 10,
     textAlign: "right",
   },
 
@@ -222,29 +228,30 @@ const styles = {
   },
 
   main: {
-    padding: 12,
-    paddingBottom: 90,
+    padding: 14,
+    paddingBottom: 100,
   },
 
   heading: {
-    fontSize: 16,
-    marginBottom: 10,
+    fontSize: 17,
+    fontWeight: 700,
+    marginBottom: 12,
   },
 
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
-    gap: 12,
+    gap: 14,
   },
 
   card: {
     background: "#fff",
-    borderRadius: 14,
+    borderRadius: 16,
     border: "1px solid #E5E7EB",
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+    boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
   },
 
   imageSection: {
@@ -253,7 +260,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: 10,
+    padding: 12,
   },
 
   image: {
@@ -263,26 +270,51 @@ const styles = {
   },
 
   noImage: {
-    fontSize: 11,
+    fontSize: 12,
     color: "#9CA3AF",
   },
 
   detailsSection: {
-    padding: 10,
-    textAlign: "center",
+    padding: 12,
+    flex: 1,
   },
 
   name: {
     fontSize: 14,
-    fontWeight: 600,
+    fontWeight: 700,
     marginBottom: 6,
-    minHeight: 38,
+    color: "#111827",
+    minHeight: 40,
   },
 
-  meta: {
+  metaRow: {
+    display: "flex",
+    gap: 10,
     fontSize: 12,
     color: "#6b7280",
-    marginBottom: 3,
+    marginBottom: 4,
+  },
+
+  subcat: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    marginBottom: 6,
+  },
+
+  price: {
+    fontSize: 16,
+    fontWeight: 800,
+    color: "#0B5ED7",
+    marginBottom: 6,
+  },
+
+  bulkBadge: {
+    fontSize: 11,
+    background: "#E6F4EA",
+    color: "#137333",
+    padding: "4px 8px",
+    borderRadius: 6,
+    display: "inline-block",
   },
 
   actionSection: {
@@ -295,10 +327,10 @@ const styles = {
     background: "#0B5ED7",
     color: "#fff",
     border: "none",
-    borderRadius: 8,
-    padding: "8px",
+    borderRadius: 10,
+    padding: "10px",
     fontSize: 13,
-    fontWeight: 600,
+    fontWeight: 700,
     cursor: "pointer",
     display: "flex",
     justifyContent: "center",
