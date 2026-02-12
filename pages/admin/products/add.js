@@ -91,7 +91,7 @@ export default function AddProduct() {
     try {
       setLoading(true);
 
-      /* 1️⃣ INSERT PRODUCT FIRST */
+      /* INSERT PRODUCT FIRST */
       const { data: product, error } = await supabase
         .from("products")
         .insert({
@@ -112,32 +112,31 @@ export default function AddProduct() {
 
       if (error) throw error;
 
-      /* 2️⃣ IMAGE UPLOAD (BUCKET = products) */
+      /* IMAGE UPLOAD FIXED */
       if (images.length > 0) {
-        const file = images[0]; // first image only
-        const fileName = `${product.id}-${Date.now()}-${file.name}`;
+        const file = images[0];
+
+        const filePath = `${product.id}-${Date.now()}-${file.name}`;
 
         const { error: uploadError } = await supabase.storage
-          .from("products") // ✅ CORRECT BUCKET
-          .upload(fileName, file);
+          .from("products") // ✅ FIXED BUCKET NAME
+          .upload(filePath, file);
 
-        if (uploadError) {
-          console.log(uploadError);
-        } else {
-          const { data } = supabase.storage
-            .from("products")
-            .getPublicUrl(fileName);
+        if (uploadError) throw uploadError;
 
-          /* 3️⃣ SAVE IMAGE URL IN PRODUCTS TABLE */
-          await supabase
-            .from("products")
-            .update({ image: data.publicUrl })
-            .eq("id", product.id);
-        }
+        const { data: publicUrlData } = supabase.storage
+          .from("products")
+          .getPublicUrl(filePath);
+
+        await supabase
+          .from("products")
+          .update({ image: publicUrlData.publicUrl })
+          .eq("id", product.id);
       }
 
       alert("✅ Product added successfully");
       router.push("/admin/products");
+
     } catch (err) {
       alert(err.message);
     } finally {
@@ -175,8 +174,50 @@ export default function AddProduct() {
             ))}
           </select>
 
-          <label style={styles.label}>Price *</label>
-          <input style={styles.input} name="price" onChange={handleChange} />
+          {subcategories.length > 0 && (
+            <>
+              <label style={styles.label}>Sub Category</label>
+              <select
+                style={styles.input}
+                value={form.subcategory_id}
+                onChange={(e) =>
+                  setForm((p) => ({
+                    ...p,
+                    subcategory_id: e.target.value,
+                  }))
+                }
+              >
+                <option value="">Select Sub Category</option>
+                {subcategories.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+
+          <div style={styles.row}>
+            <div>
+              <label style={styles.label}>Price *</label>
+              <input style={styles.input} name="price" onChange={handleChange} />
+            </div>
+            <div>
+              <label style={styles.label}>Size</label>
+              <input style={styles.input} name="size" onChange={handleChange} />
+            </div>
+          </div>
+
+          <div style={styles.row}>
+            <div>
+              <label style={styles.label}>Gauge</label>
+              <input style={styles.input} name="gauge" onChange={handleChange} />
+            </div>
+            <div>
+              <label style={styles.label}>Weight</label>
+              <input style={styles.input} name="weight" onChange={handleChange} />
+            </div>
+          </div>
 
           <label style={styles.label}>Description</label>
           <textarea
@@ -249,6 +290,11 @@ const styles = {
     marginTop: 4,
     borderRadius: 8,
     border: "1px solid #d1d5db",
+  },
+  row: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 10,
   },
   checkbox: {
     marginTop: 10,
