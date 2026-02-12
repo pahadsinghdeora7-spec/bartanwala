@@ -17,7 +17,17 @@ export default function Home() {
     async function loadProducts() {
       const { data } = await supabase
         .from("products")
-        .select("id, name, slug, price, price_unit, image")
+        .select(`
+          id,
+          name,
+          slug,
+          price,
+          price_unit,
+          image,
+          size,
+          gauge,
+          subcategories(name)
+        `)
         .eq("in_stock", true)
         .order("created_at", { ascending: false });
 
@@ -51,20 +61,26 @@ export default function Home() {
         <p>B2B Wholesale · Factory Price · All India Delivery</p>
       </section>
 
-      {/* CATEGORY */}
+      {/* MAIN CATEGORIES */}
       <section style={styles.categorySection}>
         <h2 style={styles.categoryHeading}>Shop By Category</h2>
 
         <div style={styles.categoryRow}>
-          <Link href="/category/stainless-steel-utensils" style={styles.categoryCard}>
+          <Link
+            href="/category/stainless-steel-utensils"
+            style={styles.categoryCard}
+          >
             <div style={styles.categoryTitle}>
               Stainless Steel Utensils
             </div>
           </Link>
 
-          <Link href="/category/alluminium-utensils" style={styles.categoryCard}>
+          <Link
+            href="/category/aluminium-utensils"
+            style={styles.categoryCard}
+          >
             <div style={styles.categoryTitle}>
-              Alluminium Utensils
+              Aluminium Utensils
             </div>
           </Link>
         </div>
@@ -87,7 +103,7 @@ export default function Home() {
                 href={`/product/${p.slug}`}
                 style={{ textDecoration: "none", color: "inherit" }}
               >
-                <div style={styles.cardBody}>
+                <div>
                   <div style={styles.imageSection}>
                     {p.image ? (
                       <img src={p.image} alt={p.name} style={styles.image} />
@@ -98,6 +114,15 @@ export default function Home() {
 
                   <div style={styles.detailsSection}>
                     <h3 style={styles.name}>{p.name}</h3>
+
+                    {/* META DETAILS */}
+                    <div style={styles.meta}>
+                      {p.size && <div>Size: {p.size}</div>}
+                      {p.gauge && <div>Gauge: {p.gauge}</div>}
+                      {p.subcategories?.name && (
+                        <div>{p.subcategories.name}</div>
+                      )}
+                    </div>
 
                     <div style={styles.priceRow}>
                       <FaRupeeSign size={12} />
@@ -197,8 +222,6 @@ const styles = {
     gap: 12,
   },
 
-  /* ================= FIXED CARD ================= */
-
   card: {
     background: "#fff",
     borderRadius: 14,
@@ -206,13 +229,7 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
-    height: 260,
-  },
-
-  cardBody: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
+    height: 290,
   },
 
   imageSection: {
@@ -224,8 +241,8 @@ const styles = {
   },
 
   image: {
-    maxWidth: "100%",
-    maxHeight: "100%",
+    width: "100%",
+    height: "100%",
     objectFit: "contain",
   },
 
@@ -237,20 +254,22 @@ const styles = {
   detailsSection: {
     padding: 10,
     flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
   },
 
   name: {
     fontSize: 13,
     fontWeight: 600,
-    marginBottom: 6,
-    display: "-webkit-box",
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: "vertical",
+    marginBottom: 4,
+    height: 32,
     overflow: "hidden",
-    minHeight: 34,
+  },
+
+  meta: {
+    fontSize: 11,
+    color: "#6b7280",
+    marginBottom: 6,
+    lineHeight: 1.4,
+    minHeight: 36,
   },
 
   priceRow: {
@@ -262,20 +281,19 @@ const styles = {
   },
 
   badge: {
-    marginTop: 6,
+    marginTop: 4,
     fontSize: 10,
     background: "#E6F4EA",
     color: "#137333",
-    padding: "3px 6px",
+    padding: "2px 6px",
     borderRadius: 6,
     display: "inline-flex",
     gap: 4,
     alignItems: "center",
-    width: "fit-content",
   },
 
   actionSection: {
-    padding: 10,
+    padding: 8,
     borderTop: "1px solid #E5E7EB",
   },
 
