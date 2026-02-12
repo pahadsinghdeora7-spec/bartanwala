@@ -60,6 +60,38 @@ export default function Home() {
         <title>Bartanwala | Wholesale Steel & Aluminium Utensils</title>
       </Head>
 
+      {/* ================= HERO TEXT BOX ================= */}
+      <section style={styles.hero}>
+        <h1 style={styles.heroTitle}>
+          Wholesale Steel & Aluminium Utensils
+        </h1>
+        <p style={styles.heroSub}>
+          B2B Wholesale · Factory Price · All India Delivery
+        </p>
+      </section>
+
+      {/* ================= CATEGORY SECTION ================= */}
+      <section style={styles.categorySection}>
+        <h2 style={styles.categoryHeading}>Shop By Category</h2>
+
+        <div style={styles.categoryRow}>
+          <Link href="/category/stainless-steel-utensils" style={styles.categoryCard}>
+            Stainless Steel Utensils
+          </Link>
+
+          <Link href="/category/aluminium-utensils" style={styles.categoryCard}>
+            Aluminium Utensils
+          </Link>
+        </div>
+
+        <div style={styles.viewAllWrap}>
+          <Link href="/categories" style={styles.viewAll}>
+            View All Categories →
+          </Link>
+        </div>
+      </section>
+
+      {/* ================= PRODUCTS ================= */}
       <main style={styles.main}>
         <h2 style={styles.heading}>Products</h2>
 
@@ -125,6 +157,72 @@ export default function Home() {
 /* ================= STYLES ================= */
 
 const styles = {
+
+  /* HERO */
+  hero: {
+    background: "#f8fafc",
+    padding: "28px 16px",
+    textAlign: "center",
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    border: "1px solid #E5E7EB",
+    marginBottom: 16,
+  },
+
+  heroTitle: {
+    fontSize: 20,
+    fontWeight: 700,
+    color: "#111827",
+    marginBottom: 6,
+  },
+
+  heroSub: {
+    fontSize: 13,
+    color: "#6b7280",
+  },
+
+  /* CATEGORY */
+  categorySection: {
+    padding: 16,
+  },
+
+  categoryHeading: {
+    fontSize: 16,
+    fontWeight: 700,
+    marginBottom: 12,
+  },
+
+  categoryRow: {
+    display: "flex",
+    gap: 12,
+  },
+
+  categoryCard: {
+    flex: 1,
+    padding: 14,
+    background: "#f8fafc",
+    borderRadius: 12,
+    border: "1px solid #E5E7EB",
+    textDecoration: "none",
+    color: "#111",
+    textAlign: "center",
+    fontWeight: 600,
+    fontSize: 14,
+  },
+
+  viewAllWrap: {
+    marginTop: 10,
+    textAlign: "right",
+  },
+
+  viewAll: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#0B5ED7",
+    textDecoration: "none",
+  },
+
+  /* PRODUCTS */
   main: {
     padding: 16,
     paddingBottom: 100,
@@ -148,14 +246,13 @@ const styles = {
     border: "1px solid #E5E7EB",
     display: "flex",
     flexDirection: "column",
-    height: 420,            // FIXED CARD HEIGHT
+    height: 420,
     overflow: "hidden",
     boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
   },
 
-  /* IMAGE */
   imageSection: {
-    height: 150,            // FIXED IMAGE HEIGHT
+    height: 150,
     background: "#f9fafb",
     display: "flex",
     alignItems: "center",
@@ -174,13 +271,11 @@ const styles = {
     color: "#9CA3AF",
   },
 
-  /* DETAILS */
   detailsSection: {
     flex: 1,
     padding: 14,
     display: "flex",
     flexDirection: "column",
-    justifyContent: "flex-start",
   },
 
   category: {
@@ -193,7 +288,6 @@ const styles = {
   name: {
     fontSize: 14,
     fontWeight: 700,
-    color: "#111827",
     marginBottom: 6,
     minHeight: 42,
   },
@@ -219,7 +313,6 @@ const styles = {
     marginTop: "auto",
   },
 
-  /* CART */
   cartSection: {
     padding: 12,
     borderTop: "1px solid #E5E7EB",
