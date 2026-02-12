@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
-import { FaRupeeSign, FaBoxOpen, FaShoppingCart } from "react-icons/fa";
+import { FaShoppingCart } from "react-icons/fa";
 
 /* ================= SUPABASE ================= */
 
@@ -20,17 +20,19 @@ export default function Home() {
       try {
         const { data, error } = await supabase
           .from("products")
-          .select("id, name, slug, price, price_unit, image")
+          .select(`
+            id,
+            name,
+            slug,
+            image,
+            size,
+            gauge,
+            subcategories(name)
+          `)
           .eq("in_stock", true)
           .order("created_at", { ascending: false });
 
-        if (error) {
-          console.error("Supabase Error:", error.message);
-        } else {
-          setProducts(data || []);
-        }
-      } catch (err) {
-        console.error("Unexpected Error:", err);
+        if (!error) setProducts(data || []);
       } finally {
         setLoading(false);
       }
@@ -45,11 +47,8 @@ export default function Home() {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
     const existing = cart.find((i) => i.id === product.id);
 
-    if (existing) {
-      existing.qty += 1;
-    } else {
-      cart.push({ ...product, qty: 1 });
-    }
+    if (existing) existing.qty += 1;
+    else cart.push({ ...product, qty: 1 });
 
     localStorage.setItem("cart", JSON.stringify(cart));
     alert("Product added to cart");
@@ -102,8 +101,6 @@ export default function Home() {
 
         {loading ? (
           <p style={{ fontSize: 13 }}>Loading products...</p>
-        ) : products.length === 0 ? (
-          <p style={{ fontSize: 13 }}>No products available.</p>
         ) : (
           <div style={styles.grid}>
             {products.map((p) => (
@@ -112,32 +109,30 @@ export default function Home() {
                   href={`/product/${p.slug}`}
                   style={{ textDecoration: "none", color: "inherit" }}
                 >
-                  <div>
-                    <div style={styles.imageSection}>
-                      {p.image ? (
-                        <img
-                          src={p.image}
-                          alt={p.name}
-                          style={styles.image}
-                        />
-                      ) : (
-                        <div style={styles.noImage}>No Image</div>
-                      )}
-                    </div>
+                  <div style={styles.imageSection}>
+                    {p.image ? (
+                      <img src={p.image} alt={p.name} style={styles.image} />
+                    ) : (
+                      <div style={styles.noImage}>No Image</div>
+                    )}
+                  </div>
 
-                    <div style={styles.detailsSection}>
-                      <h3 style={styles.name}>{p.name}</h3>
+                  <div style={styles.detailsSection}>
+                    <h3 style={styles.name}>{p.name}</h3>
 
-                      <div style={styles.priceRow}>
-                        <FaRupeeSign size={12} />
-                        <strong>{p.price}</strong>
-                        <span>/ {p.price_unit}</span>
+                    {p.size && (
+                      <div style={styles.meta}>Size: {p.size}</div>
+                    )}
+
+                    {p.gauge && (
+                      <div style={styles.meta}>Gauge: {p.gauge}</div>
+                    )}
+
+                    {p.subcategories?.name && (
+                      <div style={styles.meta}>
+                        {p.subcategories.name}
                       </div>
-
-                      <div style={styles.badge}>
-                        <FaBoxOpen size={12} /> Bulk Available
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </Link>
 
@@ -162,22 +157,24 @@ export default function Home() {
 
 const styles = {
   hero: {
-    background: "linear-gradient(135deg, #0B5ED7, #0a4fbf)",
-    padding: "25px 15px",
+    background: "#f8fafc",
+    padding: "26px 16px",
     textAlign: "center",
-    color: "#fff",
-    borderRadius: "0 0 16px 16px",
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    border: "1px solid #E5E7EB",
   },
 
   heroTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 700,
+    color: "#111827",
     marginBottom: 6,
   },
 
   heroSub: {
     fontSize: 13,
-    opacity: 0.95,
+    color: "#6b7280",
   },
 
   categorySection: {
@@ -237,29 +234,31 @@ const styles = {
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
-    gap: 10,
+    gap: 12,
   },
 
   card: {
     background: "#fff",
-    borderRadius: 10,
+    borderRadius: 14,
     border: "1px solid #E5E7EB",
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
   },
 
   imageSection: {
-    height: 120,
+    height: 150,
     background: "#f9fafb",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    padding: 10,
   },
 
   image: {
-    width: "100%",
-    height: "100%",
+    maxWidth: "100%",
+    maxHeight: "100%",
     objectFit: "contain",
   },
 
@@ -269,37 +268,25 @@ const styles = {
   },
 
   detailsSection: {
-    padding: 8,
+    padding: 10,
+    textAlign: "center",
   },
 
   name: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 600,
-    marginBottom: 4,
+    marginBottom: 6,
+    minHeight: 38,
   },
 
-  priceRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 4,
-    color: "#0B5ED7",
+  meta: {
     fontSize: 12,
-  },
-
-  badge: {
-    marginTop: 4,
-    fontSize: 10,
-    background: "#E6F4EA",
-    color: "#137333",
-    padding: "2px 6px",
-    borderRadius: 6,
-    display: "inline-flex",
-    gap: 4,
-    alignItems: "center",
+    color: "#6b7280",
+    marginBottom: 3,
   },
 
   actionSection: {
-    padding: 8,
+    padding: 10,
     borderTop: "1px solid #E5E7EB",
   },
 
@@ -308,7 +295,7 @@ const styles = {
     background: "#0B5ED7",
     color: "#fff",
     border: "none",
-    borderRadius: 6,
+    borderRadius: 8,
     padding: "8px",
     fontSize: 13,
     fontWeight: 600,
@@ -319,24 +306,3 @@ const styles = {
     alignItems: "center",
   },
 };
-
-hero: {
-  background: "#f8fafc",   // same as category card background
-  padding: "26px 16px",
-  textAlign: "center",
-  borderBottomLeftRadius: 24,
-  borderBottomRightRadius: 24,
-  border: "1px solid #E5E7EB",
-},
-
-heroTitle: {
-  fontSize: 20,
-  fontWeight: 700,
-  color: "#111827",
-  marginBottom: 6,
-},
-
-heroSub: {
-  fontSize: 13,
-  color: "#6b7280",
-},
