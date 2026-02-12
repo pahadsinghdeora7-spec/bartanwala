@@ -319,3 +319,24 @@ const styles = {
     alignItems: "center",
   },
 };
+
+hero: {
+  background: "#f8fafc",   // same as category card background
+  padding: "26px 16px",
+  textAlign: "center",
+  borderBottomLeftRadius: 24,
+  borderBottomRightRadius: 24,
+  border: "1px solid #E5E7EB",
+},
+
+heroTitle: {
+  fontSize: 20,
+  fontWeight: 700,
+  color: "#111827",
+  marginBottom: 6,
+},
+
+heroSub: {
+  fontSize: 13,
+  color: "#6b7280",
+},
