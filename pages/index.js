@@ -19,7 +19,17 @@ export default function Home() {
       const { data } = await supabase
         .from("products")
         .select(
-          "id, name, slug, price, image, size, gauge, subcategories(name)"
+          `
+          id,
+          name,
+          slug,
+          price,
+          image,
+          size,
+          gauge,
+          categories(name),
+          subcategories(name)
+        `
         )
         .eq("in_stock", true)
         .order("created_at", { ascending: false });
@@ -50,27 +60,15 @@ export default function Home() {
         <title>Bartanwala | Wholesale Steel & Aluminium Utensils</title>
       </Head>
 
-      {/* HERO */}
-      <section style={styles.hero}>
-        <h1 style={styles.heroTitle}>
-          Wholesale Steel & Aluminium Utensils
-        </h1>
-        <p style={styles.heroSub}>
-          B2B Wholesale · Factory Price · All India Delivery
-        </p>
-      </section>
-
-      {/* PRODUCTS */}
       <main style={styles.main}>
         <h2 style={styles.heading}>Products</h2>
 
         <div style={styles.grid}>
           {products.map((p) => (
             <div key={p.id} style={styles.card}>
-              <Link
-                href={`/product/${p.slug}`}
-                style={{ textDecoration: "none", color: "inherit" }}
-              >
+
+              {/* IMAGE SECTION */}
+              <Link href={`/product/${p.slug}`} style={{ textDecoration: "none" }}>
                 <div style={styles.imageSection}>
                   {p.image ? (
                     <img src={p.image} alt={p.name} style={styles.image} />
@@ -78,37 +76,44 @@ export default function Home() {
                     <div style={styles.noImage}>No Image</div>
                   )}
                 </div>
-
-                <div style={styles.detailsSection}>
-                  <h3 style={styles.name}>{p.name}</h3>
-
-                  <div style={styles.metaRow}>
-                    {p.size && <span>Size: {p.size}</span>}
-                    {p.gauge && <span>Gauge: {p.gauge}</span>}
-                  </div>
-
-                  {p.subcategories?.name && (
-                    <div style={styles.subcat}>
-                      {p.subcategories.name}
-                    </div>
-                  )}
-
-                  <div style={styles.price}>₹ {p.price}</div>
-
-                  <div style={styles.bulkBadge}>
-                    Bulk Available
-                  </div>
-                </div>
               </Link>
 
-              <div style={styles.actionSection}>
+              {/* DETAILS SECTION */}
+              <div style={styles.detailsSection}>
+                <div style={styles.category}>
+                  {p.categories?.name}
+                </div>
+
+                <div style={styles.name}>
+                  {p.name}
+                </div>
+
+                <div style={styles.metaRow}>
+                  {p.size && <span>Size: {p.size}</span>}
+                  {p.gauge && <span>Gauge: {p.gauge}</span>}
+                </div>
+
+                {p.subcategories?.name && (
+                  <div style={styles.subcategory}>
+                    {p.subcategories.name}
+                  </div>
+                )}
+
+                <div style={styles.price}>
+                  ₹ {p.price}
+                </div>
+              </div>
+
+              {/* ADD TO CART SECTION */}
+              <div style={styles.cartSection}>
                 <button
-                  style={styles.addToCart}
+                  style={styles.cartBtn}
                   onClick={() => addToCart(p)}
                 >
                   <FaShoppingCart /> Add to Cart
                 </button>
               </div>
+
             </div>
           ))}
         </div>
@@ -120,27 +125,6 @@ export default function Home() {
 /* ================= STYLES ================= */
 
 const styles = {
-  hero: {
-    background: "#f8fafc",
-    padding: "26px 16px",
-    textAlign: "center",
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    border: "1px solid #E5E7EB",
-  },
-
-  heroTitle: {
-    fontSize: 20,
-    fontWeight: 700,
-    color: "#111827",
-    marginBottom: 6,
-  },
-
-  heroSub: {
-    fontSize: 13,
-    color: "#6b7280",
-  },
-
   main: {
     padding: 16,
     paddingBottom: 100,
@@ -164,12 +148,14 @@ const styles = {
     border: "1px solid #E5E7EB",
     display: "flex",
     flexDirection: "column",
+    height: 420,            // FIXED CARD HEIGHT
     overflow: "hidden",
-    boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
   },
 
+  /* IMAGE */
   imageSection: {
-    height: 160,
+    height: 150,            // FIXED IMAGE HEIGHT
     background: "#f9fafb",
     display: "flex",
     alignItems: "center",
@@ -188,19 +174,28 @@ const styles = {
     color: "#9CA3AF",
   },
 
+  /* DETAILS */
   detailsSection: {
-    padding: 14,
     flex: 1,
+    padding: 14,
     display: "flex",
     flexDirection: "column",
+    justifyContent: "flex-start",
+  },
+
+  category: {
+    fontSize: 11,
+    fontWeight: 600,
+    color: "#0B5ED7",
+    marginBottom: 4,
   },
 
   name: {
     fontSize: 14,
     fontWeight: 700,
-    marginBottom: 6,
     color: "#111827",
-    minHeight: 40,
+    marginBottom: 6,
+    minHeight: 42,
   },
 
   metaRow: {
@@ -211,10 +206,10 @@ const styles = {
     marginBottom: 4,
   },
 
-  subcat: {
+  subcategory: {
     fontSize: 12,
     color: "#9CA3AF",
-    marginBottom: 6,
+    marginBottom: 8,
   },
 
   price: {
@@ -222,24 +217,15 @@ const styles = {
     fontWeight: 800,
     color: "#0B5ED7",
     marginTop: "auto",
-    marginBottom: 6,
   },
 
-  bulkBadge: {
-    fontSize: 11,
-    background: "#E6F4EA",
-    color: "#137333",
-    padding: "4px 8px",
-    borderRadius: 6,
-    display: "inline-block",
-  },
-
-  actionSection: {
+  /* CART */
+  cartSection: {
     padding: 12,
     borderTop: "1px solid #E5E7EB",
   },
 
-  addToCart: {
+  cartBtn: {
     width: "100%",
     background: "#0B5ED7",
     color: "#fff",
