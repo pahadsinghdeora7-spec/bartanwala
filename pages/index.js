@@ -24,6 +24,7 @@ export default function Home() {
           name,
           slug,
           price,
+          price_unit,
           image,
           size,
           gauge,
@@ -133,6 +134,11 @@ export default function Home() {
 
                 <div style={styles.price}>
                   ₹ {p.price}
+                  {p.price_unit && (
+                    <span style={styles.unit}>
+                      {" "} / {p.price_unit.toUpperCase()}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -158,7 +164,6 @@ export default function Home() {
 
 const styles = {
 
-  /* HERO */
   hero: {
     background: "#f8fafc",
     padding: "28px 16px",
@@ -181,7 +186,6 @@ const styles = {
     color: "#6b7280",
   },
 
-  /* CATEGORY */
   categorySection: {
     padding: 16,
   },
@@ -222,7 +226,6 @@ const styles = {
     textDecoration: "none",
   },
 
-  /* PRODUCTS */
   main: {
     padding: 16,
     paddingBottom: 100,
@@ -311,6 +314,12 @@ const styles = {
     fontWeight: 800,
     color: "#0B5ED7",
     marginTop: "auto",
+  },
+
+  unit: {
+    fontSize: 12,
+    fontWeight: 500,
+    color: "#6b7280",
   },
 
   cartSection: {
