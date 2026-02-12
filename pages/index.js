@@ -238,11 +238,15 @@ const styles = {
     marginBottom: 12,
   },
 
+  /* ================= GRID ================= */
+
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
     gap: 14,
   },
+
+  /* ================= CARD ================= */
 
   card: {
     background: "#fff",
@@ -252,6 +256,7 @@ const styles = {
     flexDirection: "column",
     overflow: "hidden",
     boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
+    height: 100%,              // ✅ Equal height
   },
 
   imageSection: {
@@ -269,14 +274,11 @@ const styles = {
     objectFit: "contain",
   },
 
-  noImage: {
-    fontSize: 12,
-    color: "#9CA3AF",
-  },
-
   detailsSection: {
     padding: 12,
-    flex: 1,
+    flex: 1,                   // ✅ Push button bottom
+    display: "flex",
+    flexDirection: "column",
   },
 
   name: {
@@ -284,7 +286,8 @@ const styles = {
     fontWeight: 700,
     marginBottom: 6,
     color: "#111827",
-    minHeight: 40,
+    height: 40,                // ✅ Fixed name height
+    overflow: "hidden",
   },
 
   metaRow: {
@@ -293,18 +296,20 @@ const styles = {
     fontSize: 12,
     color: "#6b7280",
     marginBottom: 4,
+    minHeight: 20,             // ✅ Equal spacing
   },
 
   subcat: {
     fontSize: 12,
     color: "#9CA3AF",
-    marginBottom: 6,
+    minHeight: 18,             // ✅ Fix uneven height
   },
 
   price: {
     fontSize: 16,
     fontWeight: 800,
     color: "#0B5ED7",
+    marginTop: "auto",         // ✅ Price always bottom aligned
     marginBottom: 6,
   },
 
@@ -315,6 +320,7 @@ const styles = {
     padding: "4px 8px",
     borderRadius: 6,
     display: "inline-block",
+    marginBottom: 8,
   },
 
   actionSection: {
