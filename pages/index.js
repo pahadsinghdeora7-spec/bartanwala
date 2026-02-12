@@ -82,9 +82,9 @@ export default function Home() {
             </div>
           </Link>
 
-          <Link href="/category/aluminium-utensils" style={styles.categoryCard}>
+          <Link href="/category/alluminium-utensils" style={styles.categoryCard}>
             <div style={styles.categoryTitle}>
-              Aluminium Utensils
+              Alluminium Utensils
             </div>
           </Link>
         </div>
