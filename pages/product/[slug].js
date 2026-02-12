@@ -21,7 +21,10 @@ export async function getServerSideProps({ params }) {
 
   const { data: product } = await supabase
     .from("products")
-    .select("*")
+    .select(`
+      *,
+      subcategories(name)
+    `)
     .eq("slug", params.slug)
     .single();
 
@@ -45,7 +48,7 @@ export async function getServerSideProps({ params }) {
 /* ================= PAGE ================= */
 
 export default function ProductPage({ product, related }) {
-  const { addToCart } = useCart(); // ✅ CONTEXT
+  const { addToCart } = useCart();
 
   const images = [
     product.image,
@@ -61,7 +64,6 @@ export default function ProductPage({ product, related }) {
 
   let quantityOptions = [];
 
-  /* 🔹 KG LOGIC */
   if (unit === "kg") {
     quantityOptions = [
       { label: "40 KG (Minimum Order)", value: 40 },
@@ -71,7 +73,6 @@ export default function ProductPage({ product, related }) {
     ];
   }
 
-  /* 🔹 PCS / SET LOGIC */
   if (unit === "pcs" || unit === "set") {
     quantityOptions = Array.from({ length: 5 }).map((_, i) => {
       const cartons = i + 1;
@@ -116,20 +117,34 @@ export default function ProductPage({ product, related }) {
         <div style={styles.card}>
           <h1 style={styles.title}>{product.name}</h1>
 
-          <div style={styles.row}>
-            <div style={styles.price}>
-              <FaRupeeSign /> {product.price} / {product.price_unit}
-            </div>
-            <div style={styles.stock}>
-              <FaCheckCircle /> In Stock
-            </div>
+          <div style={styles.priceRow}>
+            <FaRupeeSign />
+            <span style={styles.price}>
+              {product.price} / {product.price_unit}
+            </span>
           </div>
 
-          <div style={styles.row}>
-            <div>📦 Unit: {unit.toUpperCase()}</div>
-            <div>
+          <div style={styles.badges}>
+            <span style={styles.stock}>
+              <FaCheckCircle /> In Stock
+            </span>
+            <span style={styles.bulk}>
               <FaBoxOpen /> Bulk Available
-            </div>
+            </span>
+          </div>
+
+          {/* EXTRA DETAILS */}
+          <div style={styles.detailsBox}>
+            {product.size && <Detail label="Size" value={product.size} />}
+            {product.gauge && <Detail label="Gauge" value={product.gauge} />}
+            {product.weight && <Detail label="Weight" value={product.weight} />}
+            {product.subcategories?.name && (
+              <Detail
+                label="Sub Category"
+                value={product.subcategories.name}
+              />
+            )}
+            <Detail label="Unit Type" value={unit.toUpperCase()} />
           </div>
 
           {/* QUANTITY */}
@@ -167,7 +182,9 @@ export default function ProductPage({ product, related }) {
             </a>
           </div>
 
-          <p style={styles.desc}>{product.description}</p>
+          {product.description && (
+            <p style={styles.desc}>{product.description}</p>
+          )}
         </div>
 
         {/* RELATED PRODUCTS */}
@@ -195,6 +212,17 @@ export default function ProductPage({ product, related }) {
   );
 }
 
+/* ================= SMALL DETAIL COMPONENT ================= */
+
+function Detail({ label, value }) {
+  return (
+    <div style={styles.detailRow}>
+      <span style={styles.detailLabel}>{label}</span>
+      <span style={styles.detailValue}>{value}</span>
+    </div>
+  );
+}
+
 /* ================= STYLES ================= */
 
 const styles = {
@@ -203,16 +231,17 @@ const styles = {
   imageWrap: { background: "#fff", padding: 16 },
   mainImage: {
     width: "100%",
-    height: 260,
+    height: 280,
     objectFit: "contain",
-    borderRadius: 12,
+    borderRadius: 14,
+    background: "#f9fafb",
   },
-  thumbRow: { display: "flex", gap: 10, marginTop: 10 },
+  thumbRow: { display: "flex", gap: 10, marginTop: 12 },
   thumb: {
-    width: 60,
-    height: 60,
+    width: 65,
+    height: 65,
     objectFit: "contain",
-    borderRadius: 8,
+    borderRadius: 10,
     padding: 4,
     background: "#fff",
     cursor: "pointer",
@@ -222,21 +251,51 @@ const styles = {
     background: "#fff",
     margin: 12,
     padding: 18,
-    borderRadius: 16,
+    borderRadius: 18,
   },
 
-  title: { fontSize: 20, fontWeight: 700, marginBottom: 8 },
-  row: {
+  title: { fontSize: 20, fontWeight: 700 },
+
+  priceRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    fontSize: 18,
+    fontWeight: 800,
+    color: "#0B5ED7",
+    marginTop: 10,
+  },
+
+  price: { fontWeight: 800 },
+
+  badges: {
+    display: "flex",
+    gap: 12,
+    marginTop: 10,
+  },
+
+  stock: { color: "#16a34a", fontSize: 13 },
+  bulk: { color: "#2563eb", fontSize: 13 },
+
+  detailsBox: {
+    marginTop: 16,
+    background: "#f9fafb",
+    padding: 12,
+    borderRadius: 12,
+  },
+
+  detailRow: {
     display: "flex",
     justifyContent: "space-between",
-    marginTop: 10,
+    marginBottom: 6,
     fontSize: 14,
   },
-  price: { color: "#0B5ED7", fontWeight: 700 },
-  stock: { color: "#16a34a", display: "flex", gap: 4 },
+
+  detailLabel: { color: "#6b7280" },
+  detailValue: { fontWeight: 600 },
 
   qtyRow: {
-    marginTop: 14,
+    marginTop: 16,
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
@@ -248,23 +307,22 @@ const styles = {
     border: "1px solid #d1d5db",
   },
 
-  actionRow: { display: "flex", gap: 10, marginTop: 18 },
+  actionRow: { display: "flex", gap: 10, marginTop: 20 },
 
   cartBtn: {
     flex: 1,
     padding: 14,
-    borderRadius: 10,
+    borderRadius: 12,
     border: "1.5px solid #0B5ED7",
     background: "#fff",
     color: "#0B5ED7",
     fontWeight: 700,
-    cursor: "pointer",
   },
 
   whatsappBtn: {
     flex: 1,
     padding: 14,
-    borderRadius: 10,
+    borderRadius: 12,
     background: "#25D366",
     color: "#fff",
     fontWeight: 700,
@@ -273,7 +331,7 @@ const styles = {
   },
 
   desc: {
-    marginTop: 16,
+    marginTop: 18,
     fontSize: 14,
     lineHeight: 1.6,
     color: "#4b5563",
@@ -286,23 +344,22 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
     gap: 12,
-    maxHeight: 520,
-    overflowY: "auto",
   },
 
   relatedCard: {
     background: "#fff",
-    padding: 10,
-    borderRadius: 14,
+    padding: 12,
+    borderRadius: 16,
     textDecoration: "none",
     color: "#111",
+    border: "1px solid #e5e7eb",
   },
 
   relatedImg: {
     width: "100%",
-    height: 120,
+    height: 130,
     objectFit: "contain",
-    marginBottom: 6,
+    marginBottom: 8,
   },
 
   relatedName: { fontSize: 13, fontWeight: 600 },
