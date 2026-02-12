@@ -51,26 +51,20 @@ export default function Home() {
         <p>B2B Wholesale · Factory Price · All India Delivery</p>
       </section>
 
-      {/* MAIN CATEGORIES */}
+      {/* CATEGORY */}
       <section style={styles.categorySection}>
         <h2 style={styles.categoryHeading}>Shop By Category</h2>
 
         <div style={styles.categoryRow}>
-          <Link
-            href="/category/stainless-steel-utensils"
-            style={styles.categoryCard}
-          >
+          <Link href="/category/stainless-steel-utensils" style={styles.categoryCard}>
             <div style={styles.categoryTitle}>
               Stainless Steel Utensils
             </div>
           </Link>
 
-          <Link
-            href="/category/aluminium-utensils"
-            style={styles.categoryCard}
-          >
+          <Link href="/category/alluminium-utensils" style={styles.categoryCard}>
             <div style={styles.categoryTitle}>
-              Aluminium Utensils
+              Alluminium Utensils
             </div>
           </Link>
         </div>
@@ -93,7 +87,7 @@ export default function Home() {
                 href={`/product/${p.slug}`}
                 style={{ textDecoration: "none", color: "inherit" }}
               >
-                <div>
+                <div style={styles.cardBody}>
                   <div style={styles.imageSection}>
                     {p.image ? (
                       <img src={p.image} alt={p.name} style={styles.image} />
@@ -200,20 +194,29 @@ const styles = {
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
-    gap: 10,
+    gap: 12,
   },
+
+  /* ================= FIXED CARD ================= */
 
   card: {
     background: "#fff",
-    borderRadius: 10,
+    borderRadius: 14,
     border: "1px solid #E5E7EB",
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
+    height: 260,
+  },
+
+  cardBody: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
   },
 
   imageSection: {
-    height: 110,
+    height: 120,
     background: "#f9fafb",
     display: "flex",
     alignItems: "center",
@@ -221,8 +224,8 @@ const styles = {
   },
 
   image: {
-    width: "100%",
-    height: "100%",
+    maxWidth: "100%",
+    maxHeight: "100%",
     objectFit: "contain",
   },
 
@@ -232,13 +235,22 @@ const styles = {
   },
 
   detailsSection: {
-    padding: 8,
+    padding: 10,
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
   },
 
   name: {
     fontSize: 13,
     fontWeight: 600,
-    marginBottom: 4,
+    marginBottom: 6,
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
+    minHeight: 34,
   },
 
   priceRow: {
@@ -250,19 +262,20 @@ const styles = {
   },
 
   badge: {
-    marginTop: 4,
+    marginTop: 6,
     fontSize: 10,
     background: "#E6F4EA",
     color: "#137333",
-    padding: "2px 6px",
+    padding: "3px 6px",
     borderRadius: 6,
     display: "inline-flex",
     gap: 4,
     alignItems: "center",
+    width: "fit-content",
   },
 
   actionSection: {
-    padding: 8,
+    padding: 10,
     borderTop: "1px solid #E5E7EB",
   },
 
@@ -271,8 +284,8 @@ const styles = {
     background: "#0B5ED7",
     color: "#fff",
     border: "none",
-    borderRadius: 6,
-    padding: "6px",
+    borderRadius: 8,
+    padding: "8px",
     fontSize: 12,
     fontWeight: 600,
     cursor: "pointer",
