@@ -54,33 +54,28 @@ export default function ProductPage({ product, related }) {
     product.image3,
   ].filter(Boolean);
 
-  const [activeImg, setActiveImg] = useState(images[0]);
+  const [activeImg] = useState(images[0]);
 
   const unit = product.unit_type || "kg";
-  const cartonSize = product.carton_size || 1;
+  const isKG = unit === "kg";
+  const isCarton = unit === "pcs" || unit === "set";
 
-  let quantityOptions = [];
+  const minQty = isKG ? 40 : 1;
 
-  if (unit === "kg") {
-    quantityOptions = [
-      { label: "40 KG (Minimum Order)", value: 40 },
-      { label: "80 KG (1 Bundle)", value: 80 },
-      { label: "160 KG (2 Bundle)", value: 160 },
-      { label: "240 KG (3 Bundle)", value: 240 },
-    ];
-  }
+  const [qty, setQty] = useState(minQty);
 
-  if (unit === "pcs" || unit === "set") {
-    quantityOptions = Array.from({ length: 5 }).map((_, i) => {
-      const cartons = i + 1;
-      return {
-        label: `${cartons} Carton`,
-        value: cartons * cartonSize,
-      };
-    });
-  }
+  const dropdownOptions = isKG
+    ? [40, 80, 120, 160, 200]
+    : [1, 2, 3, 4, 5];
 
-  const [qty, setQty] = useState(quantityOptions[0]?.value || 1);
+  const handleQtyChange = (value) => {
+    const num = Number(value);
+    if (num < minQty) {
+      setQty(minQty);
+    } else {
+      setQty(num);
+    }
+  };
 
   return (
     <>
@@ -89,18 +84,20 @@ export default function ProductPage({ product, related }) {
       </Head>
 
       <div style={styles.page}>
-        {/* IMAGE SECTION */}
+        {/* IMAGE */}
         <div style={styles.imageWrap}>
           <img src={activeImg} style={styles.mainImage} />
         </div>
 
-        {/* PRODUCT DETAILS */}
+        {/* DETAILS */}
         <div style={styles.card}>
           <h1 style={styles.title}>{product.name}</h1>
 
           <div style={styles.priceRow}>
             <FaRupeeSign />
-            <span>{product.price} / {product.price_unit}</span>
+            <span>
+              {product.price} / {product.price_unit}
+            </span>
           </div>
 
           <div style={styles.badges}>
@@ -122,19 +119,33 @@ export default function ProductPage({ product, related }) {
             <Detail label="Unit Type" value={unit.toUpperCase()} />
           </div>
 
-          <div style={styles.qtyRow}>
-            <span>Quantity</span>
+          {/* 🔥 QUANTITY SECTION */}
+          <div style={styles.qtySection}>
+            <label style={styles.qtyLabel}>Quantity</label>
+
             <select
               style={styles.select}
               value={qty}
-              onChange={(e) => setQty(Number(e.target.value))}
+              onChange={(e) => handleQtyChange(e.target.value)}
             >
-              {quantityOptions.map((q) => (
-                <option key={q.value} value={q.value}>
-                  {q.label}
+              {dropdownOptions.map((val) => (
+                <option key={val} value={val}>
+                  {isKG ? `${val} KGS` : `${val} Carton`}
                 </option>
               ))}
             </select>
+
+            <input
+              type="number"
+              min={minQty}
+              value={qty}
+              onChange={(e) => handleQtyChange(e.target.value)}
+              style={styles.qtyInput}
+            />
+
+            <div style={styles.minNote}>
+              Minimum Order: {isKG ? "40 KGS" : "1 Carton"}
+            </div>
           </div>
 
           <div style={styles.actionRow}>
@@ -156,8 +167,7 @@ export default function ProductPage({ product, related }) {
           </div>
         </div>
 
-        {/* ================= RELATED PRODUCTS ================= */}
-
+        {/* RELATED PRODUCTS */}
         {related.length > 0 && (
           <div style={styles.relatedWrap}>
             <h3 style={styles.relatedTitle}>Related Products</h3>
@@ -165,8 +175,10 @@ export default function ProductPage({ product, related }) {
             <div style={styles.relatedGrid}>
               {related.map((p) => (
                 <div key={p.id} style={styles.relatedCardFull}>
-
-                  <Link href={`/product/${p.slug}`} style={{ textDecoration: "none" }}>
+                  <Link
+                    href={`/product/${p.slug}`}
+                    style={{ textDecoration: "none" }}
+                  >
                     <div style={styles.relatedImageSection}>
                       {p.image ? (
                         <img src={p.image} style={styles.relatedImage} />
@@ -191,7 +203,6 @@ export default function ProductPage({ product, related }) {
                       View Product
                     </Link>
                   </div>
-
                 </div>
               ))}
             </div>
@@ -202,7 +213,7 @@ export default function ProductPage({ product, related }) {
   );
 }
 
-/* ================= DETAIL COMPONENT ================= */
+/* ================= DETAIL ================= */
 
 function Detail({ label, value }) {
   return (
@@ -217,9 +228,7 @@ function Detail({ label, value }) {
 
 const styles = {
   page: { background: "#f4f6f8", paddingBottom: 100 },
-
   imageWrap: { background: "#fff", padding: 16 },
-
   mainImage: {
     width: "100%",
     height: 280,
@@ -227,16 +236,13 @@ const styles = {
     borderRadius: 14,
     background: "#f9fafb",
   },
-
   card: {
     background: "#fff",
     margin: 12,
     padding: 18,
     borderRadius: 18,
   },
-
   title: { fontSize: 20, fontWeight: 700 },
-
   priceRow: {
     display: "flex",
     alignItems: "center",
@@ -246,44 +252,48 @@ const styles = {
     color: "#0B5ED7",
     marginTop: 10,
   },
-
   badges: { display: "flex", gap: 12, marginTop: 10 },
-
   stock: { color: "#16a34a", fontSize: 13 },
   bulk: { color: "#2563eb", fontSize: 13 },
-
   detailsBox: {
     marginTop: 16,
     background: "#f9fafb",
     padding: 12,
     borderRadius: 12,
   },
-
   detailRow: {
     display: "flex",
     justifyContent: "space-between",
     marginBottom: 6,
     fontSize: 14,
   },
-
   detailLabel: { color: "#6b7280" },
   detailValue: { fontWeight: 600 },
 
-  qtyRow: {
+  /* 🔥 NEW */
+  qtySection: {
     marginTop: 16,
     display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: "column",
+    gap: 8,
   },
-
+  qtyLabel: { fontWeight: 600 },
   select: {
     padding: 10,
     borderRadius: 8,
     border: "1px solid #d1d5db",
   },
+  qtyInput: {
+    padding: 10,
+    borderRadius: 8,
+    border: "1px solid #d1d5db",
+  },
+  minNote: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
 
   actionRow: { display: "flex", gap: 10, marginTop: 20 },
-
   cartBtn: {
     flex: 1,
     padding: 14,
@@ -293,7 +303,6 @@ const styles = {
     color: "#0B5ED7",
     fontWeight: 700,
   },
-
   whatsappBtn: {
     flex: 1,
     padding: 14,
@@ -305,18 +314,13 @@ const styles = {
     textDecoration: "none",
   },
 
-  /* ===== RELATED SAME AS HOME ===== */
-
   relatedWrap: { padding: 16 },
-
   relatedTitle: { fontSize: 18, fontWeight: 700, marginBottom: 14 },
-
   relatedGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
     gap: 16,
   },
-
   relatedCardFull: {
     background: "#fff",
     borderRadius: 16,
@@ -325,9 +329,7 @@ const styles = {
     flexDirection: "column",
     height: 360,
     overflow: "hidden",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
   },
-
   relatedImageSection: {
     height: 130,
     background: "#f9fafb",
@@ -336,39 +338,33 @@ const styles = {
     justifyContent: "center",
     padding: 10,
   },
-
   relatedImage: {
     maxWidth: "100%",
     maxHeight: "100%",
     objectFit: "contain",
   },
-
   relatedDetails: {
     flex: 1,
     padding: 12,
     display: "flex",
     flexDirection: "column",
   },
-
   relatedName: {
     fontSize: 13,
     fontWeight: 600,
     marginBottom: 8,
     minHeight: 36,
   },
-
   relatedPrice: {
     fontSize: 14,
     fontWeight: 700,
     color: "#0B5ED7",
     marginTop: "auto",
   },
-
   relatedCartSection: {
     padding: 10,
     borderTop: "1px solid #E5E7EB",
   },
-
   relatedBtn: {
     display: "block",
     textAlign: "center",
