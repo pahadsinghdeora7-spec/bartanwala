@@ -1,11 +1,30 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import { useCart } from "../context/CartContext";
+import { supabase } from "../lib/supabase";
 import styles from "../styles/bottomNav.module.css";
 
 export default function BottomNav() {
   const router = useRouter();
   const { cartCount } = useCart();
+
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data?.session?.user ?? null);
+    });
+
+    const { data: subscription } =
+      supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null);
+      });
+
+    return () => {
+      subscription?.subscription?.unsubscribe();
+    };
+  }, []);
 
   const isActive = (path) =>
     router.pathname === path ? styles.active : "";
@@ -22,7 +41,10 @@ export default function BottomNav() {
         <span>Categories</span>
       </Link>
 
-      <Link href="/cart" className={`${styles.cartLink} ${isActive("/cart")}`}>
+      <Link
+        href="/cart"
+        className={`${styles.cartLink} ${isActive("/cart")}`}
+      >
         <span className={styles.cartIcon}>
           🛒
           {cartCount > 0 && (
@@ -32,10 +54,13 @@ export default function BottomNav() {
         <span>Cart</span>
       </Link>
 
-      <Link href="/orders" className={isActive("/orders")}>
-        <span>📄</span>
-        <span>Orders</span>
-      </Link>
+      {/* ✅ Show Orders only if logged in */}
+      {user && (
+        <Link href="/orders" className={isActive("/orders")}>
+          <span>📄</span>
+          <span>Orders</span>
+        </Link>
+      )}
 
       <Link href="/account" className={isActive("/account")}>
         <span>👤</span>
@@ -43,4 +68,4 @@ export default function BottomNav() {
       </Link>
     </nav>
   );
-          }
+}
