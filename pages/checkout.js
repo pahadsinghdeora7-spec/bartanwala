@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { FaWhatsapp } from "react-icons/fa";
 import { supabase } from "../lib/supabase";
 import styles from "../styles/checkout.module.css";
 
@@ -10,7 +9,6 @@ export default function CheckoutPage() {
 
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState({
     business: "",
@@ -29,15 +27,15 @@ export default function CheckoutPage() {
     setCart(saved);
   }, []);
 
-  /* ================= AUTO FILL PROFILE ================= */
+  /* ================= CHECK LOGIN + AUTO FILL ================= */
 
   useEffect(() => {
-    async function fetchProfile() {
+    async function checkUser() {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
 
       if (!user) {
-        setLoading(false);
+        router.push("/login?redirect=checkout");
         return;
       }
 
@@ -61,13 +59,13 @@ export default function CheckoutPage() {
       setLoading(false);
     }
 
-    fetchProfile();
+    checkUser();
   }, []);
 
   /* ================= TOTAL ================= */
 
   const subtotal = cart.reduce(
-    (sum, i) => sum + Number(i.price) * Number(i.qty),
+    (sum, i) => sum + i.price * i.qty,
     0
   );
 
@@ -89,103 +87,70 @@ export default function CheckoutPage() {
   /* ================= PLACE ORDER ================= */
 
   const placeOrder = async () => {
-    if (!form.name || !form.phone || !form.address) {
-      alert("Please fill required details");
-      return;
-    }
-
-    if (cart.length === 0) {
-      alert("Cart is empty");
-      return;
-    }
-
-    setSubmitting(true);
-
     try {
+      if (!form.name || !form.phone || !form.address) {
+        alert("Please fill required details");
+        return;
+      }
+
+      if (cart.length === 0) {
+        alert("Cart is empty");
+        return;
+      }
+
+      setLoading(true);
+
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
 
-      const orderNumber =
-        "ORD-" + Math.floor(100000 + Math.random() * 900000);
-
-      /* 1️⃣ SAVE ORDER */
-      const { data: orderData, error: orderError } = await supabase
+      // 1️⃣ Create Order
+      const { data: order, error: orderError } = await supabase
         .from("orders")
-        .insert({
-          order_number: orderNumber,
-          user_id: user?.id || null,
-          customer_name: form.name,
-          customer_phone: form.phone,
-          customer_city: form.city,
-          customer_address: form.address,
-          transport_name: form.transportName,
-          total_amount: subtotal,
-          order_status: "Processing",
-          payment_status: "Pending",
-        })
+        .insert([
+          {
+            customer_id: user.id,
+            order_number: "ORD-" + Date.now(),
+            total_amount: subtotal,
+            customer_name: form.name,
+            customer_phone: form.phone,
+            customer_city: form.city,
+            customer_address: form.address,
+            transport_name: form.transportName,
+            payment_method: "COD",
+          },
+        ])
         .select()
         .single();
 
       if (orderError) throw orderError;
 
-      /* 2️⃣ SAVE ORDER ITEMS */
-      const items = cart.map((item) => ({
-        order_id: orderData.id,
+      // 2️⃣ Insert Order Items
+      const itemsToInsert = cart.map((item) => ({
+        order_id: order.id,
         product_id: item.id,
         product_name: item.name,
         price: item.price,
-        qty: item.qty,
-        price_unit: item.price_unit || "pcs",
+        quantity: item.qty,
+        unit: item.price_unit || "",
       }));
 
       const { error: itemError } = await supabase
         .from("order_items")
-        .insert(items);
+        .insert(itemsToInsert);
 
       if (itemError) throw itemError;
 
-      /* 3️⃣ CLEAR CART */
+      // 3️⃣ Clear Cart
       localStorage.removeItem("cart");
 
-      /* 4️⃣ WHATSAPP MESSAGE */
-      const message = `
-📦 *New Order – Bartanwala*
-
-Order No: ${orderNumber}
-
-👤 ${form.name}
-📞 ${form.phone}
-📍 ${form.city}
-
-🛒 Items:
-${cart
-  .map(
-    (i) =>
-      `• ${i.name}
-Qty: ${i.qty}
-Rate: ₹${i.price}/${i.price_unit}`
-  )
-  .join("\n\n")}
-
-💰 Total: ₹${subtotal}
-`;
-
-      window.open(
-        `https://wa.me/919873670361?text=${encodeURIComponent(
-          message
-        )}`,
-        "_blank"
-      );
-
-      /* 5️⃣ REDIRECT TO SUCCESS */
-      router.push(`/order-success?order=${orderNumber}`);
+      // 4️⃣ Redirect
+      router.push(`/order-success?id=${order.id}`);
 
     } catch (error) {
       console.error(error);
       alert("Order failed. Please try again.");
+      setLoading(false);
     }
-
-    setSubmitting(false);
   };
 
   /* ================= UI ================= */
@@ -201,23 +166,61 @@ Rate: ₹${i.price}/${i.price_unit}`
       <div className={styles.page}>
         <h2 className={styles.title}>Checkout</h2>
 
-        {/* Buyer */}
+        {/* BUYER DETAILS */}
         <div className={styles.card}>
           <h3>Buyer Details</h3>
 
-          <input name="business" value={form.business} placeholder="Business Name" onChange={handleChange} className={styles.input} />
-          <input name="name" value={form.name} placeholder="Contact Name *" onChange={handleChange} className={styles.input} />
-          <input name="phone" value={form.phone} placeholder="Mobile *" onChange={handleChange} className={styles.input} />
-          <input name="city" value={form.city} placeholder="City" onChange={handleChange} className={styles.input} />
-          <textarea name="address" value={form.address} placeholder="Full Address *" onChange={handleChange} className={styles.textarea} />
+          <input
+            name="business"
+            value={form.business}
+            placeholder="Business Name"
+            onChange={handleChange}
+            className={styles.input}
+          />
+
+          <input
+            name="name"
+            value={form.name}
+            placeholder="Contact Person Name *"
+            onChange={handleChange}
+            className={styles.input}
+          />
+
+          <input
+            name="phone"
+            value={form.phone}
+            placeholder="Mobile Number *"
+            onChange={handleChange}
+            className={styles.input}
+          />
+
+          <input
+            name="city"
+            value={form.city}
+            placeholder="City"
+            onChange={handleChange}
+            className={styles.input}
+          />
+
+          <textarea
+            name="address"
+            value={form.address}
+            placeholder="Full Delivery Address *"
+            onChange={handleChange}
+            className={styles.textarea}
+          />
         </div>
 
-        {/* Transport */}
+        {/* TRANSPORT */}
         <div className={styles.card}>
           <h3>Transport Details</h3>
 
-          <select className={styles.input} value={form.transportSelect} onChange={handleTransportChange}>
-            <option value="">Select Transport</option>
+          <select
+            className={styles.input}
+            value={form.transportSelect}
+            onChange={handleTransportChange}
+          >
+            <option value="">Select Your Transport</option>
             <option value="VRL Logistics">VRL Logistics</option>
             <option value="GATI">GATI</option>
             <option value="TCI Express">TCI Express</option>
@@ -226,10 +229,16 @@ Rate: ₹${i.price}/${i.price_unit}`
             <option value="Other">Other</option>
           </select>
 
-          <input name="transportName" value={form.transportName} placeholder="Transport Name" onChange={handleChange} className={styles.input} />
+          <input
+            name="transportName"
+            value={form.transportName}
+            placeholder="Transport Name"
+            onChange={handleChange}
+            className={styles.input}
+          />
         </div>
 
-        {/* Summary */}
+        {/* SUMMARY */}
         <div className={styles.card}>
           <h3>Order Summary</h3>
 
@@ -251,14 +260,8 @@ Rate: ₹${i.price}/${i.price_unit}`
         <button
           className={styles.whatsappBtn}
           onClick={placeOrder}
-          disabled={submitting}
-          style={{
-            opacity: submitting ? 0.6 : 1,
-            cursor: submitting ? "not-allowed" : "pointer",
-          }}
         >
-          <FaWhatsapp />
-          {submitting ? " Placing Order..." : " Confirm Order"}
+          Place Order
         </button>
       </div>
     </>
