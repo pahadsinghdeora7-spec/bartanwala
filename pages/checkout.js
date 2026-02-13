@@ -104,13 +104,17 @@ export default function CheckoutPage() {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
 
-      const { data: customer } = await supabase
+      if (!user) {
+        throw new Error("User session expired");
+      }
+
+      const { data: customer, error: customerError } = await supabase
         .from("customers")
         .select("id")
         .eq("user_id", user.id)
         .single();
 
-      if (!customer) {
+      if (customerError || !customer) {
         throw new Error("Customer record not found");
       }
 
@@ -124,11 +128,9 @@ export default function CheckoutPage() {
             customer_id: customer.id,
             order_number: orderNumber,
             total_amount: subtotal,
-
             status: "Processing",
             payment_status: "Pending",
             payment_method: "COD",
-
             customer_business: form.business,
             customer_name: form.name,
             customer_phone: form.phone,
@@ -158,10 +160,11 @@ export default function CheckoutPage() {
 
       if (itemError) throw itemError;
 
-      /* 🔹 CLEAR CART */
+      /* 🔹 CLEAR CART PROPERLY (IMPORTANT FIX) */
       localStorage.removeItem("cart");
+      setCart([]); // 👈 THIS FIXES RELOAD ISSUE
 
-      /* 🔹 REDIRECT WITH ID (IMPORTANT FIX) */
+      /* 🔹 REDIRECT */
       router.replace(`/order-success?id=${order.id}`);
 
     } catch (error) {
@@ -285,4 +288,4 @@ export default function CheckoutPage() {
       </div>
     </>
   );
-    }
+}
