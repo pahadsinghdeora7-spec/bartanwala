@@ -1,10 +1,18 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
 import { FaWhatsapp } from "react-icons/fa";
+import { createClient } from "@supabase/supabase-js";
 import styles from "../styles/checkout.module.css";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 export default function CheckoutPage() {
   const [cart, setCart] = useState([]);
+  const [loading, setLoading] = useState(false);
+
   const [form, setForm] = useState({
     business: "",
     name: "",
@@ -38,14 +46,94 @@ export default function CheckoutPage() {
     });
   };
 
-  const placeOrder = () => {
+  const placeOrder = async () => {
     if (!form.name || !form.phone || !form.address) {
       alert("Please fill required details");
       return;
     }
 
-    const message = `
+    if (cart.length === 0) {
+      alert("Cart is empty");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      /* ================= GET AUTH USER ================= */
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        alert("Please login first");
+        return;
+      }
+
+      /* ================= CREATE / GET CUSTOMER ================= */
+      let { data: customer } = await supabase
+        .from("customers")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!customer) {
+        const { data: newCustomer } = await supabase
+          .from("customers")
+          .insert([
+            {
+              user_id: user.id,
+              business_name: form.business,
+              name: form.name,
+              mobile: form.phone,
+              address: form.address,
+              city: form.city,
+            },
+          ])
+          .select()
+          .single();
+
+        customer = newCustomer;
+      }
+
+      /* ================= CREATE ORDER ================= */
+      const orderNumber = "ORD-" + Date.now();
+
+      const { data: order } = await supabase
+        .from("orders")
+        .insert([
+          {
+            order_number: orderNumber,
+            customer_id: customer.id,
+            total_amount: subtotal,
+            status: "processing",
+            payment_method: "COD",
+            transport_name: form.transportName,
+          },
+        ])
+        .select()
+        .single();
+
+      /* ================= INSERT ORDER ITEMS ================= */
+      const items = cart.map((item) => ({
+        order_id: order.id,
+        product_id: item.id,
+        product_name: item.name,
+        price: item.price,
+        quantity: item.qty,
+        unit: item.price_unit || "kg",
+      }));
+
+      await supabase.from("order_items").insert(items);
+
+      /* ================= CLEAR CART ================= */
+      localStorage.removeItem("cart");
+
+      /* ================= WHATSAPP MESSAGE ================= */
+      const message = `
 📦 *New B2B Order – Bartanwala*
+
+Order No: ${orderNumber}
 
 🏪 Business: ${form.business || "N/A"}
 👤 Name: ${form.name}
@@ -53,8 +141,7 @@ export default function CheckoutPage() {
 📍 City: ${form.city}
 🏠 Address: ${form.address}
 
-🚚 *Transport Details*
-Transport: ${form.transportName || "Not provided"}
+🚚 Transport: ${form.transportName || "Not provided"}
 
 🛒 *Order Details*
 ${cart
@@ -66,16 +153,21 @@ ${cart
   )
   .join("\n")}
 
-📦 Packing Charges: As applicable
 💰 *Total Amount: ₹${subtotal}*
 `;
 
-    window.open(
-      `https://wa.me/919873670361?text=${encodeURIComponent(
-        message
-      )}`,
-      "_blank"
-    );
+      window.open(
+        `https://wa.me/919873670361?text=${encodeURIComponent(message)}`,
+        "_blank"
+      );
+
+      alert("Order placed successfully!");
+    } catch (error) {
+      console.log(error);
+      alert("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -147,35 +239,27 @@ ${cart
 
           <input
             name="transportName"
-            placeholder="Transport Name (eg: VRL Transport)"
+            placeholder="Transport Name"
             value={form.transportName}
             onChange={handleChange}
             className={styles.input}
           />
 
           <p className={styles.note}>
-            Packing charges applicable. Transport charges will be paid
-            by customer as per transporter rates.
+            Packing charges applicable. Transport charges paid by customer.
           </p>
         </div>
 
-        {/* ORDER SUMMARY */}
+        {/* SUMMARY */}
         <div className={styles.card}>
           <h3>Order Summary</h3>
 
           {cart.map((item) => (
             <div key={item.id} className={styles.row}>
-              <span>
-                {item.name} × {item.qty}
-              </span>
+              <span>{item.name} × {item.qty}</span>
               <strong>₹ {item.price * item.qty}</strong>
             </div>
           ))}
-
-          <div className={styles.rowMuted}>
-            <span>Packing Charges</span>
-            <span>As applicable</span>
-          </div>
 
           <hr />
 
@@ -185,11 +269,14 @@ ${cart
           </div>
         </div>
 
-        {/* CTA */}
-        <button className={styles.whatsappBtn} onClick={placeOrder}>
-          <FaWhatsapp /> Confirm & Send on WhatsApp
+        <button
+          className={styles.whatsappBtn}
+          onClick={placeOrder}
+          disabled={loading}
+        >
+          <FaWhatsapp /> {loading ? "Placing Order..." : "Confirm & Send on WhatsApp"}
         </button>
       </div>
     </>
   );
-              }
+    }
