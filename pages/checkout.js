@@ -9,6 +9,7 @@ export default function CheckoutPage() {
 
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [placing, setPlacing] = useState(false);
 
   const [form, setForm] = useState({
     business: "",
@@ -35,11 +36,10 @@ export default function CheckoutPage() {
       const user = sessionData?.session?.user;
 
       if (!user) {
-        router.push("/login?redirect=checkout");
+        router.replace("/login?redirect=checkout");
         return;
       }
 
-      // 🔹 Get customer record
       const { data } = await supabase
         .from("customers")
         .select("*")
@@ -99,12 +99,11 @@ export default function CheckoutPage() {
         return;
       }
 
-      setLoading(true);
+      setPlacing(true);
 
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
 
-      // 🔹 Get customer id (IMPORTANT FIX)
       const { data: customer } = await supabase
         .from("customers")
         .select("id")
@@ -117,12 +116,12 @@ export default function CheckoutPage() {
 
       const orderNumber = "ORD-" + Date.now();
 
-      // 🔹 Insert Order
+      /* 🔹 INSERT ORDER */
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert([
           {
-            customer_id: customer.id, // ✅ FIXED
+            customer_id: customer.id,
             order_number: orderNumber,
             total_amount: subtotal,
 
@@ -143,7 +142,7 @@ export default function CheckoutPage() {
 
       if (orderError) throw orderError;
 
-      // 🔹 Insert Order Items
+      /* 🔹 INSERT ITEMS */
       const itemsToInsert = cart.map((item) => ({
         order_id: order.id,
         product_id: item.id,
@@ -159,16 +158,16 @@ export default function CheckoutPage() {
 
       if (itemError) throw itemError;
 
-      // 🔹 Clear Cart
+      /* 🔹 CLEAR CART */
       localStorage.removeItem("cart");
 
-      // 🔹 Redirect to success page
-      router.push(`/order-success?order=${orderNumber}`);
+      /* 🔹 REDIRECT WITH ID (IMPORTANT FIX) */
+      router.replace(`/order-success?id=${order.id}`);
 
     } catch (error) {
       console.error("ORDER ERROR:", error);
       alert(error.message || "Order failed. Please try again.");
-      setLoading(false);
+      setPlacing(false);
     }
   };
 
@@ -279,10 +278,11 @@ export default function CheckoutPage() {
         <button
           className={styles.whatsappBtn}
           onClick={placeOrder}
+          disabled={placing}
         >
-          Place Order
+          {placing ? "Placing Order..." : "Place Order"}
         </button>
       </div>
     </>
   );
-  }
+    }
