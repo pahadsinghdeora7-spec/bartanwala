@@ -1,135 +1,159 @@
 import { useEffect, useState } from "react";
-import Head from "next/head";
-import { createClient } from "@supabase/supabase-js";
-
-/* ================= SUPABASE ================= */
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+import { supabase } from "../../lib/supabase";
+import { useRouter } from "next/router";
 
 export default function AdminOrders() {
+  const router = useRouter();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const ADMIN_EMAIL = "pahadsinghdeora7@gmail.com";
+
   useEffect(() => {
-    async function loadOrders() {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(`
-          id,
-          created_at,
-          total_amount,
-          status,
-          customers (
-            business_name,
-            name,
-            mobile,
-            city
-          )
-        `)
-        .order("created_at", { ascending: false });
-
-      if (!error) {
-        setOrders(data || []);
-      } else {
-        console.error(error.message);
-      }
-
-      setLoading(false);
-    }
-
-    loadOrders();
+    checkAdmin();
+    fetchOrders();
   }, []);
 
+  async function checkAdmin() {
+    const { data } = await supabase.auth.getUser();
+    const user = data?.user;
+
+    if (!user || user.email !== ADMIN_EMAIL) {
+      router.push("/");
+    }
+  }
+
+  async function fetchOrders() {
+    const { data } = await supabase
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    setOrders(data || []);
+    setLoading(false);
+  }
+
+  async function updateStatus(id, field, value) {
+    await supabase
+      .from("orders")
+      .update({ [field]: value })
+      .eq("id", id);
+
+    fetchOrders();
+  }
+
+  if (loading) return <div style={{ padding: 20 }}>Loading...</div>;
+
   return (
-    <>
-      <Head>
-        <title>Admin | Orders</title>
-      </Head>
+    <div style={styles.page}>
+      <h2 style={styles.title}>Admin Orders</h2>
 
-      <div style={styles.container}>
-        <h1 style={styles.heading}>Order List</h1>
+      {orders.length === 0 && (
+        <p>No orders yet</p>
+      )}
 
-        {loading ? (
-          <p>Loading orders...</p>
-        ) : orders.length === 0 ? (
-          <p>No orders found.</p>
-        ) : (
-          <div style={styles.tableWrapper}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Order ID</th>
-                  <th style={styles.th}>Customer</th>
-                  <th style={styles.th}>Mobile</th>
-                  <th style={styles.th}>City</th>
-                  <th style={styles.th}>Amount</th>
-                  <th style={styles.th}>Status</th>
-                  <th style={styles.th}>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((o) => (
-                  <tr key={o.id}>
-                    <td style={styles.td}>#{o.id}</td>
-                    <td style={styles.td}>
-                      {o.customers?.business_name || o.customers?.name}
-                    </td>
-                    <td style={styles.td}>{o.customers?.mobile}</td>
-                    <td style={styles.td}>{o.customers?.city}</td>
-                    <td style={styles.td}>₹ {o.total_amount}</td>
-                    <td style={styles.td}>{o.status}</td>
-                    <td style={styles.td}>
-                      {new Date(o.created_at).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {orders.map((order) => (
+        <div key={order.id} style={styles.card}>
+          
+          <div style={styles.header}>
+            <div>
+              <strong>{order.order_number}</strong>
+              <div style={styles.date}>
+                {new Date(order.created_at).toLocaleString()}
+              </div>
+            </div>
+
+            <div>
+              <strong>₹ {order.total_amount}</strong>
+            </div>
           </div>
-        )}
-      </div>
-    </>
+
+          <div style={styles.info}>
+            <p><strong>Name:</strong> {order.customer_name}</p>
+            <p><strong>Phone:</strong> {order.customer_phone}</p>
+            <p><strong>City:</strong> {order.customer_city}</p>
+            <p><strong>Address:</strong> {order.customer_address}</p>
+            <p><strong>Transport:</strong> {order.transport_name}</p>
+          </div>
+
+          <div style={styles.statusRow}>
+            <div>
+              <label>Order Status</label>
+              <select
+                value={order.order_status}
+                onChange={(e) =>
+                  updateStatus(order.id, "order_status", e.target.value)
+                }
+                style={styles.select}
+              >
+                <option>Processing</option>
+                <option>Confirmed</option>
+                <option>Shipped</option>
+                <option>Delivered</option>
+                <option>Cancelled</option>
+              </select>
+            </div>
+
+            <div>
+              <label>Payment Status</label>
+              <select
+                value={order.payment_status}
+                onChange={(e) =>
+                  updateStatus(order.id, "payment_status", e.target.value)
+                }
+                style={styles.select}
+              >
+                <option>Pending</option>
+                <option>Paid</option>
+                <option>Failed</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+      ))}
+    </div>
   );
 }
 
-/* ================= STYLES ================= */
-
 const styles = {
-  container: {
+  page: {
     padding: 20,
+    background: "#f4f6f8",
+    minHeight: "100vh",
   },
-
-  heading: {
+  title: {
     fontSize: 22,
     fontWeight: 700,
     marginBottom: 20,
   },
-
-  tableWrapper: {
-    overflowX: "auto",
-    borderRadius: 12,
-    border: "1px solid #E5E7EB",
+  card: {
+    background: "#fff",
+    padding: 18,
+    borderRadius: 14,
+    marginBottom: 16,
+    boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
   },
-
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginBottom: 10,
   },
-
-  th: {
-    textAlign: "left",
-    padding: 12,
-    background: "#f9fafb",
-    borderBottom: "1px solid #E5E7EB",
+  date: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
+  info: {
     fontSize: 14,
+    marginBottom: 12,
   },
-
-  td: {
-    padding: 12,
-    borderBottom: "1px solid #E5E7EB",
-    fontSize: 13,
+  statusRow: {
+    display: "flex",
+    gap: 16,
+  },
+  select: {
+    padding: 6,
+    borderRadius: 6,
+    border: "1px solid #ccc",
   },
 };
