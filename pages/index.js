@@ -3,7 +3,6 @@ import Head from "next/head";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { FaShoppingCart } from "react-icons/fa";
-import { useCart } from "../context/CartContext";
 
 /* ================= SUPABASE ================= */
 
@@ -13,9 +12,8 @@ const supabase = createClient(
 );
 
 export default function Home() {
-  const { addToCart } = useCart();
   const [products, setProducts] = useState([]);
-  const [qtyMap, setQtyMap] = useState({});
+  const [qtyMap, setQtyMap] = useState({}); // 🔥 NEW
 
   useEffect(() => {
     async function loadProducts() {
@@ -32,6 +30,7 @@ export default function Home() {
           size,
           gauge,
           unit_type,
+          carton_size,
           categories(name),
           subcategories(name)
         `
@@ -40,28 +39,29 @@ export default function Home() {
         .order("created_at", { ascending: false });
 
       setProducts(data || []);
-
-      // default qty setup
-      const initialQty = {};
-      data?.forEach((p) => {
-        initialQty[p.id] =
-          p.unit_type === "kg" ? 40 : 1;
-      });
-      setQtyMap(initialQty);
     }
 
     loadProducts();
   }, []);
 
-  const handleQtyChange = (id, value, unitType) => {
-    const min = unitType === "kg" ? 40 : 1;
-    const num = Number(value);
+  function addToCart(product) {
+    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    const existing = cart.find((i) => i.id === product.id);
 
-    setQtyMap((prev) => ({
-      ...prev,
-      [id]: num < min ? min : num,
-    }));
-  };
+    const unit = product.unit_type || "kg";
+    const minQty = unit === "kg" ? 40 : 1;
+
+    const qty = qtyMap[product.id] || minQty;
+
+    if (existing) {
+      existing.qty += qty;
+    } else {
+      cart.push({ ...product, qty });
+    }
+
+    localStorage.setItem("cart", JSON.stringify(cart));
+    alert("Product added to cart");
+  }
 
   return (
     <>
@@ -69,6 +69,7 @@ export default function Home() {
         <title>Bartanwala | Wholesale Steel & Aluminium Utensils</title>
       </Head>
 
+      {/* ================= HERO ================= */}
       <section style={styles.hero}>
         <h1 style={styles.heroTitle}>
           Wholesale Steel & Aluminium Utensils
@@ -78,38 +79,67 @@ export default function Home() {
         </p>
       </section>
 
+      {/* ================= CATEGORY SECTION ================= */}
+      <section style={styles.categorySection}>
+        <h2 style={styles.categoryHeading}>Shop By Category</h2>
+
+        <div style={styles.categoryRow}>
+          <Link href="/category/stainless-steel-utensils" style={styles.categoryCard}>
+            Stainless Steel Utensils
+          </Link>
+
+          <Link href="/category/aluminium-utensils" style={styles.categoryCard}>
+            Aluminium Utensils
+          </Link>
+        </div>
+
+        <div style={styles.viewAllWrap}>
+          <Link href="/categories" style={styles.viewAll}>
+            View All Categories →
+          </Link>
+        </div>
+      </section>
+
+      {/* ================= PRODUCTS ================= */}
       <main style={styles.main}>
         <h2 style={styles.heading}>Products</h2>
 
         <div style={styles.grid}>
           {products.map((p) => {
-            const isKG = p.unit_type === "kg";
-            const minQty = isKG ? 40 : 1;
-            const dropdown = isKG
-              ? [40, 80, 120, 160]
-              : [1, 2, 3, 4, 5];
+            const unit = p.unit_type || "kg";
+            const minQty = unit === "kg" ? 40 : 1;
 
             return (
               <div key={p.id} style={styles.card}>
-
+                {/* IMAGE */}
                 <Link href={`/product/${p.slug}`} style={{ textDecoration: "none" }}>
                   <div style={styles.imageSection}>
                     {p.image ? (
-                      <img src={p.image} style={styles.image} />
+                      <img src={p.image} alt={p.name} style={styles.image} />
                     ) : (
                       <div style={styles.noImage}>No Image</div>
                     )}
                   </div>
                 </Link>
 
+                {/* DETAILS */}
                 <div style={styles.detailsSection}>
                   <div style={styles.category}>
                     {p.categories?.name}
                   </div>
 
-                  <div style={styles.name}>
-                    {p.name}
+                  <div style={styles.name}>{p.name}</div>
+
+                  <div style={styles.metaRow}>
+                    {p.size && <span>Size: {p.size}</span>}
+                    {p.gauge && <span>Gauge: {p.gauge}</span>}
                   </div>
+
+                  {p.subcategories?.name && (
+                    <div style={styles.subcategory}>
+                      {p.subcategories.name}
+                    </div>
+                  )}
 
                   <div style={styles.price}>
                     ₹ {p.price}
@@ -123,17 +153,26 @@ export default function Home() {
                   {/* 🔥 QUANTITY SECTION */}
                   <div style={styles.qtyBox}>
                     <select
+                      style={styles.select}
                       value={qtyMap[p.id] || minQty}
                       onChange={(e) =>
-                        handleQtyChange(p.id, e.target.value, p.unit_type)
+                        setQtyMap((prev) => ({
+                          ...prev,
+                          [p.id]: Number(e.target.value),
+                        }))
                       }
-                      style={styles.select}
                     >
-                      {dropdown.map((val) => (
-                        <option key={val} value={val}>
-                          {isKG ? `${val} KGS` : `${val} Carton`}
-                        </option>
-                      ))}
+                      {unit === "kg"
+                        ? [40, 80, 120, 160].map((val) => (
+                            <option key={val} value={val}>
+                              {val} KGS
+                            </option>
+                          ))
+                        : [1, 2, 3, 4, 5].map((val) => (
+                            <option key={val} value={val}>
+                              {val} Carton
+                            </option>
+                          ))}
                     </select>
 
                     <input
@@ -141,28 +180,25 @@ export default function Home() {
                       min={minQty}
                       value={qtyMap[p.id] || minQty}
                       onChange={(e) =>
-                        handleQtyChange(p.id, e.target.value, p.unit_type)
+                        setQtyMap((prev) => ({
+                          ...prev,
+                          [p.id]: Number(e.target.value),
+                        }))
                       }
                       style={styles.input}
                     />
                   </div>
                 </div>
 
+                {/* ADD TO CART */}
                 <div style={styles.cartSection}>
                   <button
                     style={styles.cartBtn}
-                    onClick={() =>
-                      addToCart(
-                        p,
-                        qtyMap[p.id] || minQty,
-                        p.unit_type
-                      )
-                    }
+                    onClick={() => addToCart(p)}
                   >
                     <FaShoppingCart /> Add to Cart
                   </button>
                 </div>
-
               </div>
             );
           })}
@@ -184,101 +220,129 @@ const styles = {
     border: "1px solid #E5E7EB",
     marginBottom: 16,
   },
+
   heroTitle: {
     fontSize: 20,
     fontWeight: 700,
   },
+
   heroSub: {
     fontSize: 13,
     color: "#6b7280",
   },
-  main: {
-    padding: 16,
-    paddingBottom: 100,
-  },
-  heading: {
-    fontSize: 18,
+
+  categorySection: { padding: 16 },
+
+  categoryHeading: {
+    fontSize: 16,
     fontWeight: 700,
-    marginBottom: 14,
+    marginBottom: 12,
   },
+
+  categoryRow: { display: "flex", gap: 12 },
+
+  categoryCard: {
+    flex: 1,
+    padding: 14,
+    background: "#f8fafc",
+    borderRadius: 12,
+    border: "1px solid #E5E7EB",
+    textDecoration: "none",
+    color: "#111",
+    textAlign: "center",
+    fontWeight: 600,
+  },
+
+  viewAllWrap: { marginTop: 10, textAlign: "right" },
+
+  viewAll: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#0B5ED7",
+    textDecoration: "none",
+  },
+
+  main: { padding: 16, paddingBottom: 100 },
+
+  heading: { fontSize: 18, fontWeight: 700, marginBottom: 14 },
+
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
     gap: 16,
   },
+
   card: {
     background: "#fff",
     borderRadius: 16,
     border: "1px solid #E5E7EB",
     display: "flex",
     flexDirection: "column",
-    overflow: "hidden",
+    height: 470,
   },
+
   imageSection: {
-    height: 140,
+    height: 150,
     background: "#f9fafb",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     padding: 12,
   },
-  image: {
-    maxWidth: "100%",
-    maxHeight: "100%",
-    objectFit: "contain",
-  },
-  noImage: {
-    fontSize: 12,
-    color: "#9CA3AF",
-  },
+
+  image: { maxWidth: "100%", maxHeight: "100%", objectFit: "contain" },
+
+  noImage: { fontSize: 12, color: "#9CA3AF" },
+
   detailsSection: {
-    padding: 12,
     flex: 1,
+    padding: 14,
     display: "flex",
     flexDirection: "column",
   },
-  category: {
-    fontSize: 11,
-    fontWeight: 600,
-    color: "#0B5ED7",
-  },
-  name: {
-    fontSize: 14,
-    fontWeight: 700,
-    margin: "6px 0",
-  },
+
+  category: { fontSize: 11, fontWeight: 600, color: "#0B5ED7" },
+
+  name: { fontSize: 14, fontWeight: 700, marginBottom: 6 },
+
+  metaRow: { fontSize: 12, color: "#6b7280" },
+
+  subcategory: { fontSize: 12, color: "#9CA3AF" },
+
   price: {
     fontSize: 16,
     fontWeight: 800,
     color: "#0B5ED7",
-  },
-  unit: {
-    fontSize: 12,
-    color: "#6b7280",
+    marginTop: "auto",
   },
 
+  unit: { fontSize: 12, color: "#6b7280" },
+
   qtyBox: {
-    marginTop: 8,
+    marginTop: 10,
     display: "flex",
-    gap: 6,
+    gap: 8,
   },
+
   select: {
     flex: 1,
     padding: 6,
     borderRadius: 6,
-    border: "1px solid #d1d5db",
+    border: "1px solid #ccc",
   },
+
   input: {
     width: 70,
     padding: 6,
     borderRadius: 6,
-    border: "1px solid #d1d5db",
+    border: "1px solid #ccc",
   },
 
   cartSection: {
-    padding: 10,
+    padding: 12,
     borderTop: "1px solid #E5E7EB",
   },
+
   cartBtn: {
     width: "100%",
     background: "#0B5ED7",
@@ -286,7 +350,6 @@ const styles = {
     border: "none",
     borderRadius: 10,
     padding: "10px",
-    fontSize: 13,
     fontWeight: 700,
     cursor: "pointer",
   },
