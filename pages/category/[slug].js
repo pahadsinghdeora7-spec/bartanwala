@@ -1,6 +1,8 @@
 import Head from "next/head";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
+import { useState } from "react";
+import { useCart } from "../../context/CartContext";
 
 /* ================= SERVER ================= */
 
@@ -14,21 +16,17 @@ export async function getServerSideProps({ params }) {
     ? params.slug[0]
     : params.slug;
 
-  /* 🔹 CATEGORY */
-  const { data: category, error: catError } = await supabase
+  const { data: category } = await supabase
     .from("categories")
     .select("*")
     .eq("slug", slug)
     .single();
 
-  if (!category || catError) {
-    return { notFound: true };
-  }
+  if (!category) return { notFound: true };
 
-  /* 🔹 PRODUCTS */
   const { data: products } = await supabase
     .from("products")
-    .select("id, name, slug, price, price_unit, image")
+    .select("id, name, slug, price, price_unit, image, unit_type")
     .eq("category_id", category.id)
     .eq("in_stock", true)
     .order("id", { ascending: false });
@@ -44,6 +42,19 @@ export async function getServerSideProps({ params }) {
 /* ================= PAGE ================= */
 
 export default function CategoryPage({ category, products }) {
+  const { addToCart } = useCart();
+  const [qtyMap, setQtyMap] = useState({});
+
+  const handleQtyChange = (id, value, unitType) => {
+    const min = unitType === "kg" ? 40 : 1;
+    const num = Number(value);
+
+    setQtyMap((prev) => ({
+      ...prev,
+      [id]: num < min ? min : num,
+    }));
+  };
+
   return (
     <>
       <Head>
@@ -60,22 +71,79 @@ export default function CategoryPage({ category, products }) {
         )}
 
         <div style={styles.grid}>
-          {products.map((p) => (
-            <Link
-              key={p.id}
-              href={`/product/${p.slug}`}
-              style={styles.card}
-            >
-              <img
-                src={p.image || "/placeholder.png"}
-                style={styles.image}
-              />
-              <div style={styles.name}>{p.name}</div>
-              <div style={styles.price}>
-                ₹{p.price}/{p.price_unit}
+          {products.map((p) => {
+            const isKG = p.unit_type === "kg";
+            const minQty = isKG ? 40 : 1;
+            const dropdown = isKG
+              ? [40, 80, 120, 160]
+              : [1, 2, 3, 4, 5];
+
+            return (
+              <div key={p.id} style={styles.card}>
+
+                <Link href={`/product/${p.slug}`}>
+                  <div style={styles.imageWrap}>
+                    <img
+                      src={p.image || "/placeholder.png"}
+                      style={styles.image}
+                    />
+                  </div>
+                </Link>
+
+                <div style={styles.name}>{p.name}</div>
+
+                <div style={styles.price}>
+                  ₹{p.price}
+                  {p.price_unit && (
+                    <span style={styles.unit}>
+                      {" "} / {p.price_unit.toUpperCase()}
+                    </span>
+                  )}
+                </div>
+
+                {/* 🔥 QUANTITY SECTION */}
+                <div style={styles.qtyBox}>
+                  <select
+                    value={qtyMap[p.id] || minQty}
+                    onChange={(e) =>
+                      handleQtyChange(p.id, e.target.value, p.unit_type)
+                    }
+                    style={styles.select}
+                  >
+                    {dropdown.map((val) => (
+                      <option key={val} value={val}>
+                        {isKG ? `${val} KGS` : `${val} Carton`}
+                      </option>
+                    ))}
+                  </select>
+
+                  <input
+                    type="number"
+                    min={minQty}
+                    value={qtyMap[p.id] || minQty}
+                    onChange={(e) =>
+                      handleQtyChange(p.id, e.target.value, p.unit_type)
+                    }
+                    style={styles.input}
+                  />
+                </div>
+
+                <button
+                  style={styles.cartBtn}
+                  onClick={() =>
+                    addToCart(
+                      p,
+                      qtyMap[p.id] || minQty,
+                      p.unit_type
+                    )
+                  }
+                >
+                  Add to Cart
+                </button>
+
               </div>
-            </Link>
-          ))}
+            );
+          })}
         </div>
       </div>
     </>
@@ -115,27 +183,72 @@ const styles = {
     background: "#fff",
     padding: 12,
     borderRadius: 14,
-    textDecoration: "none",
-    color: "#111",
     boxShadow: "0 6px 16px rgba(0,0,0,0.06)",
+    display: "flex",
+    flexDirection: "column",
+  },
+
+  imageWrap: {
+    height: 120,
+    background: "#f9fafb",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
   },
 
   image: {
-    width: "100%",
-    height: 120,
+    maxWidth: "100%",
+    maxHeight: "100%",
     objectFit: "contain",
-    marginBottom: 8,
   },
 
   name: {
     fontSize: 13,
     fontWeight: 600,
+    marginBottom: 4,
   },
 
   price: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 700,
     color: "#0B5ED7",
-    marginTop: 4,
+  },
+
+  unit: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
+
+  qtyBox: {
+    marginTop: 8,
+    display: "flex",
+    gap: 6,
+  },
+
+  select: {
+    flex: 1,
+    padding: 6,
+    borderRadius: 6,
+    border: "1px solid #d1d5db",
+  },
+
+  input: {
+    width: 70,
+    padding: 6,
+    borderRadius: 6,
+    border: "1px solid #d1d5db",
+  },
+
+  cartBtn: {
+    marginTop: 8,
+    background: "#0B5ED7",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    padding: 8,
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: "pointer",
   },
 };
