@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { supabase } from "../lib/supabase";
+import { useCart } from "../context/CartContext";
 import styles from "../styles/checkout.module.css";
 
 export default function CheckoutPage() {
@@ -161,8 +162,8 @@ export default function CheckoutPage() {
       if (itemError) throw itemError;
 
       /* 🔹 CLEAR CART PROPERLY (IMPORTANT FIX) */
-      localStorage.removeItem("cart");
-      setCart([]); // 👈 THIS FIXES RELOAD ISSUE
+      const { clearCart } = useCart();
+clearCart(); // 👈 THIS FIXES RELOAD ISSUE
 
       /* 🔹 REDIRECT */
       router.replace(`/order-success?id=${order.id}`);
