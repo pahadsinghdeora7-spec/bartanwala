@@ -4,8 +4,6 @@ import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { FaShoppingCart } from "react-icons/fa";
 
-/* ================= SUPABASE ================= */
-
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "",
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
@@ -18,8 +16,7 @@ export default function Home() {
     async function loadProducts() {
       const { data } = await supabase
         .from("products")
-        .select(
-          `
+        .select(`
           id,
           name,
           slug,
@@ -28,11 +25,11 @@ export default function Home() {
           image,
           size,
           gauge,
-          carton_size,
+          unit_type,
+          pcs_per_carton,
           categories(name),
           subcategories(name)
-        `
-        )
+        `)
         .eq("in_stock", true)
         .order("created_at", { ascending: false });
 
@@ -42,32 +39,33 @@ export default function Home() {
     loadProducts();
   }, []);
 
-  /* ================= ADD TO CART WITH MINIMUM RULE ================= */
-
   function addToCart(product) {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
-    const unit = product.price_unit?.toLowerCase() || "kg";
-    const cartonSize = product.carton_size || 1;
+    const unit = product.unit_type || "kg";
+    const pcsPerCarton = product.pcs_per_carton || 1;
 
-    let qty = 1;
+    let minQty = 1;
 
-    // 🔹 KG → minimum 40 KG
+    // 🔥 Quantity Logic
     if (unit === "kg") {
-      qty = 40;
+      minQty = 40;
     }
 
-    // 🔹 PCS / SET → minimum 1 carton
     if (unit === "pcs" || unit === "set") {
-      qty = cartonSize;
+      minQty = pcsPerCarton; // 1 carton minimum
     }
 
     const existing = cart.find((i) => i.id === product.id);
 
     if (existing) {
-      existing.qty += qty;
+      existing.qty += minQty;
     } else {
-      cart.push({ ...product, qty, unit });
+      cart.push({
+        ...product,
+        qty: minQty,
+        unit,
+      });
     }
 
     localStorage.setItem("cart", JSON.stringify(cart));
@@ -80,7 +78,7 @@ export default function Home() {
         <title>Bartanwala | Wholesale Steel & Aluminium Utensils</title>
       </Head>
 
-      {/* ================= HERO TEXT BOX ================= */}
+      {/* HERO */}
       <section style={styles.hero}>
         <h1 style={styles.heroTitle}>
           Wholesale Steel & Aluminium Utensils
@@ -90,7 +88,7 @@ export default function Home() {
         </p>
       </section>
 
-      {/* ================= CATEGORY SECTION (LOCKED - NO CHANGE) ================= */}
+      {/* CATEGORY SECTION — LOCKED */}
       <section style={styles.categorySection}>
         <h2 style={styles.categoryHeading}>Shop By Category</h2>
 
@@ -111,7 +109,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ================= PRODUCTS ================= */}
+      {/* PRODUCTS */}
       <main style={styles.main}>
         <h2 style={styles.heading}>Products</h2>
 
@@ -119,7 +117,6 @@ export default function Home() {
           {products.map((p) => (
             <div key={p.id} style={styles.card}>
 
-              {/* IMAGE SECTION */}
               <Link href={`/product/${p.slug}`} style={{ textDecoration: "none" }}>
                 <div style={styles.imageSection}>
                   {p.image ? (
@@ -130,7 +127,6 @@ export default function Home() {
                 </div>
               </Link>
 
-              {/* DETAILS SECTION */}
               <div style={styles.detailsSection}>
                 <div style={styles.category}>
                   {p.categories?.name}
@@ -161,7 +157,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* ADD TO CART */}
               <div style={styles.cartSection}>
                 <button
                   style={styles.cartBtn}
@@ -179,10 +174,8 @@ export default function Home() {
   );
 }
 
-/* ================= STYLES (UNCHANGED) ================= */
-
+/* STYLES — UNCHANGED */
 const styles = {
-
   hero: {
     background: "#f8fafc",
     padding: "28px 16px",
@@ -192,34 +185,11 @@ const styles = {
     border: "1px solid #E5E7EB",
     marginBottom: 16,
   },
-
-  heroTitle: {
-    fontSize: 20,
-    fontWeight: 700,
-    color: "#111827",
-    marginBottom: 6,
-  },
-
-  heroSub: {
-    fontSize: 13,
-    color: "#6b7280",
-  },
-
-  categorySection: {
-    padding: 16,
-  },
-
-  categoryHeading: {
-    fontSize: 16,
-    fontWeight: 700,
-    marginBottom: 12,
-  },
-
-  categoryRow: {
-    display: "flex",
-    gap: 12,
-  },
-
+  heroTitle: { fontSize: 20, fontWeight: 700, marginBottom: 6 },
+  heroSub: { fontSize: 13, color: "#6b7280" },
+  categorySection: { padding: 16 },
+  categoryHeading: { fontSize: 16, fontWeight: 700, marginBottom: 12 },
+  categoryRow: { display: "flex", gap: 12 },
   categoryCard: {
     flex: 1,
     padding: 14,
@@ -230,38 +200,12 @@ const styles = {
     color: "#111",
     textAlign: "center",
     fontWeight: 600,
-    fontSize: 14,
   },
-
-  viewAllWrap: {
-    marginTop: 10,
-    textAlign: "right",
-  },
-
-  viewAll: {
-    fontSize: 12,
-    fontWeight: 600,
-    color: "#0B5ED7",
-    textDecoration: "none",
-  },
-
-  main: {
-    padding: 16,
-    paddingBottom: 100,
-  },
-
-  heading: {
-    fontSize: 18,
-    fontWeight: 700,
-    marginBottom: 14,
-  },
-
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    gap: 16,
-  },
-
+  viewAllWrap: { marginTop: 10, textAlign: "right" },
+  viewAll: { fontSize: 12, fontWeight: 600, color: "#0B5ED7" },
+  main: { padding: 16, paddingBottom: 100 },
+  heading: { fontSize: 18, fontWeight: 700, marginBottom: 14 },
+  grid: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 },
   card: {
     background: "#fff",
     borderRadius: 16,
@@ -270,9 +214,7 @@ const styles = {
     flexDirection: "column",
     height: 420,
     overflow: "hidden",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
   },
-
   imageSection: {
     height: 150,
     background: "#f9fafb",
@@ -281,71 +223,16 @@ const styles = {
     justifyContent: "center",
     padding: 12,
   },
-
-  image: {
-    maxWidth: "100%",
-    maxHeight: "100%",
-    objectFit: "contain",
-  },
-
-  noImage: {
-    fontSize: 12,
-    color: "#9CA3AF",
-  },
-
-  detailsSection: {
-    flex: 1,
-    padding: 14,
-    display: "flex",
-    flexDirection: "column",
-  },
-
-  category: {
-    fontSize: 11,
-    fontWeight: 600,
-    color: "#0B5ED7",
-    marginBottom: 4,
-  },
-
-  name: {
-    fontSize: 14,
-    fontWeight: 700,
-    marginBottom: 6,
-    minHeight: 42,
-  },
-
-  metaRow: {
-    display: "flex",
-    gap: 10,
-    fontSize: 12,
-    color: "#6b7280",
-    marginBottom: 4,
-  },
-
-  subcategory: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    marginBottom: 8,
-  },
-
-  price: {
-    fontSize: 16,
-    fontWeight: 800,
-    color: "#0B5ED7",
-    marginTop: "auto",
-  },
-
-  unit: {
-    fontSize: 12,
-    fontWeight: 500,
-    color: "#6b7280",
-  },
-
-  cartSection: {
-    padding: 12,
-    borderTop: "1px solid #E5E7EB",
-  },
-
+  image: { maxWidth: "100%", maxHeight: "100%", objectFit: "contain" },
+  noImage: { fontSize: 12, color: "#9CA3AF" },
+  detailsSection: { flex: 1, padding: 14, display: "flex", flexDirection: "column" },
+  category: { fontSize: 11, fontWeight: 600, color: "#0B5ED7" },
+  name: { fontSize: 14, fontWeight: 700, marginBottom: 6 },
+  metaRow: { display: "flex", gap: 10, fontSize: 12, color: "#6b7280" },
+  subcategory: { fontSize: 12, color: "#9CA3AF", marginBottom: 8 },
+  price: { fontSize: 16, fontWeight: 800, color: "#0B5ED7", marginTop: "auto" },
+  unit: { fontSize: 12, color: "#6b7280" },
+  cartSection: { padding: 12, borderTop: "1px solid #E5E7EB" },
   cartBtn: {
     width: "100%",
     background: "#0B5ED7",
@@ -353,12 +240,7 @@ const styles = {
     border: "none",
     borderRadius: 10,
     padding: "10px",
-    fontSize: 13,
     fontWeight: 700,
     cursor: "pointer",
-    display: "flex",
-    justifyContent: "center",
-    gap: 6,
-    alignItems: "center",
   },
 };
