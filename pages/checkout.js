@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
+import { useRouter } from "next/router";
 import { FaWhatsapp } from "react-icons/fa";
 import { supabase } from "../lib/supabase";
 import styles from "../styles/checkout.module.css";
 
 export default function CheckoutPage() {
+  const router = useRouter();
+
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState({
     business: "",
@@ -60,10 +64,10 @@ export default function CheckoutPage() {
     fetchProfile();
   }, []);
 
-  /* ================= CALCULATE TOTAL ================= */
+  /* ================= TOTAL ================= */
 
   const subtotal = cart.reduce(
-    (sum, i) => sum + i.price * i.qty,
+    (sum, i) => sum + Number(i.price) * Number(i.qty),
     0
   );
 
@@ -82,42 +86,106 @@ export default function CheckoutPage() {
     });
   };
 
-  const placeOrder = () => {
+  /* ================= PLACE ORDER ================= */
+
+  const placeOrder = async () => {
     if (!form.name || !form.phone || !form.address) {
       alert("Please fill required details");
       return;
     }
 
-    const message = `
-📦 *New B2B Order – Bartanwala*
+    if (cart.length === 0) {
+      alert("Cart is empty");
+      return;
+    }
 
-🏪 Business: ${form.business || "N/A"}
-👤 Name: ${form.name}
-📞 Mobile: ${form.phone}
-📍 City: ${form.city}
-🏠 Address: ${form.address}
+    setSubmitting(true);
 
-🚚 Transport: ${form.transportName || "Not provided"}
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData?.session?.user;
 
-🛒 Order Details:
+      const orderNumber =
+        "ORD-" + Math.floor(100000 + Math.random() * 900000);
+
+      /* 1️⃣ SAVE ORDER */
+      const { data: orderData, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          order_number: orderNumber,
+          user_id: user?.id || null,
+          customer_name: form.name,
+          customer_phone: form.phone,
+          customer_city: form.city,
+          customer_address: form.address,
+          transport_name: form.transportName,
+          total_amount: subtotal,
+          order_status: "Processing",
+          payment_status: "Pending",
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      /* 2️⃣ SAVE ORDER ITEMS */
+      const items = cart.map((item) => ({
+        order_id: orderData.id,
+        product_id: item.id,
+        product_name: item.name,
+        price: item.price,
+        qty: item.qty,
+        price_unit: item.price_unit || "pcs",
+      }));
+
+      const { error: itemError } = await supabase
+        .from("order_items")
+        .insert(items);
+
+      if (itemError) throw itemError;
+
+      /* 3️⃣ CLEAR CART */
+      localStorage.removeItem("cart");
+
+      /* 4️⃣ WHATSAPP MESSAGE */
+      const message = `
+📦 *New Order – Bartanwala*
+
+Order No: ${orderNumber}
+
+👤 ${form.name}
+📞 ${form.phone}
+📍 ${form.city}
+
+🛒 Items:
 ${cart
   .map(
     (i) =>
       `• ${i.name}
-  Qty: ${i.qty}
-  Rate: ₹${i.price}/${i.price_unit}`
+Qty: ${i.qty}
+Rate: ₹${i.price}/${i.price_unit}`
   )
-  .join("\n")}
+  .join("\n\n")}
 
-💰 Total Amount: ₹${subtotal}
+💰 Total: ₹${subtotal}
 `;
 
-    window.open(
-      `https://wa.me/919873670361?text=${encodeURIComponent(
-        message
-      )}`,
-      "_blank"
-    );
+      window.open(
+        `https://wa.me/919873670361?text=${encodeURIComponent(
+          message
+        )}`,
+        "_blank"
+      );
+
+      /* 5️⃣ REDIRECT TO SUCCESS */
+      router.push(`/order-success?order=${orderNumber}`);
+
+    } catch (error) {
+      console.error(error);
+      alert("Order failed. Please try again.");
+    }
+
+    setSubmitting(false);
   };
 
   /* ================= UI ================= */
@@ -133,61 +201,23 @@ ${cart
       <div className={styles.page}>
         <h2 className={styles.title}>Checkout</h2>
 
-        {/* BUYER DETAILS */}
+        {/* Buyer */}
         <div className={styles.card}>
           <h3>Buyer Details</h3>
 
-          <input
-            name="business"
-            value={form.business}
-            placeholder="Business / Shop Name"
-            onChange={handleChange}
-            className={styles.input}
-          />
-
-          <input
-            name="name"
-            value={form.name}
-            placeholder="Contact Person Name *"
-            onChange={handleChange}
-            className={styles.input}
-          />
-
-          <input
-            name="phone"
-            value={form.phone}
-            placeholder="Mobile Number *"
-            onChange={handleChange}
-            className={styles.input}
-          />
-
-          <input
-            name="city"
-            value={form.city}
-            placeholder="City"
-            onChange={handleChange}
-            className={styles.input}
-          />
-
-          <textarea
-            name="address"
-            value={form.address}
-            placeholder="Full Delivery Address *"
-            onChange={handleChange}
-            className={styles.textarea}
-          />
+          <input name="business" value={form.business} placeholder="Business Name" onChange={handleChange} className={styles.input} />
+          <input name="name" value={form.name} placeholder="Contact Name *" onChange={handleChange} className={styles.input} />
+          <input name="phone" value={form.phone} placeholder="Mobile *" onChange={handleChange} className={styles.input} />
+          <input name="city" value={form.city} placeholder="City" onChange={handleChange} className={styles.input} />
+          <textarea name="address" value={form.address} placeholder="Full Address *" onChange={handleChange} className={styles.textarea} />
         </div>
 
-        {/* TRANSPORT */}
+        {/* Transport */}
         <div className={styles.card}>
           <h3>Transport Details</h3>
 
-          <select
-            className={styles.input}
-            value={form.transportSelect}
-            onChange={handleTransportChange}
-          >
-            <option value="">Select Your Transport</option>
+          <select className={styles.input} value={form.transportSelect} onChange={handleTransportChange}>
+            <option value="">Select Transport</option>
             <option value="VRL Logistics">VRL Logistics</option>
             <option value="GATI">GATI</option>
             <option value="TCI Express">TCI Express</option>
@@ -196,20 +226,10 @@ ${cart
             <option value="Other">Other</option>
           </select>
 
-          <input
-            name="transportName"
-            value={form.transportName}
-            placeholder="Transport Name"
-            onChange={handleChange}
-            className={styles.input}
-          />
-
-          <p className={styles.note}>
-            Packing charges applicable. Transport charges paid by customer.
-          </p>
+          <input name="transportName" value={form.transportName} placeholder="Transport Name" onChange={handleChange} className={styles.input} />
         </div>
 
-        {/* ORDER SUMMARY */}
+        {/* Summary */}
         <div className={styles.card}>
           <h3>Order Summary</h3>
 
@@ -228,10 +248,19 @@ ${cart
           </div>
         </div>
 
-        <button className={styles.whatsappBtn} onClick={placeOrder}>
-          <FaWhatsapp /> Confirm & Send on WhatsApp
+        <button
+          className={styles.whatsappBtn}
+          onClick={placeOrder}
+          disabled={submitting}
+          style={{
+            opacity: submitting ? 0.6 : 1,
+            cursor: submitting ? "not-allowed" : "pointer",
+          }}
+        >
+          <FaWhatsapp />
+          {submitting ? " Placing Order..." : " Confirm Order"}
         </button>
       </div>
     </>
   );
-    }
+}
