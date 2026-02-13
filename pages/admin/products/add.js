@@ -23,6 +23,10 @@ export default function AddProduct() {
     weight: "",
     description: "",
     in_stock: true,
+
+    /* ✅ NEW FIELDS */
+    unit_type: "kg",
+    pcs_per_carton: 1,
   });
 
   /* ================= LOAD CATEGORIES ================= */
@@ -91,7 +95,6 @@ export default function AddProduct() {
     try {
       setLoading(true);
 
-      /* INSERT PRODUCT FIRST */
       const { data: product, error } = await supabase
         .from("products")
         .insert({
@@ -106,20 +109,26 @@ export default function AddProduct() {
           weight: form.weight,
           description: form.description,
           in_stock: form.in_stock,
+
+          /* ✅ NEW DATA SAVE */
+          unit_type: form.unit_type,
+          pcs_per_carton:
+            form.unit_type === "pcs" || form.unit_type === "set"
+              ? Number(form.pcs_per_carton)
+              : 1,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      /* IMAGE UPLOAD FIXED */
+      /* IMAGE UPLOAD */
       if (images.length > 0) {
         const file = images[0];
-
         const filePath = `${product.id}-${Date.now()}-${file.name}`;
 
         const { error: uploadError } = await supabase.storage
-          .from("products") // ✅ FIXED BUCKET NAME
+          .from("products")
           .upload(filePath, file);
 
         if (uploadError) throw uploadError;
@@ -136,7 +145,6 @@ export default function AddProduct() {
 
       alert("✅ Product added successfully");
       router.push("/admin/products");
-
     } catch (err) {
       alert(err.message);
     } finally {
@@ -174,26 +182,34 @@ export default function AddProduct() {
             ))}
           </select>
 
-          {subcategories.length > 0 && (
+          {/* ✅ UNIT TYPE */}
+          <label style={styles.label}>Unit Type *</label>
+          <select
+            style={styles.input}
+            name="unit_type"
+            value={form.unit_type}
+            onChange={handleChange}
+          >
+            <option value="kg">KG</option>
+            <option value="pcs">PCS</option>
+            <option value="set">SET</option>
+          </select>
+
+          {/* ✅ PCS PER CARTON */}
+          {(form.unit_type === "pcs" ||
+            form.unit_type === "set") && (
             <>
-              <label style={styles.label}>Sub Category</label>
-              <select
+              <label style={styles.label}>
+                PCS Per Carton (Minimum 1 Carton)
+              </label>
+              <input
+                type="number"
                 style={styles.input}
-                value={form.subcategory_id}
-                onChange={(e) =>
-                  setForm((p) => ({
-                    ...p,
-                    subcategory_id: e.target.value,
-                  }))
-                }
-              >
-                <option value="">Select Sub Category</option>
-                {subcategories.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                name="pcs_per_carton"
+                value={form.pcs_per_carton}
+                onChange={handleChange}
+                placeholder="Example: 12"
+              />
             </>
           )}
 
