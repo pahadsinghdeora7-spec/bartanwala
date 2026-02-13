@@ -11,7 +11,6 @@ export default function AdminOrders() {
 
   useEffect(() => {
     checkAdmin();
-    fetchOrders();
   }, []);
 
   async function checkAdmin() {
@@ -20,67 +19,84 @@ export default function AdminOrders() {
 
     if (!user || user.email !== ADMIN_EMAIL) {
       router.push("/");
+      return;
     }
-  }
-
-  async function fetchOrders() {
-    const { data } = await supabase
-      .from("orders")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    setOrders(data || []);
-    setLoading(false);
-  }
-
-  async function updateStatus(id, field, value) {
-    await supabase
-      .from("orders")
-      .update({ [field]: value })
-      .eq("id", id);
 
     fetchOrders();
   }
 
-  if (loading) return <div style={{ padding: 20 }}>Loading...</div>;
+  async function fetchOrders() {
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (!error) {
+      setOrders(data || []);
+    }
+
+    setLoading(false);
+  }
+
+  async function updateStatus(id, field, value) {
+    const { error } = await supabase
+      .from("orders")
+      .update({ [field]: value })
+      .eq("id", id);
+
+    if (!error) {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === id ? { ...o, [field]: value } : o
+        )
+      );
+    }
+  }
+
+  if (loading)
+    return <div style={{ padding: 20 }}>Loading Orders...</div>;
 
   return (
     <div style={styles.page}>
       <h2 style={styles.title}>Admin Orders</h2>
 
-      {orders.length === 0 && (
-        <p>No orders yet</p>
-      )}
+      {orders.length === 0 && <p>No orders yet</p>}
 
       {orders.map((order) => (
         <div key={order.id} style={styles.card}>
-          
+
+          {/* HEADER */}
           <div style={styles.header}>
             <div>
-              <strong>{order.order_number}</strong>
+              <div style={styles.orderNo}>
+                {order.order_number}
+              </div>
               <div style={styles.date}>
                 {new Date(order.created_at).toLocaleString()}
               </div>
             </div>
 
-            <div>
-              <strong>₹ {order.total_amount}</strong>
+            <div style={styles.amount}>
+              ₹ {order.total_amount}
             </div>
           </div>
 
+          {/* CUSTOMER INFO */}
           <div style={styles.info}>
+            <p><strong>Business:</strong> {order.customer_business || "-"}</p>
             <p><strong>Name:</strong> {order.customer_name}</p>
             <p><strong>Phone:</strong> {order.customer_phone}</p>
             <p><strong>City:</strong> {order.customer_city}</p>
             <p><strong>Address:</strong> {order.customer_address}</p>
-            <p><strong>Transport:</strong> {order.transport_name}</p>
+            <p><strong>Transport:</strong> {order.transport_name || "-"}</p>
           </div>
 
+          {/* STATUS SECTION */}
           <div style={styles.statusRow}>
-            <div>
-              <label>Order Status</label>
+            <div style={styles.statusBox}>
+              <label style={styles.label}>Order Status</label>
               <select
-                value={order.order_status}
+                value={order.order_status || "Processing"}
                 onChange={(e) =>
                   updateStatus(order.id, "order_status", e.target.value)
                 }
@@ -94,10 +110,10 @@ export default function AdminOrders() {
               </select>
             </div>
 
-            <div>
-              <label>Payment Status</label>
+            <div style={styles.statusBox}>
+              <label style={styles.label}>Payment Status</label>
               <select
-                value={order.payment_status}
+                value={order.payment_status || "Pending"}
                 onChange={(e) =>
                   updateStatus(order.id, "payment_status", e.target.value)
                 }
@@ -116,44 +132,81 @@ export default function AdminOrders() {
   );
 }
 
+/* ================= STYLES ================= */
+
 const styles = {
   page: {
     padding: 20,
     background: "#f4f6f8",
     minHeight: "100vh",
   },
+
   title: {
     fontSize: 22,
     fontWeight: 700,
     marginBottom: 20,
   },
+
   card: {
     background: "#fff",
-    padding: 18,
-    borderRadius: 14,
-    marginBottom: 16,
-    boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 18,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
   },
+
   header: {
     display: "flex",
     justifyContent: "space-between",
-    marginBottom: 10,
+    alignItems: "center",
+    marginBottom: 12,
   },
+
+  orderNo: {
+    fontWeight: 700,
+    fontSize: 16,
+  },
+
   date: {
     fontSize: 12,
     color: "#6b7280",
   },
+
+  amount: {
+    fontSize: 18,
+    fontWeight: 800,
+    color: "#0B5ED7",
+  },
+
   info: {
     fontSize: 14,
-    marginBottom: 12,
+    marginBottom: 16,
+    lineHeight: 1.6,
   },
+
   statusRow: {
     display: "flex",
-    gap: 16,
+    gap: 20,
+    flexWrap: "wrap",
   },
+
+  statusBox: {
+    flex: 1,
+    minWidth: 180,
+  },
+
+  label: {
+    display: "block",
+    fontSize: 12,
+    marginBottom: 6,
+    color: "#6b7280",
+  },
+
   select: {
-    padding: 6,
-    borderRadius: 6,
-    border: "1px solid #ccc",
+    width: "100%",
+    padding: 8,
+    borderRadius: 8,
+    border: "1px solid #d1d5db",
+    fontSize: 14,
   },
 };
