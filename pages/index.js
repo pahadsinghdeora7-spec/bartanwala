@@ -28,6 +28,7 @@ export default function Home() {
           image,
           size,
           gauge,
+          carton_size,
           categories(name),
           subcategories(name)
         `
@@ -41,14 +42,32 @@ export default function Home() {
     loadProducts();
   }, []);
 
+  /* ================= ADD TO CART WITH MINIMUM RULE ================= */
+
   function addToCart(product) {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+
+    const unit = product.price_unit?.toLowerCase() || "kg";
+    const cartonSize = product.carton_size || 1;
+
+    let qty = 1;
+
+    // 🔹 KG → minimum 40 KG
+    if (unit === "kg") {
+      qty = 40;
+    }
+
+    // 🔹 PCS / SET → minimum 1 carton
+    if (unit === "pcs" || unit === "set") {
+      qty = cartonSize;
+    }
+
     const existing = cart.find((i) => i.id === product.id);
 
     if (existing) {
-      existing.qty += 1;
+      existing.qty += qty;
     } else {
-      cart.push({ ...product, qty: 1 });
+      cart.push({ ...product, qty, unit });
     }
 
     localStorage.setItem("cart", JSON.stringify(cart));
@@ -67,11 +86,11 @@ export default function Home() {
           Wholesale Steel & Aluminium Utensils
         </h1>
         <p style={styles.heroSub}>
-          B2B Wholesale Â· Factory Price Â· All India Delivery
+          B2B Wholesale · Factory Price · All India Delivery
         </p>
       </section>
 
-      {/* ================= CATEGORY SECTION ================= */}
+      {/* ================= CATEGORY SECTION (LOCKED - NO CHANGE) ================= */}
       <section style={styles.categorySection}>
         <h2 style={styles.categoryHeading}>Shop By Category</h2>
 
@@ -87,7 +106,7 @@ export default function Home() {
 
         <div style={styles.viewAllWrap}>
           <Link href="/categories" style={styles.viewAll}>
-            View All Categories â†’
+            View All Categories →
           </Link>
         </div>
       </section>
@@ -133,7 +152,7 @@ export default function Home() {
                 )}
 
                 <div style={styles.price}>
-                  â‚¹ {p.price}
+                  ₹ {p.price}
                   {p.price_unit && (
                     <span style={styles.unit}>
                       {" "} / {p.price_unit.toUpperCase()}
@@ -142,7 +161,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* ADD TO CART SECTION */}
+              {/* ADD TO CART */}
               <div style={styles.cartSection}>
                 <button
                   style={styles.cartBtn}
@@ -160,7 +179,7 @@ export default function Home() {
   );
 }
 
-/* ================= STYLES ================= */
+/* ================= STYLES (UNCHANGED) ================= */
 
 const styles = {
 
