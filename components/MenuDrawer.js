@@ -89,6 +89,9 @@ export default function MenuDrawer({ open, onClose, user }) {
         <div style={styles.section}>
           <MenuItem href="/about" icon={<FaInfoCircle />} label="About Us" router={router} />
           <MenuItem href="/contact" icon={<FaPhone />} label="Contact Us" router={router} />
+
+          {/* ✅ NEW POLICIES OPTION */}
+          <MenuItem href="/policies" icon={<FaClipboardList />} label="Policies" router={router} />
         </div>
 
         {/* WHATSAPP */}
@@ -116,10 +119,13 @@ function MenuItem({ href, icon, label, router }) {
   const active = router.pathname === href;
 
   return (
-    <Link href={href} style={{
-      ...styles.item,
-      ...(active && styles.activeItem),
-    }}>
+    <Link
+      href={href}
+      style={{
+        ...styles.item,
+        ...(active && styles.activeItem),
+      }}
+    >
       <span style={styles.icon}>{icon}</span>
       {label}
     </Link>
