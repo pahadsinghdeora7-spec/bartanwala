@@ -1,8 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
-import { useState } from "react";
-import { useCart } from "../../context/CartContext";
 
 /* ================= SERVER ================= */
 
@@ -26,10 +24,20 @@ export async function getServerSideProps({ params }) {
 
   const { data: products } = await supabase
     .from("products")
-    .select("id, name, slug, price, price_unit, image, unit_type")
+    .select(`
+      id,
+      name,
+      slug,
+      price,
+      price_unit,
+      image,
+      size,
+      gauge,
+      subcategories(name)
+    `)
     .eq("category_id", category.id)
     .eq("in_stock", true)
-    .order("id", { ascending: false });
+    .order("created_at", { ascending: false });
 
   return {
     props: {
@@ -42,19 +50,6 @@ export async function getServerSideProps({ params }) {
 /* ================= PAGE ================= */
 
 export default function CategoryPage({ category, products }) {
-  const { addToCart } = useCart();
-  const [qtyMap, setQtyMap] = useState({});
-
-  const handleQtyChange = (id, value, unitType) => {
-    const min = unitType === "kg" ? 40 : 1;
-    const num = Number(value);
-
-    setQtyMap((prev) => ({
-      ...prev,
-      [id]: num < min ? min : num,
-    }));
-  };
-
   return (
     <>
       <Head>
@@ -71,79 +66,45 @@ export default function CategoryPage({ category, products }) {
         )}
 
         <div style={styles.grid}>
-          {products.map((p) => {
-            const isKG = p.unit_type === "kg";
-            const minQty = isKG ? 40 : 1;
-            const dropdown = isKG
-              ? [40, 80, 120, 160]
-              : [1, 2, 3, 4, 5];
+          {products.map((p) => (
+            <div key={p.id} style={styles.card}>
 
-            return (
-              <div key={p.id} style={styles.card}>
+              <Link href={`/product/${p.slug}`} style={{ textDecoration: "none" }}>
+                <div style={styles.imageSection}>
+                  {p.image ? (
+                    <img src={p.image} alt={p.name} style={styles.image} />
+                  ) : (
+                    <div style={styles.noImage}>No Image</div>
+                  )}
+                </div>
+              </Link>
 
-                <Link href={`/product/${p.slug}`}>
-                  <div style={styles.imageWrap}>
-                    <img
-                      src={p.image || "/placeholder.png"}
-                      style={styles.image}
-                    />
-                  </div>
-                </Link>
-
+              <div style={styles.detailsSection}>
                 <div style={styles.name}>{p.name}</div>
 
+                <div style={styles.metaRow}>
+                  {p.size && <span>Size: {p.size}</span>}
+                  {p.gauge && <span>Gauge: {p.gauge}</span>}
+                </div>
+
+                {p.subcategories?.name && (
+                  <div style={styles.subcategory}>
+                    {p.subcategories.name}
+                  </div>
+                )}
+
                 <div style={styles.price}>
-                  ₹{p.price}
+                  ₹ {p.price}
                   {p.price_unit && (
                     <span style={styles.unit}>
                       {" "} / {p.price_unit.toUpperCase()}
                     </span>
                   )}
                 </div>
-
-                {/* 🔥 QUANTITY SECTION */}
-                <div style={styles.qtyBox}>
-                  <select
-                    value={qtyMap[p.id] || minQty}
-                    onChange={(e) =>
-                      handleQtyChange(p.id, e.target.value, p.unit_type)
-                    }
-                    style={styles.select}
-                  >
-                    {dropdown.map((val) => (
-                      <option key={val} value={val}>
-                        {isKG ? `${val} KGS` : `${val} Carton`}
-                      </option>
-                    ))}
-                  </select>
-
-                  <input
-                    type="number"
-                    min={minQty}
-                    value={qtyMap[p.id] || minQty}
-                    onChange={(e) =>
-                      handleQtyChange(p.id, e.target.value, p.unit_type)
-                    }
-                    style={styles.input}
-                  />
-                </div>
-
-                <button
-                  style={styles.cartBtn}
-                  onClick={() =>
-                    addToCart(
-                      p,
-                      qtyMap[p.id] || minQty,
-                      p.unit_type
-                    )
-                  }
-                >
-                  Add to Cart
-                </button>
-
               </div>
-            );
-          })}
+
+            </div>
+          ))}
         </div>
       </div>
     </>
@@ -176,25 +137,27 @@ const styles = {
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
-    gap: 14,
+    gap: 16,
   },
 
   card: {
     background: "#fff",
-    padding: 12,
-    borderRadius: 14,
-    boxShadow: "0 6px 16px rgba(0,0,0,0.06)",
+    borderRadius: 16,
+    border: "1px solid #E5E7EB",
     display: "flex",
     flexDirection: "column",
+    height: 380,
+    overflow: "hidden",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
   },
 
-  imageWrap: {
-    height: 120,
+  imageSection: {
+    height: 150,
     background: "#f9fafb",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
+    padding: 12,
   },
 
   image: {
@@ -203,52 +166,48 @@ const styles = {
     objectFit: "contain",
   },
 
+  noImage: {
+    fontSize: 12,
+    color: "#9CA3AF",
+  },
+
+  detailsSection: {
+    flex: 1,
+    padding: 14,
+    display: "flex",
+    flexDirection: "column",
+  },
+
   name: {
-    fontSize: 13,
-    fontWeight: 600,
+    fontSize: 14,
+    fontWeight: 700,
+    marginBottom: 6,
+    minHeight: 40,
+  },
+
+  metaRow: {
+    display: "flex",
+    gap: 10,
+    fontSize: 12,
+    color: "#6b7280",
     marginBottom: 4,
   },
 
+  subcategory: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    marginBottom: 8,
+  },
+
   price: {
-    fontSize: 14,
-    fontWeight: 700,
+    fontSize: 16,
+    fontWeight: 800,
     color: "#0B5ED7",
+    marginTop: "auto",
   },
 
   unit: {
     fontSize: 12,
     color: "#6b7280",
-  },
-
-  qtyBox: {
-    marginTop: 8,
-    display: "flex",
-    gap: 6,
-  },
-
-  select: {
-    flex: 1,
-    padding: 6,
-    borderRadius: 6,
-    border: "1px solid #d1d5db",
-  },
-
-  input: {
-    width: 70,
-    padding: 6,
-    borderRadius: 6,
-    border: "1px solid #d1d5db",
-  },
-
-  cartBtn: {
-    marginTop: 8,
-    background: "#0B5ED7",
-    color: "#fff",
-    border: "none",
-    borderRadius: 8,
-    padding: 8,
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: "pointer",
   },
 };
