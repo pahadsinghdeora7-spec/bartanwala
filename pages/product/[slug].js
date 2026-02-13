@@ -89,26 +89,9 @@ export default function ProductPage({ product, related }) {
       </Head>
 
       <div style={styles.page}>
-
         {/* IMAGE SECTION */}
         <div style={styles.imageWrap}>
           <img src={activeImg} style={styles.mainImage} />
-          <div style={styles.thumbRow}>
-            {images.map((img, i) => (
-              <img
-                key={i}
-                src={img}
-                style={{
-                  ...styles.thumb,
-                  border:
-                    img === activeImg
-                      ? "2px solid #0B5ED7"
-                      : "1px solid #e5e7eb",
-                }}
-                onClick={() => setActiveImg(img)}
-              />
-            ))}
-          </div>
         </div>
 
         {/* PRODUCT DETAILS */}
@@ -117,9 +100,7 @@ export default function ProductPage({ product, related }) {
 
           <div style={styles.priceRow}>
             <FaRupeeSign />
-            <span style={styles.price}>
-              {product.price} / {product.price_unit}
-            </span>
+            <span>{product.price} / {product.price_unit}</span>
           </div>
 
           <div style={styles.badges}>
@@ -173,13 +154,9 @@ export default function ProductPage({ product, related }) {
               <FaWhatsapp /> Get Bulk Price
             </a>
           </div>
-
-          {product.description && (
-            <p style={styles.desc}>{product.description}</p>
-          )}
         </div>
 
-        {/* ================= RELATED PRODUCTS (FIXED PROFESSIONAL) ================= */}
+        {/* ================= RELATED PRODUCTS ================= */}
 
         {related.length > 0 && (
           <div style={styles.relatedWrap}>
@@ -187,12 +164,12 @@ export default function ProductPage({ product, related }) {
 
             <div style={styles.relatedGrid}>
               {related.map((p) => (
-                <div key={p.id} style={styles.relatedCard}>
+                <div key={p.id} style={styles.relatedCardFull}>
 
                   <Link href={`/product/${p.slug}`} style={{ textDecoration: "none" }}>
                     <div style={styles.relatedImageSection}>
                       {p.image ? (
-                        <img src={p.image} alt={p.name} style={styles.relatedImage} />
+                        <img src={p.image} style={styles.relatedImage} />
                       ) : (
                         <div style={styles.noImage}>No Image</div>
                       )}
@@ -204,6 +181,15 @@ export default function ProductPage({ product, related }) {
                     <div style={styles.relatedPrice}>
                       ₹ {p.price} {p.price_unit && `/ ${p.price_unit}`}
                     </div>
+                  </div>
+
+                  <div style={styles.relatedCartSection}>
+                    <Link
+                      href={`/product/${p.slug}`}
+                      style={styles.relatedBtn}
+                    >
+                      View Product
+                    </Link>
                   </div>
 
                 </div>
@@ -242,18 +228,6 @@ const styles = {
     background: "#f9fafb",
   },
 
-  thumbRow: { display: "flex", gap: 10, marginTop: 12 },
-
-  thumb: {
-    width: 65,
-    height: 65,
-    objectFit: "contain",
-    borderRadius: 10,
-    padding: 4,
-    background: "#fff",
-    cursor: "pointer",
-  },
-
   card: {
     background: "#fff",
     margin: 12,
@@ -272,8 +246,6 @@ const styles = {
     color: "#0B5ED7",
     marginTop: 10,
   },
-
-  price: { fontWeight: 800 },
 
   badges: { display: "flex", gap: 12, marginTop: 10 },
 
@@ -333,14 +305,7 @@ const styles = {
     textDecoration: "none",
   },
 
-  desc: {
-    marginTop: 18,
-    fontSize: 14,
-    lineHeight: 1.6,
-    color: "#4b5563",
-  },
-
-  /* ===== RELATED PROFESSIONAL ===== */
+  /* ===== RELATED SAME AS HOME ===== */
 
   relatedWrap: { padding: 16 },
 
@@ -352,23 +317,24 @@ const styles = {
     gap: 16,
   },
 
-  relatedCard: {
+  relatedCardFull: {
     background: "#fff",
     borderRadius: 16,
     border: "1px solid #E5E7EB",
-    overflow: "hidden",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
     display: "flex",
     flexDirection: "column",
+    height: 360,
+    overflow: "hidden",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
   },
 
   relatedImageSection: {
-    height: 140,
+    height: 130,
     background: "#f9fafb",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: 12,
+    padding: 10,
   },
 
   relatedImage: {
@@ -378,19 +344,40 @@ const styles = {
   },
 
   relatedDetails: {
+    flex: 1,
     padding: 12,
+    display: "flex",
+    flexDirection: "column",
   },
 
   relatedName: {
     fontSize: 13,
     fontWeight: 600,
-    marginBottom: 6,
+    marginBottom: 8,
     minHeight: 36,
   },
 
   relatedPrice: {
     fontSize: 14,
-    fontWeight: 800,
+    fontWeight: 700,
     color: "#0B5ED7",
+    marginTop: "auto",
+  },
+
+  relatedCartSection: {
+    padding: 10,
+    borderTop: "1px solid #E5E7EB",
+  },
+
+  relatedBtn: {
+    display: "block",
+    textAlign: "center",
+    background: "#0B5ED7",
+    color: "#fff",
+    padding: 8,
+    borderRadius: 8,
+    fontSize: 12,
+    fontWeight: 600,
+    textDecoration: "none",
   },
 };
