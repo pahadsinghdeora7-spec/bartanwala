@@ -39,6 +39,7 @@ export default function CheckoutPage() {
         return;
       }
 
+      // 🔹 Get customer record
       const { data } = await supabase
         .from("customers")
         .select("*")
@@ -103,20 +104,38 @@ export default function CheckoutPage() {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData?.session?.user;
 
-      // 1️⃣ Create Order
+      // 🔹 Get customer id (IMPORTANT FIX)
+      const { data: customer } = await supabase
+        .from("customers")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!customer) {
+        throw new Error("Customer record not found");
+      }
+
+      const orderNumber = "ORD-" + Date.now();
+
+      // 🔹 Insert Order
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert([
           {
-            customer_id: user.id,
-            order_number: "ORD-" + Date.now(),
+            customer_id: customer.id, // ✅ FIXED
+            order_number: orderNumber,
             total_amount: subtotal,
+
+            status: "Processing",
+            payment_status: "Pending",
+            payment_method: "COD",
+
+            customer_business: form.business,
             customer_name: form.name,
             customer_phone: form.phone,
             customer_city: form.city,
             customer_address: form.address,
             transport_name: form.transportName,
-            payment_method: "COD",
           },
         ])
         .select()
@@ -124,7 +143,7 @@ export default function CheckoutPage() {
 
       if (orderError) throw orderError;
 
-      // 2️⃣ Insert Order Items
+      // 🔹 Insert Order Items
       const itemsToInsert = cart.map((item) => ({
         order_id: order.id,
         product_id: item.id,
@@ -140,15 +159,15 @@ export default function CheckoutPage() {
 
       if (itemError) throw itemError;
 
-      // 3️⃣ Clear Cart
+      // 🔹 Clear Cart
       localStorage.removeItem("cart");
 
-      // 4️⃣ Redirect
-      router.push(`/order-success?id=${order.id}`);
+      // 🔹 Redirect to success page
+      router.push(`/order-success?order=${orderNumber}`);
 
     } catch (error) {
-      console.error(error);
-      alert("Order failed. Please try again.");
+      console.error("ORDER ERROR:", error);
+      alert(error.message || "Order failed. Please try again.");
       setLoading(false);
     }
   };
@@ -266,4 +285,4 @@ export default function CheckoutPage() {
       </div>
     </>
   );
-}
+  }
