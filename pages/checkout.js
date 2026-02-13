@@ -1,17 +1,12 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
 import { FaWhatsapp } from "react-icons/fa";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "../lib/supabase";
 import styles from "../styles/checkout.module.css";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
 
 export default function CheckoutPage() {
   const [cart, setCart] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [form, setForm] = useState({
     business: "",
@@ -23,15 +18,56 @@ export default function CheckoutPage() {
     transportName: "",
   });
 
+  /* ================= LOAD CART ================= */
+
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem("cart") || "[]");
     setCart(saved);
   }, []);
 
+  /* ================= AUTO FILL PROFILE ================= */
+
+  useEffect(() => {
+    async function fetchProfile() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData?.session?.user;
+
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("customers")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (data) {
+        setForm((prev) => ({
+          ...prev,
+          business: data.business_name || "",
+          name: data.name || "",
+          phone: data.mobile || "",
+          city: data.city || "",
+          address: data.address || "",
+        }));
+      }
+
+      setLoading(false);
+    }
+
+    fetchProfile();
+  }, []);
+
+  /* ================= CALCULATE TOTAL ================= */
+
   const subtotal = cart.reduce(
     (sum, i) => sum + i.price * i.qty,
     0
   );
+
+  /* ================= HANDLERS ================= */
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -46,94 +82,14 @@ export default function CheckoutPage() {
     });
   };
 
-  const placeOrder = async () => {
+  const placeOrder = () => {
     if (!form.name || !form.phone || !form.address) {
       alert("Please fill required details");
       return;
     }
 
-    if (cart.length === 0) {
-      alert("Cart is empty");
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      /* ================= GET AUTH USER ================= */
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        alert("Please login first");
-        return;
-      }
-
-      /* ================= CREATE / GET CUSTOMER ================= */
-      let { data: customer } = await supabase
-        .from("customers")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!customer) {
-        const { data: newCustomer } = await supabase
-          .from("customers")
-          .insert([
-            {
-              user_id: user.id,
-              business_name: form.business,
-              name: form.name,
-              mobile: form.phone,
-              address: form.address,
-              city: form.city,
-            },
-          ])
-          .select()
-          .single();
-
-        customer = newCustomer;
-      }
-
-      /* ================= CREATE ORDER ================= */
-      const orderNumber = "ORD-" + Date.now();
-
-      const { data: order } = await supabase
-        .from("orders")
-        .insert([
-          {
-            order_number: orderNumber,
-            customer_id: customer.id,
-            total_amount: subtotal,
-            status: "processing",
-            payment_method: "COD",
-            transport_name: form.transportName,
-          },
-        ])
-        .select()
-        .single();
-
-      /* ================= INSERT ORDER ITEMS ================= */
-      const items = cart.map((item) => ({
-        order_id: order.id,
-        product_id: item.id,
-        product_name: item.name,
-        price: item.price,
-        quantity: item.qty,
-        unit: item.price_unit || "kg",
-      }));
-
-      await supabase.from("order_items").insert(items);
-
-      /* ================= CLEAR CART ================= */
-      localStorage.removeItem("cart");
-
-      /* ================= WHATSAPP MESSAGE ================= */
-      const message = `
+    const message = `
 📦 *New B2B Order – Bartanwala*
-
-Order No: ${orderNumber}
 
 🏪 Business: ${form.business || "N/A"}
 👤 Name: ${form.name}
@@ -143,7 +99,7 @@ Order No: ${orderNumber}
 
 🚚 Transport: ${form.transportName || "Not provided"}
 
-🛒 *Order Details*
+🛒 Order Details:
 ${cart
   .map(
     (i) =>
@@ -153,22 +109,20 @@ ${cart
   )
   .join("\n")}
 
-💰 *Total Amount: ₹${subtotal}*
+💰 Total Amount: ₹${subtotal}
 `;
 
-      window.open(
-        `https://wa.me/919873670361?text=${encodeURIComponent(message)}`,
-        "_blank"
-      );
-
-      alert("Order placed successfully!");
-    } catch (error) {
-      console.log(error);
-      alert("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
+    window.open(
+      `https://wa.me/919873670361?text=${encodeURIComponent(
+        message
+      )}`,
+      "_blank"
+    );
   };
+
+  /* ================= UI ================= */
+
+  if (loading) return <div className={styles.page}>Loading...</div>;
 
   return (
     <>
@@ -185,13 +139,15 @@ ${cart
 
           <input
             name="business"
-            placeholder="Business / Shop Name (optional)"
+            value={form.business}
+            placeholder="Business / Shop Name"
             onChange={handleChange}
             className={styles.input}
           />
 
           <input
             name="name"
+            value={form.name}
             placeholder="Contact Person Name *"
             onChange={handleChange}
             className={styles.input}
@@ -199,6 +155,7 @@ ${cart
 
           <input
             name="phone"
+            value={form.phone}
             placeholder="Mobile Number *"
             onChange={handleChange}
             className={styles.input}
@@ -206,6 +163,7 @@ ${cart
 
           <input
             name="city"
+            value={form.city}
             placeholder="City"
             onChange={handleChange}
             className={styles.input}
@@ -213,6 +171,7 @@ ${cart
 
           <textarea
             name="address"
+            value={form.address}
             placeholder="Full Delivery Address *"
             onChange={handleChange}
             className={styles.textarea}
@@ -234,13 +193,13 @@ ${cart
             <option value="TCI Express">TCI Express</option>
             <option value="SafeExpress">SafeExpress</option>
             <option value="Local Transport">Local Transport</option>
-            <option value="Other">Other (Type manually)</option>
+            <option value="Other">Other</option>
           </select>
 
           <input
             name="transportName"
-            placeholder="Transport Name"
             value={form.transportName}
+            placeholder="Transport Name"
             onChange={handleChange}
             className={styles.input}
           />
@@ -250,7 +209,7 @@ ${cart
           </p>
         </div>
 
-        {/* SUMMARY */}
+        {/* ORDER SUMMARY */}
         <div className={styles.card}>
           <h3>Order Summary</h3>
 
@@ -269,12 +228,8 @@ ${cart
           </div>
         </div>
 
-        <button
-          className={styles.whatsappBtn}
-          onClick={placeOrder}
-          disabled={loading}
-        >
-          <FaWhatsapp /> {loading ? "Placing Order..." : "Confirm & Send on WhatsApp"}
+        <button className={styles.whatsappBtn} onClick={placeOrder}>
+          <FaWhatsapp /> Confirm & Send on WhatsApp
         </button>
       </div>
     </>
