@@ -14,6 +14,7 @@ export default function Dashboard() {
       <h1 style={styles.title}>Admin Dashboard</h1>
 
       <div style={styles.grid}>
+        
         {/* PRODUCTS */}
         <div
           style={styles.card}
@@ -24,7 +25,7 @@ export default function Dashboard() {
           <div style={styles.sub}>Add / Edit / Delete Products</div>
         </div>
 
-        {/* CATEGORIES + SUB CATEGORIES */}
+        {/* CATEGORIES */}
         <div
           style={styles.card}
           onClick={() => router.push("/admin/categories")}
@@ -45,18 +46,25 @@ export default function Dashboard() {
         </div>
 
         {/* DELIVERY */}
-        <div style={styles.card}>
+        <div
+          style={styles.card}
+          onClick={() => router.push("/admin/delivery")}
+        >
           <div style={styles.icon}>🚚</div>
           <div style={styles.label}>Delivery</div>
-          <div style={styles.sub}>Shipping & tracking</div>
+          <div style={styles.sub}>Shipping & Tracking</div>
         </div>
 
         {/* CUSTOMERS */}
-        <div style={styles.card}>
+        <div
+          style={styles.card}
+          onClick={() => router.push("/admin/customers")}
+        >
           <div style={styles.icon}>👤</div>
           <div style={styles.label}>Customers</div>
-          <div style={styles.sub}>Customer list</div>
+          <div style={styles.sub}>Customer list & details</div>
         </div>
+
       </div>
     </AdminLayout>
   );
@@ -66,7 +74,7 @@ export default function Dashboard() {
 
 const styles = {
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 700,
   },
 
@@ -89,7 +97,7 @@ const styles = {
 
   icon: {
     fontSize: 28,
-    marginBottom: 6,
+    marginBottom: 8,
   },
 
   label: {
@@ -100,6 +108,6 @@ const styles = {
   sub: {
     fontSize: 12,
     color: "#6b7280",
-    marginTop: 4,
+    marginTop: 6,
   },
 };
