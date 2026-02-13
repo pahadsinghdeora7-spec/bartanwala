@@ -21,10 +21,7 @@ export async function getServerSideProps({ params }) {
 
   const { data: product } = await supabase
     .from("products")
-    .select(`
-      *,
-      subcategories(name)
-    `)
+    .select(`*, subcategories(name)`)
     .eq("slug", params.slug)
     .single();
 
@@ -92,6 +89,7 @@ export default function ProductPage({ product, related }) {
       </Head>
 
       <div style={styles.page}>
+
         {/* IMAGE SECTION */}
         <div style={styles.imageWrap}>
           <img src={activeImg} style={styles.mainImage} />
@@ -133,21 +131,16 @@ export default function ProductPage({ product, related }) {
             </span>
           </div>
 
-          {/* EXTRA DETAILS */}
           <div style={styles.detailsBox}>
             {product.size && <Detail label="Size" value={product.size} />}
             {product.gauge && <Detail label="Gauge" value={product.gauge} />}
             {product.weight && <Detail label="Weight" value={product.weight} />}
             {product.subcategories?.name && (
-              <Detail
-                label="Sub Category"
-                value={product.subcategories.name}
-              />
+              <Detail label="Sub Category" value={product.subcategories.name} />
             )}
             <Detail label="Unit Type" value={unit.toUpperCase()} />
           </div>
 
-          {/* QUANTITY */}
           <div style={styles.qtyRow}>
             <span>Quantity</span>
             <select
@@ -163,7 +156,6 @@ export default function ProductPage({ product, related }) {
             </select>
           </div>
 
-          {/* ACTION BUTTONS */}
           <div style={styles.actionRow}>
             <button
               style={styles.cartBtn}
@@ -187,22 +179,34 @@ export default function ProductPage({ product, related }) {
           )}
         </div>
 
-        {/* RELATED PRODUCTS */}
+        {/* ================= RELATED PRODUCTS (FIXED PROFESSIONAL) ================= */}
+
         {related.length > 0 && (
-          <div style={styles.related}>
+          <div style={styles.relatedWrap}>
             <h3 style={styles.relatedTitle}>Related Products</h3>
 
             <div style={styles.relatedGrid}>
               {related.map((p) => (
-                <Link key={p.id} href={`/product/${p.slug}`}>
-                  <a style={styles.relatedCard}>
-                    <img src={p.image} style={styles.relatedImg} />
+                <div key={p.id} style={styles.relatedCard}>
+
+                  <Link href={`/product/${p.slug}`} style={{ textDecoration: "none" }}>
+                    <div style={styles.relatedImageSection}>
+                      {p.image ? (
+                        <img src={p.image} alt={p.name} style={styles.relatedImage} />
+                      ) : (
+                        <div style={styles.noImage}>No Image</div>
+                      )}
+                    </div>
+                  </Link>
+
+                  <div style={styles.relatedDetails}>
                     <div style={styles.relatedName}>{p.name}</div>
                     <div style={styles.relatedPrice}>
-                      ₹{p.price}/{p.price_unit}
+                      ₹ {p.price} {p.price_unit && `/ ${p.price_unit}`}
                     </div>
-                  </a>
-                </Link>
+                  </div>
+
+                </div>
               ))}
             </div>
           </div>
@@ -212,7 +216,7 @@ export default function ProductPage({ product, related }) {
   );
 }
 
-/* ================= SMALL DETAIL COMPONENT ================= */
+/* ================= DETAIL COMPONENT ================= */
 
 function Detail({ label, value }) {
   return (
@@ -229,6 +233,7 @@ const styles = {
   page: { background: "#f4f6f8", paddingBottom: 100 },
 
   imageWrap: { background: "#fff", padding: 16 },
+
   mainImage: {
     width: "100%",
     height: 280,
@@ -236,7 +241,9 @@ const styles = {
     borderRadius: 14,
     background: "#f9fafb",
   },
+
   thumbRow: { display: "flex", gap: 10, marginTop: 12 },
+
   thumb: {
     width: 65,
     height: 65,
@@ -268,11 +275,7 @@ const styles = {
 
   price: { fontWeight: 800 },
 
-  badges: {
-    display: "flex",
-    gap: 12,
-    marginTop: 10,
-  },
+  badges: { display: "flex", gap: 12, marginTop: 10 },
 
   stock: { color: "#16a34a", fontSize: 13 },
   bulk: { color: "#2563eb", fontSize: 13 },
@@ -337,31 +340,57 @@ const styles = {
     color: "#4b5563",
   },
 
-  related: { padding: 12 },
-  relatedTitle: { fontSize: 16, fontWeight: 700, marginBottom: 10 },
+  /* ===== RELATED PROFESSIONAL ===== */
+
+  relatedWrap: { padding: 16 },
+
+  relatedTitle: { fontSize: 18, fontWeight: 700, marginBottom: 14 },
 
   relatedGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
-    gap: 12,
+    gap: 16,
   },
 
   relatedCard: {
     background: "#fff",
-    padding: 12,
     borderRadius: 16,
-    textDecoration: "none",
-    color: "#111",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #E5E7EB",
+    overflow: "hidden",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+    display: "flex",
+    flexDirection: "column",
   },
 
-  relatedImg: {
-    width: "100%",
-    height: 130,
+  relatedImageSection: {
+    height: 140,
+    background: "#f9fafb",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+  },
+
+  relatedImage: {
+    maxWidth: "100%",
+    maxHeight: "100%",
     objectFit: "contain",
-    marginBottom: 8,
   },
 
-  relatedName: { fontSize: 13, fontWeight: 600 },
-  relatedPrice: { fontSize: 13, fontWeight: 700, color: "#0B5ED7" },
+  relatedDetails: {
+    padding: 12,
+  },
+
+  relatedName: {
+    fontSize: 13,
+    fontWeight: 600,
+    marginBottom: 6,
+    minHeight: 36,
+  },
+
+  relatedPrice: {
+    fontSize: 14,
+    fontWeight: 800,
+    color: "#0B5ED7",
+  },
 };
