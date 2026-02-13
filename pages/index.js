@@ -3,6 +3,7 @@ import Head from "next/head";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { FaShoppingCart } from "react-icons/fa";
+import { useCart } from "../context/CartContext";
 
 /* ================= SUPABASE ================= */
 
@@ -12,7 +13,9 @@ const supabase = createClient(
 );
 
 export default function Home() {
+  const { addToCart } = useCart();
   const [products, setProducts] = useState([]);
+  const [qtyMap, setQtyMap] = useState({});
 
   useEffect(() => {
     async function loadProducts() {
@@ -28,6 +31,7 @@ export default function Home() {
           image,
           size,
           gauge,
+          unit_type,
           categories(name),
           subcategories(name)
         `
@@ -36,24 +40,28 @@ export default function Home() {
         .order("created_at", { ascending: false });
 
       setProducts(data || []);
+
+      // default qty setup
+      const initialQty = {};
+      data?.forEach((p) => {
+        initialQty[p.id] =
+          p.unit_type === "kg" ? 40 : 1;
+      });
+      setQtyMap(initialQty);
     }
 
     loadProducts();
   }, []);
 
-  function addToCart(product) {
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-    const existing = cart.find((i) => i.id === product.id);
+  const handleQtyChange = (id, value, unitType) => {
+    const min = unitType === "kg" ? 40 : 1;
+    const num = Number(value);
 
-    if (existing) {
-      existing.qty += 1;
-    } else {
-      cart.push({ ...product, qty: 1 });
-    }
-
-    localStorage.setItem("cart", JSON.stringify(cart));
-    alert("Product added to cart");
-  }
+    setQtyMap((prev) => ({
+      ...prev,
+      [id]: num < min ? min : num,
+    }));
+  };
 
   return (
     <>
@@ -61,7 +69,6 @@ export default function Home() {
         <title>Bartanwala | Wholesale Steel & Aluminium Utensils</title>
       </Head>
 
-      {/* ================= HERO TEXT BOX ================= */}
       <section style={styles.hero}>
         <h1 style={styles.heroTitle}>
           Wholesale Steel & Aluminium Utensils
@@ -71,89 +78,94 @@ export default function Home() {
         </p>
       </section>
 
-      {/* ================= CATEGORY SECTION ================= */}
-      <section style={styles.categorySection}>
-        <h2 style={styles.categoryHeading}>Shop By Category</h2>
-
-        <div style={styles.categoryRow}>
-          <Link href="/category/stainless-steel-utensils" style={styles.categoryCard}>
-            Stainless Steel Utensils
-          </Link>
-
-          <Link href="/category/aluminium-utensils" style={styles.categoryCard}>
-            Aluminium Utensils
-          </Link>
-        </div>
-
-        <div style={styles.viewAllWrap}>
-          <Link href="/categories" style={styles.viewAll}>
-            View All Categories →
-          </Link>
-        </div>
-      </section>
-
-      {/* ================= PRODUCTS ================= */}
       <main style={styles.main}>
         <h2 style={styles.heading}>Products</h2>
 
         <div style={styles.grid}>
-          {products.map((p) => (
-            <div key={p.id} style={styles.card}>
+          {products.map((p) => {
+            const isKG = p.unit_type === "kg";
+            const minQty = isKG ? 40 : 1;
+            const dropdown = isKG
+              ? [40, 80, 120, 160]
+              : [1, 2, 3, 4, 5];
 
-              {/* IMAGE SECTION */}
-              <Link href={`/product/${p.slug}`} style={{ textDecoration: "none" }}>
-                <div style={styles.imageSection}>
-                  {p.image ? (
-                    <img src={p.image} alt={p.name} style={styles.image} />
-                  ) : (
-                    <div style={styles.noImage}>No Image</div>
-                  )}
-                </div>
-              </Link>
+            return (
+              <div key={p.id} style={styles.card}>
 
-              {/* DETAILS SECTION */}
-              <div style={styles.detailsSection}>
-                <div style={styles.category}>
-                  {p.categories?.name}
-                </div>
-
-                <div style={styles.name}>
-                  {p.name}
-                </div>
-
-                <div style={styles.metaRow}>
-                  {p.size && <span>Size: {p.size}</span>}
-                  {p.gauge && <span>Gauge: {p.gauge}</span>}
-                </div>
-
-                {p.subcategories?.name && (
-                  <div style={styles.subcategory}>
-                    {p.subcategories.name}
+                <Link href={`/product/${p.slug}`} style={{ textDecoration: "none" }}>
+                  <div style={styles.imageSection}>
+                    {p.image ? (
+                      <img src={p.image} style={styles.image} />
+                    ) : (
+                      <div style={styles.noImage}>No Image</div>
+                    )}
                   </div>
-                )}
+                </Link>
 
-                <div style={styles.price}>
-                  ₹ {p.price}
-                  {p.price_unit && (
-                    <span style={styles.unit}>
-                      {" "} / {p.price_unit.toUpperCase()}
-                    </span>
-                  )}
+                <div style={styles.detailsSection}>
+                  <div style={styles.category}>
+                    {p.categories?.name}
+                  </div>
+
+                  <div style={styles.name}>
+                    {p.name}
+                  </div>
+
+                  <div style={styles.price}>
+                    ₹ {p.price}
+                    {p.price_unit && (
+                      <span style={styles.unit}>
+                        {" "} / {p.price_unit.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 🔥 QUANTITY SECTION */}
+                  <div style={styles.qtyBox}>
+                    <select
+                      value={qtyMap[p.id] || minQty}
+                      onChange={(e) =>
+                        handleQtyChange(p.id, e.target.value, p.unit_type)
+                      }
+                      style={styles.select}
+                    >
+                      {dropdown.map((val) => (
+                        <option key={val} value={val}>
+                          {isKG ? `${val} KGS` : `${val} Carton`}
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      type="number"
+                      min={minQty}
+                      value={qtyMap[p.id] || minQty}
+                      onChange={(e) =>
+                        handleQtyChange(p.id, e.target.value, p.unit_type)
+                      }
+                      style={styles.input}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* ADD TO CART SECTION */}
-              <div style={styles.cartSection}>
-                <button
-                  style={styles.cartBtn}
-                  onClick={() => addToCart(p)}
-                >
-                  <FaShoppingCart /> Add to Cart
-                </button>
-              </div>
+                <div style={styles.cartSection}>
+                  <button
+                    style={styles.cartBtn}
+                    onClick={() =>
+                      addToCart(
+                        p,
+                        qtyMap[p.id] || minQty,
+                        p.unit_type
+                      )
+                    }
+                  >
+                    <FaShoppingCart /> Add to Cart
+                  </button>
+                </div>
 
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       </main>
     </>
@@ -163,7 +175,6 @@ export default function Home() {
 /* ================= STYLES ================= */
 
 const styles = {
-
   hero: {
     background: "#f8fafc",
     padding: "28px 16px",
@@ -173,160 +184,101 @@ const styles = {
     border: "1px solid #E5E7EB",
     marginBottom: 16,
   },
-
   heroTitle: {
     fontSize: 20,
     fontWeight: 700,
-    color: "#111827",
-    marginBottom: 6,
   },
-
   heroSub: {
     fontSize: 13,
     color: "#6b7280",
   },
-
-  categorySection: {
-    padding: 16,
-  },
-
-  categoryHeading: {
-    fontSize: 16,
-    fontWeight: 700,
-    marginBottom: 12,
-  },
-
-  categoryRow: {
-    display: "flex",
-    gap: 12,
-  },
-
-  categoryCard: {
-    flex: 1,
-    padding: 14,
-    background: "#f8fafc",
-    borderRadius: 12,
-    border: "1px solid #E5E7EB",
-    textDecoration: "none",
-    color: "#111",
-    textAlign: "center",
-    fontWeight: 600,
-    fontSize: 14,
-  },
-
-  viewAllWrap: {
-    marginTop: 10,
-    textAlign: "right",
-  },
-
-  viewAll: {
-    fontSize: 12,
-    fontWeight: 600,
-    color: "#0B5ED7",
-    textDecoration: "none",
-  },
-
   main: {
     padding: 16,
     paddingBottom: 100,
   },
-
   heading: {
     fontSize: 18,
     fontWeight: 700,
     marginBottom: 14,
   },
-
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
     gap: 16,
   },
-
   card: {
     background: "#fff",
     borderRadius: 16,
     border: "1px solid #E5E7EB",
     display: "flex",
     flexDirection: "column",
-    height: 420,
     overflow: "hidden",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
   },
-
   imageSection: {
-    height: 150,
+    height: 140,
     background: "#f9fafb",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     padding: 12,
   },
-
   image: {
     maxWidth: "100%",
     maxHeight: "100%",
     objectFit: "contain",
   },
-
   noImage: {
     fontSize: 12,
     color: "#9CA3AF",
   },
-
   detailsSection: {
+    padding: 12,
     flex: 1,
-    padding: 14,
     display: "flex",
     flexDirection: "column",
   },
-
   category: {
     fontSize: 11,
     fontWeight: 600,
     color: "#0B5ED7",
-    marginBottom: 4,
   },
-
   name: {
     fontSize: 14,
     fontWeight: 700,
-    marginBottom: 6,
-    minHeight: 42,
+    margin: "6px 0",
   },
-
-  metaRow: {
-    display: "flex",
-    gap: 10,
-    fontSize: 12,
-    color: "#6b7280",
-    marginBottom: 4,
-  },
-
-  subcategory: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    marginBottom: 8,
-  },
-
   price: {
     fontSize: 16,
     fontWeight: 800,
     color: "#0B5ED7",
-    marginTop: "auto",
   },
-
   unit: {
     fontSize: 12,
-    fontWeight: 500,
     color: "#6b7280",
   },
 
-  cartSection: {
-    padding: 12,
-    borderTop: "1px solid #E5E7EB",
+  qtyBox: {
+    marginTop: 8,
+    display: "flex",
+    gap: 6,
+  },
+  select: {
+    flex: 1,
+    padding: 6,
+    borderRadius: 6,
+    border: "1px solid #d1d5db",
+  },
+  input: {
+    width: 70,
+    padding: 6,
+    borderRadius: 6,
+    border: "1px solid #d1d5db",
   },
 
+  cartSection: {
+    padding: 10,
+    borderTop: "1px solid #E5E7EB",
+  },
   cartBtn: {
     width: "100%",
     background: "#0B5ED7",
@@ -337,9 +289,5 @@ const styles = {
     fontSize: 13,
     fontWeight: 700,
     cursor: "pointer",
-    display: "flex",
-    justifyContent: "center",
-    gap: 6,
-    alignItems: "center",
   },
 };
