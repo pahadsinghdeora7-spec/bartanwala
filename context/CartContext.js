@@ -1,22 +1,38 @@
-import { createContext, useContext, useEffect, useState, useMemo } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useMemo,
+} from "react";
 
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
   const [cart, setCart] = useState([]);
+  const [initialized, setInitialized] = useState(false);
 
-  // 🔥 LOAD FROM LOCALSTORAGE ON FIRST LOAD
+  /* ================= LOAD FROM LOCALSTORAGE ================= */
+
   useEffect(() => {
-    const stored = localStorage.getItem("cart");
-    if (stored) {
-      setCart(JSON.parse(stored));
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("cart");
+      if (stored) {
+        setCart(JSON.parse(stored));
+      }
+      setInitialized(true);
     }
   }, []);
 
-  // 🔥 SAVE TO LOCALSTORAGE WHEN CART CHANGES
+  /* ================= SAVE TO LOCALSTORAGE ================= */
+
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
+    if (initialized) {
+      localStorage.setItem("cart", JSON.stringify(cart));
+    }
+  }, [cart, initialized]);
+
+  /* ================= ADD TO CART ================= */
 
   const addToCart = (product, qty = 1, unit = "kg") => {
     setCart((prev) => {
@@ -34,6 +50,8 @@ export function CartProvider({ children }) {
     });
   };
 
+  /* ================= UPDATE QTY ================= */
+
   const updateQty = (id, qty) => {
     setCart((prev) =>
       prev.map((item) =>
@@ -44,9 +62,22 @@ export function CartProvider({ children }) {
     );
   };
 
+  /* ================= REMOVE ITEM ================= */
+
   const removeItem = (id) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
   };
+
+  /* ================= CLEAR CART (IMPORTANT FIX) ================= */
+
+  const clearCart = () => {
+    setCart([]);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("cart");
+    }
+  };
+
+  /* ================= COUNT ================= */
 
   const cartCount = useMemo(() => {
     return cart.reduce((sum, item) => sum + item.qty, 0);
@@ -54,7 +85,14 @@ export function CartProvider({ children }) {
 
   return (
     <CartContext.Provider
-      value={{ cart, addToCart, updateQty, removeItem, cartCount }}
+      value={{
+        cart,
+        addToCart,
+        updateQty,
+        removeItem,
+        clearCart,   // 👈 NEW
+        cartCount,
+      }}
     >
       {children}
     </CartContext.Provider>
