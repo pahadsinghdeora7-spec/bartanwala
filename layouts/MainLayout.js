@@ -5,6 +5,7 @@ import Header from "../components/Header";
 import SearchBar from "../components/SearchBar";
 import BottomNav from "../components/BottomNav";
 import MenuDrawer from "../components/MenuDrawer";
+import Footer from "../components/Footer"; // ✅ Footer Import
 import { supabase } from "../lib/supabase";
 
 const HIDE_NAV = ["/login", "/signup", "/checkout", "/payment"];
@@ -38,7 +39,6 @@ export default function MainLayout({ children }) {
 
   return (
     <>
-      {/* ✅ REMOVE cartCount PROP */}
       <Header
         onMenuClick={() => setDrawerOpen(true)}
         user={user}
@@ -56,7 +56,10 @@ export default function MainLayout({ children }) {
         {children}
       </main>
 
+      {/* ✅ Desktop Only Footer */}
+      <Footer />
+
       {!hideBottomNav && <BottomNav />}
     </>
   );
-          }
+        }
