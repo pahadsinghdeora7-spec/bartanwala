@@ -53,6 +53,32 @@ export default function AdminOrders() {
     }
   }
 
+  const getOrderStatusColor = (status) => {
+    switch (status) {
+      case "Confirmed":
+        return "#2563eb";
+      case "Shipped":
+        return "#f59e0b";
+      case "Delivered":
+        return "#16a34a";
+      case "Cancelled":
+        return "#ef4444";
+      default:
+        return "#6b7280";
+    }
+  };
+
+  const getPaymentStatusColor = (status) => {
+    switch (status) {
+      case "Paid":
+        return "#16a34a";
+      case "Failed":
+        return "#ef4444";
+      default:
+        return "#f59e0b";
+    }
+  };
+
   if (loading)
     return <div style={{ padding: 20 }}>Loading Orders...</div>;
 
@@ -81,17 +107,37 @@ export default function AdminOrders() {
             </div>
           </div>
 
+          {/* STATUS BADGES */}
+          <div style={styles.badgeRow}>
+            <span
+              style={{
+                ...styles.badge,
+                background: getOrderStatusColor(order.order_status),
+              }}
+            >
+              {order.order_status || "Processing"}
+            </span>
+
+            <span
+              style={{
+                ...styles.badge,
+                background: getPaymentStatusColor(order.payment_status),
+              }}
+            >
+              {order.payment_status || "Pending"}
+            </span>
+          </div>
+
           {/* CUSTOMER INFO */}
           <div style={styles.info}>
             <p><strong>Business:</strong> {order.customer_business || "-"}</p>
             <p><strong>Name:</strong> {order.customer_name}</p>
             <p><strong>Phone:</strong> {order.customer_phone}</p>
             <p><strong>City:</strong> {order.customer_city}</p>
-            <p><strong>Address:</strong> {order.customer_address}</p>
             <p><strong>Transport:</strong> {order.transport_name || "-"}</p>
           </div>
 
-          {/* STATUS SECTION */}
+          {/* STATUS UPDATE */}
           <div style={styles.statusRow}>
             <div style={styles.statusBox}>
               <label style={styles.label}>Order Status</label>
@@ -126,6 +172,14 @@ export default function AdminOrders() {
             </div>
           </div>
 
+          {/* VIEW DETAILS BUTTON */}
+          <button
+            style={styles.viewBtn}
+            onClick={() => router.push(`/admin/orders/${order.id}`)}
+          >
+            View Full Details
+          </button>
+
         </div>
       ))}
     </div>
@@ -158,8 +212,7 @@ const styles = {
   header: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 10,
   },
 
   orderNo: {
@@ -176,6 +229,20 @@ const styles = {
     fontSize: 18,
     fontWeight: 800,
     color: "#0B5ED7",
+  },
+
+  badgeRow: {
+    display: "flex",
+    gap: 10,
+    marginBottom: 12,
+  },
+
+  badge: {
+    padding: "4px 10px",
+    borderRadius: 8,
+    fontSize: 12,
+    color: "#fff",
+    fontWeight: 600,
   },
 
   info: {
@@ -208,5 +275,17 @@ const styles = {
     borderRadius: 8,
     border: "1px solid #d1d5db",
     fontSize: 14,
+  },
+
+  viewBtn: {
+    marginTop: 16,
+    width: "100%",
+    padding: 10,
+    borderRadius: 10,
+    border: "none",
+    background: "#0B5ED7",
+    color: "#fff",
+    fontWeight: 600,
+    cursor: "pointer",
   },
 };
