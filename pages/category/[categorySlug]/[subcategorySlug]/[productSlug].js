@@ -9,7 +9,10 @@ import {
   FaCheckCircle,
   FaBoxOpen,
 } from "react-icons/fa";
-import { useCart } from "../../../context/CartContext";
+
+/* ✅ FIXED IMPORT PATH */
+import { useCart } from "../../../../context/CartContext";
+
 
 /* ================= SERVER ================= */
 
@@ -62,6 +65,7 @@ export async function getServerSideProps({ params }) {
   };
 }
 
+
 /* ================= PAGE ================= */
 
 export default function ProductPage({
@@ -84,7 +88,6 @@ export default function ProductPage({
 
   const unit = product.unit_type || "kg";
   const isKG = unit === "kg";
-  const isCarton = unit === "pcs" || unit === "set";
 
   const minQty = isKG ? 40 : 1;
   const [qty, setQty] = useState(minQty);
@@ -118,10 +121,12 @@ export default function ProductPage({
           <span>{product.name}</span>
         </div>
 
+
         {/* IMAGE */}
         <div style={styles.imageWrap}>
           <img src={activeImg} style={styles.mainImage} />
         </div>
+
 
         {/* DETAILS */}
         <div style={styles.card}>
@@ -139,14 +144,17 @@ export default function ProductPage({
             {product.price} / {unit.toUpperCase()}
           </div>
 
+
           <div style={styles.badges}>
             <span style={styles.stock}>
               <FaCheckCircle /> In Stock
             </span>
+
             <span style={styles.bulk}>
               <FaBoxOpen /> Bulk Available
             </span>
           </div>
+
 
           <div style={styles.detailsBox}>
 
@@ -167,6 +175,7 @@ export default function ProductPage({
             )}
 
           </div>
+
 
           {/* QUANTITY */}
           <div style={styles.qtySection}>
@@ -189,6 +198,7 @@ export default function ProductPage({
 
           </div>
 
+
           {/* BUTTONS */}
           <div style={styles.actionRow}>
 
@@ -199,10 +209,12 @@ export default function ProductPage({
               <FaShoppingCart /> Add to Cart
             </button>
 
+
             <a
               href="https://wa.me/919873670361"
               style={styles.whatsappBtn}
               target="_blank"
+              rel="noreferrer"
             >
               <FaWhatsapp /> WhatsApp
             </a>
@@ -211,7 +223,8 @@ export default function ProductPage({
 
         </div>
 
-        {/* RELATED */}
+
+        {/* RELATED PRODUCTS */}
         {related.length > 0 && (
 
           <div style={styles.relatedWrap}>
@@ -244,6 +257,7 @@ export default function ProductPage({
   );
 }
 
+
 /* DETAIL */
 function Detail({ label, value }) {
   return (
@@ -254,133 +268,31 @@ function Detail({ label, value }) {
   );
 }
 
+
 /* STYLES */
 
 const styles = {
-
   page:{ padding:16 },
-
-  breadcrumb:{
-    fontSize:12,
-    marginBottom:10,
-    color:"#6b7280"
-  },
-
-  imageWrap:{
-    background:"#fff",
-    padding:10,
-    borderRadius:12
-  },
-
-  mainImage:{
-    width:"100%",
-    height:280,
-    objectFit:"contain"
-  },
-
-  card:{
-    background:"#fff",
-    padding:16,
-    borderRadius:12,
-    marginTop:10
-  },
-
-  category:{
-    color:"#0B5ED7",
-    fontSize:12,
-    fontWeight:600
-  },
-
-  title:{
-    fontSize:20,
-    fontWeight:700
-  },
-
-  priceRow:{
-    fontSize:20,
-    fontWeight:800,
-    color:"#0B5ED7"
-  },
-
-  badges:{
-    display:"flex",
-    gap:10,
-    marginTop:6
-  },
-
+  breadcrumb:{ fontSize:12, marginBottom:10, color:"#6b7280" },
+  imageWrap:{ background:"#fff", padding:10, borderRadius:12 },
+  mainImage:{ width:"100%", height:280, objectFit:"contain" },
+  card:{ background:"#fff", padding:16, borderRadius:12, marginTop:10 },
+  category:{ color:"#0B5ED7", fontSize:12, fontWeight:600 },
+  title:{ fontSize:20, fontWeight:700 },
+  priceRow:{ fontSize:20, fontWeight:800, color:"#0B5ED7" },
+  badges:{ display:"flex", gap:10, marginTop:6 },
   stock:{ color:"green" },
   bulk:{ color:"blue" },
-
-  detailsBox:{
-    marginTop:10
-  },
-
-  detailRow:{
-    display:"flex",
-    justifyContent:"space-between"
-  },
-
-  qtySection:{
-    marginTop:10
-  },
-
-  select:{
-    width:"100%",
-    padding:10
-  },
-
-  minNote:{
-    fontSize:12,
-    color:"#6b7280"
-  },
-
-  actionRow:{
-    display:"flex",
-    gap:10,
-    marginTop:10
-  },
-
-  cartBtn:{
-    flex:1,
-    padding:12,
-    background:"#0B5ED7",
-    color:"#fff",
-    border:"none",
-    borderRadius:8
-  },
-
-  whatsappBtn:{
-    flex:1,
-    padding:12,
-    background:"#25D366",
-    color:"#fff",
-    textAlign:"center",
-    borderRadius:8,
-    textDecoration:"none"
-  },
-
-  relatedWrap:{
-    marginTop:20
-  },
-
-  relatedGrid:{
-    display:"grid",
-    gridTemplateColumns:"repeat(2,1fr)",
-    gap:10
-  },
-
-  relatedCard:{
-    background:"#fff",
-    padding:10,
-    borderRadius:10,
-    textDecoration:"none",
-    color:"#000"
-  },
-
-  relatedImage:{
-    width:"100%",
-    height:120,
-    objectFit:"contain"
-  }
-
+  detailsBox:{ marginTop:10 },
+  detailRow:{ display:"flex", justifyContent:"space-between" },
+  qtySection:{ marginTop:10 },
+  select:{ width:"100%", padding:10 },
+  minNote:{ fontSize:12, color:"#6b7280" },
+  actionRow:{ display:"flex", gap:10, marginTop:10 },
+  cartBtn:{ flex:1, padding:12, background:"#0B5ED7", color:"#fff", border:"none", borderRadius:8 },
+  whatsappBtn:{ flex:1, padding:12, background:"#25D366", color:"#fff", textAlign:"center", borderRadius:8, textDecoration:"none" },
+  relatedWrap:{ marginTop:20 },
+  relatedGrid:{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10 },
+  relatedCard:{ background:"#fff", padding:10, borderRadius:10, textDecoration:"none", color:"#000" },
+  relatedImage:{ width:"100%", height:120, objectFit:"contain" }
 };
