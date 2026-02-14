@@ -30,6 +30,7 @@ export default function ProductCard({ product }) {
     localStorage.setItem("cart", JSON.stringify(cart));
 
     alert("Product added to cart");
+
   }
 
   const unit = product.unit_type || "kg";
@@ -64,16 +65,33 @@ export default function ProductCard({ product }) {
       {/* DETAILS */}
       <div style={styles.detailsSection}>
 
-        {/* ✅ SHOW SUBCATEGORY ONLY */}
-        <div style={styles.subcategory}>
-          {product.subcategories?.name || ""}
+
+        {/* ✅ MAIN CATEGORY */}
+        <div style={styles.category}>
+          {product.categories?.name}
         </div>
 
 
-        {/* ✅ PRODUCT NAME MAX 2 LINE */}
+        {/* ✅ PRODUCT NAME */}
         <div style={styles.name}>
           {product.name}
         </div>
+
+
+        {/* ✅ SUBCATEGORY */}
+        <div style={styles.subcategory}>
+          {product.subcategories?.name}
+        </div>
+
+
+        {/* ✅ SIZE AND GAUGE */}
+        {(product.size || product.gauge) && (
+          <div style={styles.meta}>
+            {product.size && <span>Size: {product.size}</span>}
+            {product.size && product.gauge && <span> | </span>}
+            {product.gauge && <span>Gauge: {product.gauge}</span>}
+          </div>
+        )}
 
 
         {/* PRICE */}
@@ -158,19 +176,20 @@ const styles = {
     padding: 14,
     display: "flex",
     flexDirection: "column",
-    gap: 6,
+    gap: 4,
     flex: 1,
   },
 
-  /* ✅ SUBCATEGORY STYLE */
-  subcategory: {
+
+  /* MAIN CATEGORY */
+  category: {
     fontSize: 11,
-    color: "#0B5ED7",
     fontWeight: 600,
+    color: "#0B5ED7",
   },
 
 
-  /* ✅ NAME STRICT 2 LINE */
+  /* PRODUCT NAME 2 LINE */
   name: {
     fontSize: 14,
     fontWeight: 700,
@@ -185,10 +204,25 @@ const styles = {
   },
 
 
+  /* SUBCATEGORY */
+  subcategory: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
+
+
+  /* SIZE GAUGE */
+  meta: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
+
+
   price: {
     fontSize: 18,
     fontWeight: 800,
     color: "#0B5ED7",
+    marginTop: 4,
   },
 
   unit: {
@@ -196,17 +230,21 @@ const styles = {
     color: "#6b7280",
   },
 
+
   minBox: {
     fontSize: 11,
     background: "#F3F4F6",
     padding: "6px 8px",
     borderRadius: 8,
+    marginTop: 4,
   },
+
 
   cartSection: {
     padding: 12,
     borderTop: "1px solid #E5E7EB",
   },
+
 
   cartBtn: {
     width: "100%",
