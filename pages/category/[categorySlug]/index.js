@@ -15,83 +15,66 @@ const supabase = createClient(
 export default function CategoryPage() {
 
   const router = useRouter();
-  const { slug } = router.query;
+
+  const { categorySlug } = router.query;
 
   const [category, setCategory] = useState(null);
   const [subcategories, setSubcategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  /* ================= LOAD DATA ================= */
+  /* LOAD DATA */
 
   useEffect(() => {
 
-    if (!slug) return;
+    if (!categorySlug) return;
 
     async function loadData() {
 
       setLoading(true);
 
-      try {
+      /* CATEGORY */
+      const { data: cat } = await supabase
+        .from("categories")
+        .select("*")
+        .eq("slug", categorySlug)
+        .single();
 
-        /* LOAD CATEGORY */
-        const { data: cat, error: catError } = await supabase
-          .from("categories")
-          .select("*")
-          .eq("slug", slug)
-          .single();
-
-        if (catError || !cat) {
-          console.log("Category error:", catError);
-          setLoading(false);
-          return;
-        }
-
-        setCategory(cat);
-
-        /* LOAD SUBCATEGORIES */
-        const { data: subs, error: subError } = await supabase
-          .from("subcategories")
-          .select("id, name, slug")
-          .eq("category_id", cat.id)
-          .order("name");
-
-        if (subError) {
-          console.log("Subcategory error:", subError);
-        }
-
-        setSubcategories(subs || []);
-
-        /* LOAD PRODUCTS */
-        const { data: prods, error: prodError } = await supabase
-          .from("products")
-          .select(`
-            id,
-            name,
-            slug,
-            price,
-            image,
-            size,
-            gauge,
-            unit_type,
-            pcs_per_carton,
-            categories(name)
-          `)
-          .eq("category_id", cat.id)
-          .eq("in_stock", true)
-          .order("created_at", { ascending: false });
-
-        if (prodError) {
-          console.log("Product error:", prodError);
-        }
-
-        setProducts(prods || []);
-
-      } catch (err) {
-
-        console.log("Load error:", err);
-
+      if (!cat) {
+        setLoading(false);
+        return;
       }
+
+      setCategory(cat);
+
+      /* SUBCATEGORIES */
+      const { data: subs } = await supabase
+        .from("subcategories")
+        .select("id,name,slug")
+        .eq("category_id", cat.id)
+        .order("name");
+
+      setSubcategories(subs || []);
+
+      /* PRODUCTS */
+      const { data: prods } = await supabase
+        .from("products")
+        .select(`
+          id,
+          name,
+          slug,
+          price,
+          image,
+          unit_type,
+          pcs_per_carton,
+          categories(slug,name),
+          subcategories(slug,name)
+        `)
+        .eq("category_id", cat.id)
+        .eq("in_stock", true)
+        .order("created_at", { ascending:false });
+
+      setProducts(prods || []);
 
       setLoading(false);
 
@@ -99,71 +82,50 @@ export default function CategoryPage() {
 
     loadData();
 
-  }, [slug]);
+  }, [categorySlug]);
 
 
-  /* ================= ADD TO CART ================= */
+  /* ADD CART */
 
   function addToCart(product) {
 
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
     const unit = product.unit_type || "kg";
-    const cartonSize = product.pcs_per_carton || 1;
+    const pcs = product.pcs_per_carton || 1;
 
-    let qty = 1;
-
-    if (unit === "kg") qty = 40;
-    if (unit === "pcs" || unit === "set") qty = cartonSize;
+    const qty = unit === "kg" ? 40 : pcs;
 
     const existing = cart.find(i => i.id === product.id);
 
-    if (existing) {
-      existing.qty += qty;
-    } else {
-      cart.push({
-        ...product,
-        qty,
-        unit
-      });
-    }
+    if (existing) existing.qty += qty;
+    else cart.push({ ...product, qty, unit });
 
     localStorage.setItem("cart", JSON.stringify(cart));
 
-    alert("Product added to cart");
+    alert("Added to cart");
 
   }
 
 
-  /* ================= LOADING ================= */
+  if (loading) return <div style={{padding:20}}>Loading...</div>;
 
-  if (loading) {
-
-    return (
-      <div style={{ padding: 20 }}>
-        Loading...
-      </div>
-    );
-
-  }
-
-
-  /* ================= UI ================= */
 
   return (
+
     <>
       <Head>
-        <title>{category?.name || "Category"} | Bartanwala</title>
+        <title>{category?.name} | Bartanwala</title>
       </Head>
 
       <main style={styles.main}>
 
-        <h2 style={styles.heading}>
+        <h1 style={styles.heading}>
           {category?.name}
-        </h2>
+        </h1>
 
 
-        {/* ================= SUBCATEGORIES ================= */}
+        {/* SUBCATEGORIES */}
 
         {subcategories.length > 0 && (
 
@@ -176,7 +138,7 @@ export default function CategoryPage() {
 
                 <Link
                   key={sub.id}
-                  href={`/subcategory/${sub.slug}`}   // ✅ FIXED HERE
+                  href={`/category/${category.slug}/${sub.slug}`}
                   style={styles.subCard}
                 >
                   {sub.name}
@@ -185,12 +147,13 @@ export default function CategoryPage() {
               ))}
 
             </div>
-          </>
 
+          </>
         )}
 
 
-        {/* ================= PRODUCTS ================= */}
+
+        {/* PRODUCTS */}
 
         {products.length > 0 && (
 
@@ -202,19 +165,20 @@ export default function CategoryPage() {
               {products.map(p => {
 
                 const unit = p.unit_type || "kg";
-                const cartonSize = p.pcs_per_carton || 1;
+                const pcs = p.pcs_per_carton || 1;
 
                 return (
 
                   <div key={p.id} style={styles.card}>
 
-                    <Link href={`/product/${p.slug}`}>
+                    <Link
+                      href={`/category/${p.categories?.slug}/${p.subcategories?.slug}/${p.slug}`}
+                    >
 
                       <div style={styles.imageSection}>
 
                         <img
                           src={p.image || "/placeholder.png"}
-                          alt={p.name}
                           style={styles.image}
                         />
 
@@ -225,32 +189,33 @@ export default function CategoryPage() {
 
                     <div style={styles.detailsSection}>
 
-                      <div style={styles.badge}>
+                      {/* CATEGORY */}
+                      <div style={styles.category}>
                         {p.categories?.name}
                       </div>
 
+                      {/* PRODUCT NAME */}
                       <div style={styles.name}>
                         {p.name}
                       </div>
 
-                      <div style={styles.price}>
-                        ₹ {p.price}
-                        <span style={styles.unit}>
-                          {" "} / {unit.toUpperCase()}
-                        </span>
+                      {/* SUBCATEGORY */}
+                      <div style={styles.subcategory}>
+                        {p.subcategories?.name}
                       </div>
 
-                      {unit === "kg" && (
-                        <div style={styles.minBox}>
-                          Min Order: 40 KG
-                        </div>
-                      )}
+                      {/* PRICE */}
+                      <div style={styles.price}>
+                        ₹ {p.price} / {unit.toUpperCase()}
+                      </div>
 
-                      {(unit === "pcs" || unit === "set") && (
-                        <div style={styles.minBox}>
-                          1 Carton = {cartonSize} {unit.toUpperCase()}
-                        </div>
-                      )}
+                      {/* MIN */}
+                      <div style={styles.min}>
+                        {unit==="kg"
+                          ? "Min Order: 40 KG"
+                          : `1 Carton = ${pcs}`
+                        }
+                      </div>
 
                     </div>
 
@@ -259,10 +224,9 @@ export default function CategoryPage() {
 
                       <button
                         style={styles.cartBtn}
-                        onClick={() => addToCart(p)}
+                        onClick={()=>addToCart(p)}
                       >
-                        <FaShoppingCart />
-                        Add to Cart
+                        <FaShoppingCart/> Add
                       </button>
 
                     </div>
@@ -276,123 +240,100 @@ export default function CategoryPage() {
             </div>
 
           </>
-
         )}
 
       </main>
+
     </>
   );
 }
 
 
-/* ================= STYLES ================= */
+/* STYLES */
 
 const styles = {
 
-  main: {
-    padding: 16,
-    paddingBottom: 100,
+  main:{ padding:16 },
+
+  heading:{
+    fontSize:22,
+    fontWeight:700
   },
 
-  heading: {
-    fontSize: 22,
-    fontWeight: 700,
-    marginBottom: 16,
+  subHeading:{
+    marginTop:20,
+    marginBottom:10
   },
 
-  subHeading: {
-    fontSize: 16,
-    fontWeight: 700,
-    marginTop: 16,
-    marginBottom: 10,
+  grid:{
+    display:"grid",
+    gridTemplateColumns:"repeat(2,1fr)",
+    gap:16
   },
 
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2,1fr)",
-    gap: 16,
+  subCard:{
+    padding:14,
+    background:"#fff",
+    borderRadius:10,
+    textAlign:"center",
+    textDecoration:"none",
+    color:"#000"
   },
 
-  subCard: {
-    padding: 16,
-    background: "#fff",
-    borderRadius: 12,
-    textAlign: "center",
-    textDecoration: "none",
-    color: "#111",
-    border: "1px solid #E5E7EB",
-    fontWeight: 600,
+  card:{
+    background:"#fff",
+    borderRadius:12
   },
 
-  card: {
-    background: "#fff",
-    borderRadius: 16,
-    border: "1px solid #E5E7EB",
-    display: "flex",
-    flexDirection: "column",
+  imageSection:{
+    height:140,
+    display:"flex",
+    justifyContent:"center",
+    alignItems:"center"
   },
 
-  imageSection: {
-    height: 140,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    background: "#f9fafb",
+  image:{
+    maxWidth:"100%",
+    maxHeight:"100%"
   },
 
-  image: {
-    maxWidth: "100%",
-    maxHeight: "100%",
-    objectFit: "contain",
+  detailsSection:{
+    padding:10
   },
 
-  detailsSection: {
-    padding: 12,
+  category:{
+    fontSize:12,
+    color:"#0B5ED7"
   },
 
-  badge: {
-    fontSize: 10,
-    color: "#0B5ED7",
+  subcategory:{
+    fontSize:12,
+    color:"#6b7280"
   },
 
-  name: {
-    fontSize: 14,
-    fontWeight: 700,
+  name:{
+    fontWeight:700
   },
 
-  price: {
-    fontSize: 16,
-    fontWeight: 700,
-    color: "#0B5ED7",
+  price:{
+    color:"#0B5ED7",
+    fontWeight:700
   },
 
-  unit: {
-    fontSize: 12,
+  min:{
+    fontSize:12
   },
 
-  minBox: {
-    fontSize: 11,
-    background: "#f3f4f6",
-    padding: 4,
-    borderRadius: 6,
-    marginTop: 4,
+  cartSection:{
+    padding:10
   },
 
-  cartSection: {
-    padding: 10,
-  },
-
-  cartBtn: {
-    width: "100%",
-    padding: 10,
-    background: "#0B5ED7",
-    color: "#fff",
-    border: "none",
-    borderRadius: 8,
-    display: "flex",
-    justifyContent: "center",
-    gap: 6,
-    alignItems: "center",
+  cartBtn:{
+    width:"100%",
+    padding:10,
+    background:"#0B5ED7",
+    color:"#fff",
+    border:"none"
   }
 
 };
