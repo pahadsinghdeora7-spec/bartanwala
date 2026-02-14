@@ -11,7 +11,7 @@ export async function getServerSideProps() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 
-  const { data: categories, error } = await supabase
+  const { data, error } = await supabase
     .from("categories")
     .select(`
       id,
@@ -25,9 +25,12 @@ export async function getServerSideProps() {
     console.log("CATEGORY ERROR:", error);
   }
 
+  /* 🔥 SAFETY FILTER — REMOVE EMPTY SLUG */
+  const categories = (data || []).filter(cat => cat.slug);
+
   return {
     props: {
-      categories: categories || [],
+      categories,
     },
   };
 }
