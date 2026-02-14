@@ -23,7 +23,6 @@ export default function Home() {
           name,
           slug,
           price,
-          price_unit,
           image,
           size,
           gauge,
@@ -46,7 +45,7 @@ export default function Home() {
     loadProducts();
   }, []);
 
-  /* ================= QUANTITY LOGIC ================= */
+  /* ================= ADD TO CART ================= */
 
   function addToCart(product) {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
@@ -56,15 +55,8 @@ export default function Home() {
 
     let qty = 1;
 
-    // 🔹 KG products → minimum 40 KG
-    if (unit === "kg") {
-      qty = 40;
-    }
-
-    // 🔹 PCS / SET → minimum 1 carton
-    if (unit === "pcs" || unit === "set") {
-      qty = cartonSize;
-    }
+    if (unit === "kg") qty = 40;
+    if (unit === "pcs" || unit === "set") qty = cartonSize;
 
     const existing = cart.find((i) => i.id === product.id);
 
@@ -81,100 +73,90 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Bartanwala | Wholesale Steel & Aluminium Utensils</title>
+        <title>Bartanwala | Category</title>
       </Head>
 
-      {/* ================= HERO TEXT BOX ================= */}
-      <section style={styles.hero}>
-        <h1 style={styles.heroTitle}>
-          Wholesale Steel & Aluminium Utensils
-        </h1>
-        <p style={styles.heroSub}>
-          B2B Wholesale · Factory Price · All India Delivery
-        </p>
-      </section>
-
-      {/* ================= CATEGORY SECTION (LOCKED) ================= */}
-      <section style={styles.categorySection}>
-        <h2 style={styles.categoryHeading}>Shop By Category</h2>
-
-        <div style={styles.categoryRow}>
-          <Link href="/category/stainless-steel-utensils" style={styles.categoryCard}>
-            Stainless Steel Utensils
-          </Link>
-
-          <Link href="/category/aluminium-utensils" style={styles.categoryCard}>
-            Aluminium Utensils
-          </Link>
-        </div>
-
-        <div style={styles.viewAllWrap}>
-          <Link href="/categories" style={styles.viewAll}>
-            View All Categories →
-          </Link>
-        </div>
-      </section>
-
-      {/* ================= PRODUCTS ================= */}
       <main style={styles.main}>
         <h2 style={styles.heading}>Products</h2>
 
         <div style={styles.grid}>
-          {products.map((p) => (
-            <div key={p.id} style={styles.card}>
+          {products.map((p) => {
 
-              <Link href={`/product/${p.slug}`} style={{ textDecoration: "none" }}>
-                <div style={styles.imageSection}>
-                  {p.image ? (
-                    <img src={p.image} alt={p.name} style={styles.image} />
-                  ) : (
-                    <div style={styles.noImage}>No Image</div>
-                  )}
-                </div>
-              </Link>
+            const unit = p.unit_type || "kg";
+            const cartonSize = p.carton_size || 1;
 
-              <div style={styles.detailsSection}>
-                <div style={styles.category}>
-                  {p.categories?.name}
-                </div>
+            return (
+              <div key={p.id} style={styles.card}>
 
-                <div style={styles.name}>
-                  {p.name}
-                </div>
-
-                <div style={styles.metaRow}>
-                  {p.size && <span>Size: {p.size}</span>}
-                  {p.gauge && <span>Gauge: {p.gauge}</span>}
-                </div>
-
-                {p.subcategories?.name && (
-                  <div style={styles.subcategory}>
-                    {p.subcategories.name}
+                {/* IMAGE */}
+                <Link href={`/product/${p.slug}`} style={{ textDecoration: "none" }}>
+                  <div style={styles.imageSection}>
+                    {p.image ? (
+                      <img src={p.image} alt={p.name} style={styles.image} />
+                    ) : (
+                      <div style={styles.noImage}>No Image</div>
+                    )}
                   </div>
-                )}
+                </Link>
 
-                <div style={styles.price}>
-                  ₹ {p.price}
-                  {p.price_unit && (
+                {/* DETAILS */}
+                <div style={styles.detailsSection}>
+
+                  {/* CATEGORY BADGE */}
+                  <div style={styles.badge}>
+                    {p.categories?.name}
+                  </div>
+
+                  {/* NAME */}
+                  <div style={styles.name}>
+                    {p.name}
+                  </div>
+
+                  {/* META */}
+                  <div style={styles.metaRow}>
+                    {p.size && <span>Size: {p.size}</span>}
+                    {p.gauge && <span>Gauge: {p.gauge}</span>}
+                  </div>
+
+                  {/* PRICE */}
+                  <div style={styles.price}>
+                    ₹ {p.price}
                     <span style={styles.unit}>
-                      {" "} / {p.price_unit.toUpperCase()}
+                      {" "} / {unit.toUpperCase()}
                     </span>
+                  </div>
+
+                  {/* MIN ORDER / CARTON */}
+                  {unit === "kg" && (
+                    <div style={styles.minBox}>
+                      Min Order: 40 KG
+                    </div>
                   )}
+
+                  {(unit === "pcs" || unit === "set") && (
+                    <div style={styles.minBox}>
+                      1 Carton = {cartonSize} {unit.toUpperCase()}
+                    </div>
+                  )}
+
                 </div>
-              </div>
 
-              <div style={styles.cartSection}>
-                <button
-                  style={styles.cartBtn}
-                  onClick={() => addToCart(p)}
-                >
-                  <FaShoppingCart /> Add to Cart
-                </button>
-              </div>
+                {/* BUTTON */}
+                <div style={styles.cartSection}>
+                  <button
+                    style={styles.cartBtn}
+                    onClick={() => addToCart(p)}
+                  >
+                    <FaShoppingCart /> Add to Cart
+                  </button>
+                </div>
 
-            </div>
-          ))}
+              </div>
+            );
+
+          })}
         </div>
+
       </main>
     </>
   );
@@ -183,67 +165,6 @@ export default function Home() {
 /* ================= STYLES ================= */
 
 const styles = {
-  hero: {
-    background: "#f8fafc",
-    padding: "28px 16px",
-    textAlign: "center",
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    border: "1px solid #E5E7EB",
-    marginBottom: 16,
-  },
-
-  heroTitle: {
-    fontSize: 20,
-    fontWeight: 700,
-    color: "#111827",
-    marginBottom: 6,
-  },
-
-  heroSub: {
-    fontSize: 13,
-    color: "#6b7280",
-  },
-
-  categorySection: {
-    padding: 16,
-  },
-
-  categoryHeading: {
-    fontSize: 16,
-    fontWeight: 700,
-    marginBottom: 12,
-  },
-
-  categoryRow: {
-    display: "flex",
-    gap: 12,
-  },
-
-  categoryCard: {
-    flex: 1,
-    padding: 14,
-    background: "#f8fafc",
-    borderRadius: 12,
-    border: "1px solid #E5E7EB",
-    textDecoration: "none",
-    color: "#111",
-    textAlign: "center",
-    fontWeight: 600,
-    fontSize: 14,
-  },
-
-  viewAllWrap: {
-    marginTop: 10,
-    textAlign: "right",
-  },
-
-  viewAll: {
-    fontSize: 12,
-    fontWeight: 600,
-    color: "#0B5ED7",
-    textDecoration: "none",
-  },
 
   main: {
     padding: 16,
@@ -264,17 +185,16 @@ const styles = {
 
   card: {
     background: "#fff",
-    borderRadius: 16,
+    borderRadius: 18,
     border: "1px solid #E5E7EB",
     display: "flex",
     flexDirection: "column",
-    height: 420,
     overflow: "hidden",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+    boxShadow: "0 6px 16px rgba(0,0,0,0.05)",
   },
 
   imageSection: {
-    height: 150,
+    height: 160,
     background: "#f9fafb",
     display: "flex",
     alignItems: "center",
@@ -294,24 +214,28 @@ const styles = {
   },
 
   detailsSection: {
-    flex: 1,
     padding: 14,
     display: "flex",
     flexDirection: "column",
+    gap: 6,
+    flex: 1,
   },
 
-  category: {
-    fontSize: 11,
+  badge: {
+    fontSize: 10,
     fontWeight: 600,
+    background: "#E0EDFF",
     color: "#0B5ED7",
-    marginBottom: 4,
+    padding: "4px 8px",
+    borderRadius: 20,
+    width: "fit-content",
   },
 
   name: {
     fontSize: 14,
     fontWeight: 700,
-    marginBottom: 6,
-    minHeight: 42,
+    lineHeight: 1.3,
+    minHeight: 38,
   },
 
   metaRow: {
@@ -319,26 +243,27 @@ const styles = {
     gap: 10,
     fontSize: 12,
     color: "#6b7280",
-    marginBottom: 4,
-  },
-
-  subcategory: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    marginBottom: 8,
   },
 
   price: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 800,
     color: "#0B5ED7",
-    marginTop: "auto",
+    marginTop: 6,
   },
 
   unit: {
     fontSize: 12,
-    fontWeight: 500,
+    fontWeight: 600,
     color: "#6b7280",
+  },
+
+  minBox: {
+    fontSize: 11,
+    background: "#F3F4F6",
+    padding: "6px 8px",
+    borderRadius: 8,
+    marginTop: 4,
   },
 
   cartSection: {
@@ -348,12 +273,11 @@ const styles = {
 
   cartBtn: {
     width: "100%",
-    background: "#0B5ED7",
+    background: "linear-gradient(135deg,#0B5ED7,#084298)",
     color: "#fff",
     border: "none",
-    borderRadius: 10,
+    borderRadius: 12,
     padding: "10px",
-    fontSize: 13,
     fontWeight: 700,
     cursor: "pointer",
     display: "flex",
@@ -361,4 +285,5 @@ const styles = {
     gap: 6,
     alignItems: "center",
   },
+
 };
