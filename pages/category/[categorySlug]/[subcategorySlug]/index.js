@@ -5,6 +5,8 @@ import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
 import { FaShoppingCart } from "react-icons/fa";
 
+/* ================= SUPABASE ================= */
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -20,9 +22,12 @@ export default function SubcategoryProductsPage() {
   const [subcategory, setSubcategory] = useState(null);
   const [loading, setLoading] = useState(true);
 
+
+  /* ================= LOAD DATA ================= */
+
   useEffect(() => {
 
-    if (!subcategorySlug) return;
+    if (!categorySlug || !subcategorySlug) return;
 
     async function loadData() {
 
@@ -44,16 +49,32 @@ export default function SubcategoryProductsPage() {
         .eq("slug", subcategorySlug)
         .single();
 
+
       if (error || !subcat) {
-        console.log(error);
+
+        console.log("Subcategory error:", error);
+
         setProducts([]);
         setLoading(false);
+
         return;
       }
 
+
+      /* VALIDATE CATEGORY SLUG */
+      if (subcat.categories.slug !== categorySlug) {
+
+        router.replace("/404");
+
+        return;
+      }
+
+
       setSubcategory(subcat);
 
+
       /* GET PRODUCTS */
+
       const { data: prodData, error: prodError } = await supabase
         .from("products")
         .select(`
@@ -66,25 +87,30 @@ export default function SubcategoryProductsPage() {
           gauge,
           unit_type,
           pcs_per_carton,
-          categories(name),
-          subcategories(name)
+          categories(name,slug),
+          subcategories(name,slug)
         `)
         .eq("subcategory_id", subcat.id)
         .eq("in_stock", true)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending:false });
 
-      if (prodError) console.log(prodError);
+
+      if (prodError)
+        console.log("Product error:", prodError);
+
 
       setProducts(prodData || []);
 
       setLoading(false);
+
     }
 
     loadData();
 
-  }, [subcategorySlug]);
+  }, [categorySlug, subcategorySlug]);
 
 
+  /* ================= ADD TO CART ================= */
 
   function addToCart(product) {
 
@@ -93,15 +119,18 @@ export default function SubcategoryProductsPage() {
     const unit = product.unit_type || "kg";
     const pcs = product.pcs_per_carton || 1;
 
-    let qty = 1;
-
-    if (unit === "kg") qty = 40;
-    else qty = pcs;
+    const qty = unit === "kg" ? 40 : pcs;
 
     const existing = cart.find(i => i.id === product.id);
 
-    if (existing) existing.qty += qty;
-    else cart.push({ ...product, qty });
+    if (existing)
+      existing.qty += qty;
+    else
+      cart.push({
+        ...product,
+        qty,
+        unit
+      });
 
     localStorage.setItem("cart", JSON.stringify(cart));
 
@@ -110,89 +139,159 @@ export default function SubcategoryProductsPage() {
   }
 
 
+  /* ================= LOADING ================= */
 
-  if (loading) return <div style={{ padding: 20 }}>Loading...</div>;
+  if (loading)
+    return <div style={{ padding:20 }}>Loading...</div>;
 
+
+  /* ================= UI ================= */
 
   return (
 
     <>
-
       <Head>
+
         <title>
           {subcategory?.name} | Bartanwala
         </title>
+
       </Head>
 
 
-      <main style={{ padding: 16 }}>
-
-        <h1>{subcategory?.name}</h1>
+      <main style={styles.main}>
 
 
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2,1fr)",
-          gap: 16
-        }}>
+        {/* SUBCATEGORY NAME */}
+
+        <h1 style={styles.heading}>
+          {subcategory?.name}
+        </h1>
 
 
-          {products.map(p => (
 
-            <div key={p.id}
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: 12,
-                padding: 10
-              }}>
+        {/* PRODUCTS GRID */}
+
+        <div style={styles.grid}>
 
 
-              <Link href={`/category/${categorySlug}/${subcategorySlug}/${p.slug}`}>
+          {products.map(p => {
 
-                <img
-                  src={p.image}
-                  style={{ width: "100%", height: 140, objectFit: "contain" }}
-                />
+            const unit = p.unit_type || "kg";
+            const pcs = p.pcs_per_carton || 1;
 
-              </Link>
+            return (
+
+              <div key={p.id} style={styles.card}>
 
 
-              <div style={{ fontSize: 12, color: "#0B5ED7" }}>
-                {p.categories?.name}
+                {/* IMAGE */}
+
+                <Link
+                  href={`/category/${categorySlug}/${subcategorySlug}/${p.slug}`}
+                >
+
+                  <div style={styles.imageWrap}>
+
+                    <img
+                      src={p.image || "/placeholder.png"}
+                      style={styles.image}
+                    />
+
+                  </div>
+
+                </Link>
+
+
+
+                {/* DETAILS */}
+
+                <div style={styles.details}>
+
+
+                  {/* CATEGORY */}
+
+                  <div style={styles.category}>
+                    {p.categories?.name}
+                  </div>
+
+
+                  {/* PRODUCT NAME */}
+
+                  <div style={styles.name}>
+                    {p.name}
+                  </div>
+
+
+                  {/* SUBCATEGORY */}
+
+                  <div style={styles.subcategory}>
+                    {p.subcategories?.name}
+                  </div>
+
+
+                  {/* SIZE / GAUGE */}
+
+                  {(p.size || p.gauge) && (
+
+                    <div style={styles.meta}>
+
+                      {p.size && `Size: ${p.size}`}
+
+                      {p.size && p.gauge && " • "}
+
+                      {p.gauge && `Gauge: ${p.gauge}`}
+
+                    </div>
+
+                  )}
+
+
+                  {/* PRICE */}
+
+                  <div style={styles.price}>
+                    ₹ {p.price} / {unit.toUpperCase()}
+                  </div>
+
+
+                  {/* MIN */}
+
+                  <div style={styles.min}>
+
+                    {unit==="kg"
+                      ? "Min Order: 40 KG"
+                      : `1 Carton = ${pcs}`}
+
+                  </div>
+
+
+                </div>
+
+
+
+                {/* CART BUTTON */}
+
+                <div style={styles.cartWrap}>
+
+                  <button
+                    onClick={()=>addToCart(p)}
+                    style={styles.cartBtn}
+                  >
+
+                    <FaShoppingCart/>
+
+                    Add to Cart
+
+                  </button>
+
+                </div>
+
+
               </div>
 
+            );
 
-              <div style={{ fontWeight: 700 }}>
-                {p.name}
-              </div>
-
-
-              <div>
-                ₹ {p.price} / {p.unit_type}
-              </div>
-
-
-              <button
-                onClick={() => addToCart(p)}
-                style={{
-                  marginTop: 8,
-                  width: "100%",
-                  background: "#0B5ED7",
-                  color: "#fff",
-                  border: "none",
-                  padding: 8,
-                  borderRadius: 8
-                }}
-              >
-
-                <FaShoppingCart /> Add to Cart
-
-              </button>
-
-
-            </div>
-
-          ))}
+          })}
 
 
         </div>
@@ -202,5 +301,98 @@ export default function SubcategoryProductsPage() {
 
 
     </>
+
   );
+
 }
+
+
+/* ================= STYLES ================= */
+
+const styles = {
+
+  main:{
+    padding:16,
+    paddingBottom:100
+  },
+
+  heading:{
+    fontSize:22,
+    fontWeight:700,
+    marginBottom:16
+  },
+
+  grid:{
+    display:"grid",
+    gridTemplateColumns:"repeat(2,1fr)",
+    gap:16
+  },
+
+  card:{
+    background:"#fff",
+    borderRadius:16,
+    border:"1px solid #E5E7EB",
+    overflow:"hidden"
+  },
+
+  imageWrap:{
+    height:140,
+    display:"flex",
+    justifyContent:"center",
+    alignItems:"center",
+    background:"#f9fafb"
+  },
+
+  image:{
+    maxWidth:"100%",
+    maxHeight:"100%",
+    objectFit:"contain"
+  },
+
+  details:{
+    padding:12
+  },
+
+  category:{
+    fontSize:12,
+    color:"#0B5ED7"
+  },
+
+  name:{
+    fontSize:14,
+    fontWeight:700
+  },
+
+  subcategory:{
+    fontSize:12,
+    color:"#6b7280"
+  },
+
+  meta:{
+    fontSize:12,
+    color:"#6b7280"
+  },
+
+  price:{
+    fontWeight:700,
+    color:"#0B5ED7"
+  },
+
+  min:{
+    fontSize:12
+  },
+
+  cartWrap:{
+    padding:10
+  },
+
+  cartBtn:{
+    width:"100%",
+    padding:10,
+    background:"#0B5ED7",
+    color:"#fff",
+    border:"none",
+    borderRadius:8
+  }
+
+};
