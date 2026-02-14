@@ -21,7 +21,6 @@ export default function Home() {
           name,
           slug,
           price,
-          price_unit,
           image,
           size,
           gauge,
@@ -47,14 +46,8 @@ export default function Home() {
 
     let minQty = 1;
 
-    // 🔥 Quantity Logic
-    if (unit === "kg") {
-      minQty = 40;
-    }
-
-    if (unit === "pcs" || unit === "set") {
-      minQty = pcsPerCarton; // 1 carton minimum
-    }
+    if (unit === "kg") minQty = 40;
+    if (unit === "pcs" || unit === "set") minQty = pcsPerCarton;
 
     const existing = cart.find((i) => i.id === product.id);
 
@@ -114,67 +107,80 @@ export default function Home() {
         <h2 style={styles.heading}>Products</h2>
 
         <div style={styles.grid}>
-          {products.map((p) => (
-            <div key={p.id} style={styles.card}>
+          {products.map((p) => {
+            const unit = p.unit_type || "kg";
+            const pcsPerCarton = p.pcs_per_carton || 1;
 
-              <Link href={`/product/${p.slug}`} style={{ textDecoration: "none" }}>
-                <div style={styles.imageSection}>
-                  {p.image ? (
-                    <img src={p.image} alt={p.name} style={styles.image} />
-                  ) : (
-                    <div style={styles.noImage}>No Image</div>
-                  )}
-                </div>
-              </Link>
+            return (
+              <div key={p.id} style={styles.card}>
 
-              <div style={styles.detailsSection}>
-                <div style={styles.category}>
-                  {p.categories?.name}
-                </div>
-
-                <div style={styles.name}>
-                  {p.name}
-                </div>
-
-                <div style={styles.metaRow}>
-                  {p.size && <span>Size: {p.size}</span>}
-                  {p.gauge && <span>Gauge: {p.gauge}</span>}
-                </div>
-
-                {p.subcategories?.name && (
-                  <div style={styles.subcategory}>
-                    {p.subcategories.name}
+                <Link href={`/product/${p.slug}`} style={{ textDecoration: "none" }}>
+                  <div style={styles.imageSection}>
+                    {p.image ? (
+                      <img src={p.image} alt={p.name} style={styles.image} />
+                    ) : (
+                      <div style={styles.noImage}>No Image</div>
+                    )}
                   </div>
-                )}
+                </Link>
 
-                <div style={styles.price}>
-                  ₹ {p.price}
-                  {p.price_unit && (
-                    <span style={styles.unit}>
-                      {" "} / {p.price_unit.toUpperCase()}
-                    </span>
+                <div style={styles.detailsSection}>
+
+                  {/* Category Badge */}
+                  <div style={styles.badge}>
+                    {p.categories?.name}
+                  </div>
+
+                  {/* Name */}
+                  <div style={styles.name}>
+                    {p.name}
+                  </div>
+
+                  {/* Meta */}
+                  <div style={styles.metaRow}>
+                    {p.size && <span>Size: {p.size}</span>}
+                    {p.gauge && <span>Gauge: {p.gauge}</span>}
+                  </div>
+
+                  {/* Price */}
+                  <div style={styles.price}>
+                    ₹ {p.price}
+                    <span style={styles.unit}> / {unit.toUpperCase()}</span>
+                  </div>
+
+                  {/* Minimum Info */}
+                  {unit === "kg" && (
+                    <div style={styles.minBox}>
+                      Min Order: 40 KG
+                    </div>
                   )}
+
+                  {(unit === "pcs" || unit === "set") && (
+                    <div style={styles.minBox}>
+                      1 Carton = {pcsPerCarton} {unit.toUpperCase()}
+                    </div>
+                  )}
+
                 </div>
-              </div>
 
-              <div style={styles.cartSection}>
-                <button
-                  style={styles.cartBtn}
-                  onClick={() => addToCart(p)}
-                >
-                  <FaShoppingCart /> Add to Cart
-                </button>
-              </div>
+                <div style={styles.cartSection}>
+                  <button
+                    style={styles.cartBtn}
+                    onClick={() => addToCart(p)}
+                  >
+                    <FaShoppingCart /> Add to Cart
+                  </button>
+                </div>
 
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       </main>
     </>
   );
 }
 
-/* STYLES — UNCHANGED */
 const styles = {
   hero: {
     background: "#f8fafc",
@@ -187,6 +193,7 @@ const styles = {
   },
   heroTitle: { fontSize: 20, fontWeight: 700, marginBottom: 6 },
   heroSub: { fontSize: 13, color: "#6b7280" },
+
   categorySection: { padding: 16 },
   categoryHeading: { fontSize: 16, fontWeight: 700, marginBottom: 12 },
   categoryRow: { display: "flex", gap: 12 },
@@ -203,42 +210,100 @@ const styles = {
   },
   viewAllWrap: { marginTop: 10, textAlign: "right" },
   viewAll: { fontSize: 12, fontWeight: 600, color: "#0B5ED7" },
+
   main: { padding: 16, paddingBottom: 100 },
   heading: { fontSize: 18, fontWeight: 700, marginBottom: 14 },
-  grid: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 },
+
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gap: 16,
+  },
+
   card: {
     background: "#fff",
-    borderRadius: 16,
+    borderRadius: 18,
     border: "1px solid #E5E7EB",
     display: "flex",
     flexDirection: "column",
-    height: 420,
     overflow: "hidden",
+    boxShadow: "0 6px 16px rgba(0,0,0,0.05)",
   },
+
   imageSection: {
-    height: 150,
+    height: 160,
     background: "#f9fafb",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     padding: 12,
   },
+
   image: { maxWidth: "100%", maxHeight: "100%", objectFit: "contain" },
   noImage: { fontSize: 12, color: "#9CA3AF" },
-  detailsSection: { flex: 1, padding: 14, display: "flex", flexDirection: "column" },
-  category: { fontSize: 11, fontWeight: 600, color: "#0B5ED7" },
-  name: { fontSize: 14, fontWeight: 700, marginBottom: 6 },
-  metaRow: { display: "flex", gap: 10, fontSize: 12, color: "#6b7280" },
-  subcategory: { fontSize: 12, color: "#9CA3AF", marginBottom: 8 },
-  price: { fontSize: 16, fontWeight: 800, color: "#0B5ED7", marginTop: "auto" },
-  unit: { fontSize: 12, color: "#6b7280" },
-  cartSection: { padding: 12, borderTop: "1px solid #E5E7EB" },
+
+  detailsSection: {
+    padding: 14,
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+  },
+
+  badge: {
+    fontSize: 10,
+    fontWeight: 600,
+    background: "#E0EDFF",
+    color: "#0B5ED7",
+    padding: "4px 8px",
+    borderRadius: 20,
+    width: "fit-content",
+  },
+
+  name: {
+    fontSize: 14,
+    fontWeight: 700,
+    lineHeight: 1.3,
+  },
+
+  metaRow: {
+    display: "flex",
+    gap: 10,
+    fontSize: 12,
+    color: "#6b7280",
+  },
+
+  price: {
+    fontSize: 18,
+    fontWeight: 800,
+    color: "#0B5ED7",
+    marginTop: 6,
+  },
+
+  unit: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#6b7280",
+  },
+
+  minBox: {
+    fontSize: 11,
+    background: "#F3F4F6",
+    padding: "6px 8px",
+    borderRadius: 8,
+    marginTop: 4,
+  },
+
+  cartSection: {
+    padding: 12,
+    borderTop: "1px solid #E5E7EB",
+  },
+
   cartBtn: {
     width: "100%",
-    background: "#0B5ED7",
+    background: "linear-gradient(135deg,#0B5ED7,#084298)",
     color: "#fff",
     border: "none",
-    borderRadius: 10,
+    borderRadius: 12,
     padding: "10px",
     fontWeight: 700,
     cursor: "pointer",
