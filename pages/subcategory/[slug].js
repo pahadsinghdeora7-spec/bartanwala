@@ -5,7 +5,6 @@ import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
 import { FaShoppingCart } from "react-icons/fa";
 
-/* SUPABASE */
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -28,8 +27,25 @@ export default function SubcategoryProductsPage() {
 
       setLoading(true);
 
-      /* DIRECT JOIN QUERY */
-      const { data, error } = await supabase
+      /* STEP 1: get subcategory */
+      const { data: subcat, error: subErr } = await supabase
+        .from("subcategories")
+        .select("id, name")
+        .eq("slug", slug)
+        .single();
+
+      if (subErr || !subcat) {
+
+        setProducts([]);
+        setSubcategory(null);
+        setLoading(false);
+        return;
+      }
+
+      setSubcategory(subcat);
+
+      /* STEP 2: get products using subcategory_id */
+      const { data: prod, error: prodErr } = await supabase
         .from("products")
         .select(`
           id,
@@ -37,33 +53,17 @@ export default function SubcategoryProductsPage() {
           slug,
           price,
           image,
-          size,
-          gauge,
           unit_type,
           pcs_per_carton,
-          subcategories (
-            id,
-            name,
-            slug
-          ),
-          categories (
-            name
-          )
+          categories(name)
         `)
-        .eq("subcategories.slug", slug)
+        .eq("subcategory_id", subcat.id)
         .eq("in_stock", true)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.log(error);
-      }
+      if (prodErr) console.log(prodErr);
 
-      setProducts(data || []);
-
-      if (data && data.length > 0) {
-        setSubcategory(data[0].subcategories);
-      }
-
+      setProducts(prod || []);
       setLoading(false);
     }
 
@@ -71,31 +71,23 @@ export default function SubcategoryProductsPage() {
 
   }, [slug]);
 
-  /* ADD TO CART */
   function addToCart(product) {
 
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
-    const unit = product.unit_type || "kg";
-    const carton = product.pcs_per_carton || 1;
-
     let qty = 1;
 
-    if (unit === "kg") qty = 40;
-    if (unit === "pcs" || unit === "set") qty = carton;
+    if (product.unit_type === "kg") qty = 40;
+    if (product.unit_type === "pcs") qty = product.pcs_per_carton || 1;
 
     const exist = cart.find(i => i.id === product.id);
 
-    if (exist) {
-      exist.qty += qty;
-    } else {
-      cart.push({ ...product, qty, unit });
-    }
+    if (exist) exist.qty += qty;
+    else cart.push({ ...product, qty });
 
     localStorage.setItem("cart", JSON.stringify(cart));
 
-    alert("Added to cart");
-
+    alert("Added");
   }
 
   if (loading) return <div style={{padding:20}}>Loading...</div>;
@@ -103,147 +95,56 @@ export default function SubcategoryProductsPage() {
   return (
     <>
       <Head>
-        <title>{subcategory?.name || "Products"} | Bartanwala</title>
+        <title>{subcategory?.name}</title>
       </Head>
 
-      <main style={styles.main}>
+      <div style={{padding:16}}>
 
-        <h1 style={styles.heading}>
-          {subcategory?.name}
-        </h1>
+        <h2>{subcategory?.name}</h2>
 
         {products.length === 0 && (
           <div>No products found</div>
         )}
 
-        <div style={styles.grid}>
+        <div style={{
+          display:"grid",
+          gridTemplateColumns:"repeat(2,1fr)",
+          gap:16
+        }}>
 
-          {products.map(p => {
+          {products.map(p => (
 
-            const unit = p.unit_type || "kg";
+            <div key={p.id}
+              style={{
+                border:"1px solid #eee",
+                borderRadius:12,
+                padding:10
+              }}>
 
-            return (
+              <Link href={`/product/${p.slug}`}>
 
-              <div key={p.id} style={styles.card}>
+                <img src={p.image}
+                  style={{width:"100%",height:120,objectFit:"contain"}}
+                />
 
-                <Link href={`/product/${p.slug}`}>
+              </Link>
 
-                  <div style={styles.imageSection}>
+              <div>{p.name}</div>
 
-                    {p.image ? (
-                      <img src={p.image} style={styles.image} />
-                    ) : (
-                      <div>No Image</div>
-                    )}
+              <div>₹{p.price}</div>
 
-                  </div>
+              <button onClick={()=>addToCart(p)}>
+                Add
+              </button>
 
-                </Link>
+            </div>
 
-                <div style={styles.detailsSection}>
-
-                  <div style={styles.badge}>
-                    {p.categories?.name}
-                  </div>
-
-                  <div style={styles.name}>
-                    {p.name}
-                  </div>
-
-                  <div style={styles.price}>
-                    ₹ {p.price} / {unit}
-                  </div>
-
-                </div>
-
-                <div style={styles.cartSection}>
-                  <button
-                    style={styles.cartBtn}
-                    onClick={() => addToCart(p)}
-                  >
-                    <FaShoppingCart /> Add
-                  </button>
-                </div>
-
-              </div>
-
-            );
-
-          })}
+          ))}
 
         </div>
 
-      </main>
+      </div>
     </>
   );
 
-}
-
-/* STYLES */
-
-const styles = {
-
-main:{padding:16},
-
-heading:{
-fontSize:22,
-fontWeight:700,
-marginBottom:16
-},
-
-grid:{
-display:"grid",
-gridTemplateColumns:"repeat(2,1fr)",
-gap:16
-},
-
-card:{
-background:"#fff",
-border:"1px solid #eee",
-borderRadius:12,
-overflow:"hidden"
-},
-
-imageSection:{
-height:150,
-display:"flex",
-alignItems:"center",
-justifyContent:"center"
-},
-
-image:{
-maxWidth:"100%",
-maxHeight:"100%"
-},
-
-detailsSection:{
-padding:12
-},
-
-badge:{
-fontSize:11,
-color:"#0B5ED7"
-},
-
-name:{
-fontWeight:600
-},
-
-price:{
-fontWeight:700
-},
-
-cartSection:{
-padding:10
-},
-
-cartBtn:{
-width:"100%",
-background:"#0B5ED7",
-color:"#fff",
-border:"none",
-padding:10,
-borderRadius:8
-}
-
-};
+                }
