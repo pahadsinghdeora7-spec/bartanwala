@@ -3,17 +3,17 @@ import { FaShoppingCart } from "react-icons/fa";
 
 export default function ProductCard({ product }) {
 
-  const unit = product.unit_type || "kg";
-  const cartonSize = product.pcs_per_carton || 1;
-
   function addToCart() {
 
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
+    const unit = product.unit_type || "kg";
+    const pcsPerCarton = product.pcs_per_carton || 1;
+
     let qty = 1;
 
     if (unit === "kg") qty = 40;
-    if (unit === "pcs" || unit === "set") qty = cartonSize;
+    if (unit === "pcs" || unit === "set") qty = pcsPerCarton;
 
     const existing = cart.find(i => i.id === product.id);
 
@@ -30,8 +30,10 @@ export default function ProductCard({ product }) {
     localStorage.setItem("cart", JSON.stringify(cart));
 
     alert("Product added to cart");
-
   }
+
+  const unit = product.unit_type || "kg";
+  const pcsPerCarton = product.pcs_per_carton || 1;
 
   return (
 
@@ -42,11 +44,17 @@ export default function ProductCard({ product }) {
 
         <div style={styles.imageSection}>
 
-          <img
-            src={product.image || "/placeholder.png"}
-            alt={product.name}
-            style={styles.image}
-          />
+          {product.image ? (
+            <img
+              src={product.image}
+              alt={product.name}
+              style={styles.image}
+            />
+          ) : (
+            <div style={styles.noImage}>
+              No Image
+            </div>
+          )}
 
         </div>
 
@@ -56,14 +64,19 @@ export default function ProductCard({ product }) {
       {/* DETAILS */}
       <div style={styles.detailsSection}>
 
-        <div style={styles.badge}>
-          {product.categories?.name}
+        {/* ✅ SHOW SUBCATEGORY ONLY */}
+        <div style={styles.subcategory}>
+          {product.subcategories?.name || ""}
         </div>
 
+
+        {/* ✅ PRODUCT NAME MAX 2 LINE */}
         <div style={styles.name}>
           {product.name}
         </div>
 
+
+        {/* PRICE */}
         <div style={styles.price}>
           ₹ {product.price}
           <span style={styles.unit}>
@@ -71,6 +84,8 @@ export default function ProductCard({ product }) {
           </span>
         </div>
 
+
+        {/* MIN ORDER */}
         {unit === "kg" && (
           <div style={styles.minBox}>
             Min Order: 40 KG
@@ -79,7 +94,7 @@ export default function ProductCard({ product }) {
 
         {(unit === "pcs" || unit === "set") && (
           <div style={styles.minBox}>
-            1 Carton = {cartonSize} {unit.toUpperCase()}
+            1 Carton = {pcsPerCarton} {unit.toUpperCase()}
           </div>
         )}
 
@@ -93,8 +108,7 @@ export default function ProductCard({ product }) {
           style={styles.cartBtn}
           onClick={addToCart}
         >
-          <FaShoppingCart />
-          Add to Cart
+          <FaShoppingCart /> Add to Cart
         </button>
 
       </div>
@@ -106,25 +120,27 @@ export default function ProductCard({ product }) {
 }
 
 
-/* STYLES */
+/* ================= STYLES ================= */
 
 const styles = {
 
   card: {
     background: "#fff",
-    borderRadius: 16,
+    borderRadius: 18,
     border: "1px solid #E5E7EB",
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
+    boxShadow: "0 6px 16px rgba(0,0,0,0.05)",
   },
 
   imageSection: {
-    height: 150,
+    height: 160,
     background: "#f9fafb",
     display: "flex",
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
   },
 
   image: {
@@ -133,53 +149,74 @@ const styles = {
     objectFit: "contain",
   },
 
+  noImage: {
+    fontSize: 12,
+    color: "#9CA3AF",
+  },
+
   detailsSection: {
-    padding: 12,
+    padding: 14,
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    flex: 1,
   },
 
-  badge: {
-    fontSize: 10,
+  /* ✅ SUBCATEGORY STYLE */
+  subcategory: {
+    fontSize: 11,
     color: "#0B5ED7",
+    fontWeight: 600,
   },
 
+
+  /* ✅ NAME STRICT 2 LINE */
   name: {
     fontSize: 14,
     fontWeight: 700,
+    lineHeight: 1.3,
+
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
+
+    minHeight: 36,
   },
 
+
   price: {
-    fontSize: 16,
-    fontWeight: 700,
+    fontSize: 18,
+    fontWeight: 800,
     color: "#0B5ED7",
   },
 
   unit: {
     fontSize: 12,
+    color: "#6b7280",
   },
 
   minBox: {
     fontSize: 11,
-    background: "#f3f4f6",
-    padding: 4,
-    borderRadius: 6,
-    marginTop: 4,
+    background: "#F3F4F6",
+    padding: "6px 8px",
+    borderRadius: 8,
   },
 
   cartSection: {
-    padding: 10,
+    padding: 12,
+    borderTop: "1px solid #E5E7EB",
   },
 
   cartBtn: {
     width: "100%",
-    padding: 10,
-    background: "#0B5ED7",
+    background: "linear-gradient(135deg,#0B5ED7,#084298)",
     color: "#fff",
     border: "none",
-    borderRadius: 8,
-    display: "flex",
-    justifyContent: "center",
-    gap: 6,
-    alignItems: "center",
-  }
+    borderRadius: 12,
+    padding: "10px",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
 
 };
