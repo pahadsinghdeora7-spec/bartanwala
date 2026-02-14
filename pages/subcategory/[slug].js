@@ -21,7 +21,7 @@ export default function SubcategoryProductsPage() {
   const [subcategory, setSubcategory] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  /* ================= LOAD PRODUCTS ================= */
+  /* ================= LOAD DATA ================= */
 
   useEffect(() => {
 
@@ -29,44 +29,63 @@ export default function SubcategoryProductsPage() {
 
     async function loadData() {
 
-      setLoading(true);
+      try {
 
-      /* GET SUBCATEGORY */
-      const { data: subcat } = await supabase
-        .from("subcategories")
-        .select("id, name")
-        .eq("slug", slug)
-        .single();
+        setLoading(true);
 
-      if (!subcat) {
+        /* GET SUBCATEGORY USING SLUG */
+        const { data: subcat, error: subError } = await supabase
+          .from("subcategories")
+          .select("id, name, slug")
+          .eq("slug", slug)
+          .single();
+
+        if (subError || !subcat) {
+          console.log("Subcategory error:", subError);
+          setProducts([]);
+          setSubcategory(null);
+          setLoading(false);
+          return;
+        }
+
+        setSubcategory(subcat);
+
+        /* GET PRODUCTS USING subcategory_id */
+        const { data: productsData, error: prodError } = await supabase
+          .from("products")
+          .select(`
+            id,
+            name,
+            slug,
+            price,
+            image,
+            size,
+            gauge,
+            unit_type,
+            pcs_per_carton,
+            categories(name)
+          `)
+          .eq("subcategory_id", Number(subcat.id)) // FIXED
+          .eq("in_stock", true)
+          .order("created_at", { ascending: false });
+
+        if (prodError) {
+          console.log("Products error:", prodError);
+        }
+
+        setProducts(productsData || []);
+
+      } catch (err) {
+
+        console.log("Load error:", err);
         setProducts([]);
+
+      } finally {
+
         setLoading(false);
-        return;
+
       }
 
-      setSubcategory(subcat);
-
-      /* GET PRODUCTS */
-      const { data: productsData } = await supabase
-        .from("products")
-        .select(`
-          id,
-          name,
-          slug,
-          price,
-          image,
-          size,
-          gauge,
-          unit_type,
-          pcs_per_carton,
-          categories(name)
-        `)
-        .eq("subcategory_id", subcat.id)
-        .eq("in_stock", true)
-        .order("created_at", { ascending: false });
-
-      setProducts(productsData || []);
-      setLoading(false);
     }
 
     loadData();
@@ -107,11 +126,13 @@ export default function SubcategoryProductsPage() {
   /* ================= LOADING ================= */
 
   if (loading) {
+
     return (
       <div style={{ padding: 20 }}>
         Loading...
       </div>
     );
+
   }
 
   /* ================= PAGE ================= */
@@ -148,7 +169,6 @@ export default function SubcategoryProductsPage() {
 
               <div key={p.id} style={styles.card}>
 
-                {/* IMAGE */}
                 <Link href={`/product/${p.slug}`}>
 
                   <div style={styles.imageSection}>
@@ -169,7 +189,6 @@ export default function SubcategoryProductsPage() {
 
                 </Link>
 
-                {/* DETAILS */}
                 <div style={styles.detailsSection}>
 
                   <div style={styles.badge}>
@@ -206,7 +225,6 @@ export default function SubcategoryProductsPage() {
 
                 </div>
 
-                {/* BUTTON */}
                 <div style={styles.cartSection}>
 
                   <button
