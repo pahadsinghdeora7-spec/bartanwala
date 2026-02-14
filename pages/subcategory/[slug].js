@@ -5,11 +5,10 @@ import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
 import { FaShoppingCart } from "react-icons/fa";
 
-/* ================= SUPABASE ================= */
-
+/* SUPABASE */
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
 export default function SubcategoryProductsPage() {
@@ -21,130 +20,90 @@ export default function SubcategoryProductsPage() {
   const [subcategory, setSubcategory] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  /* ================= LOAD DATA ================= */
-
   useEffect(() => {
 
     if (!slug) return;
 
     async function loadData() {
 
-      try {
+      setLoading(true);
 
-        setLoading(true);
-
-        /* GET SUBCATEGORY USING SLUG */
-        const { data: subcat, error: subError } = await supabase
-          .from("subcategories")
-          .select("id, name, slug")
-          .eq("slug", slug)
-          .single();
-
-        if (subError || !subcat) {
-          console.log("Subcategory error:", subError);
-          setProducts([]);
-          setSubcategory(null);
-          setLoading(false);
-          return;
-        }
-
-        setSubcategory(subcat);
-
-        /* GET PRODUCTS USING subcategory_id */
-        const { data: productsData, error: prodError } = await supabase
-          .from("products")
-          .select(`
+      /* DIRECT JOIN QUERY */
+      const { data, error } = await supabase
+        .from("products")
+        .select(`
+          id,
+          name,
+          slug,
+          price,
+          image,
+          size,
+          gauge,
+          unit_type,
+          pcs_per_carton,
+          subcategories (
             id,
             name,
-            slug,
-            price,
-            image,
-            size,
-            gauge,
-            unit_type,
-            pcs_per_carton,
-            categories(name)
-          `)
-          .eq("subcategory_id", subcat.id)   // ✅ FIXED
-          .order("created_at", { ascending: false });  // ✅ removed in_stock filter
+            slug
+          ),
+          categories (
+            name
+          )
+        `)
+        .eq("subcategories.slug", slug)
+        .eq("in_stock", true)
+        .order("created_at", { ascending: false });
 
-        if (prodError) {
-          console.log("Products error:", prodError);
-        }
-
-        console.log("Loaded products:", productsData);
-
-        setProducts(productsData || []);
-
-      } catch (err) {
-
-        console.log("Load error:", err);
-        setProducts([]);
-
-      } finally {
-
-        setLoading(false);
-
+      if (error) {
+        console.log(error);
       }
 
+      setProducts(data || []);
+
+      if (data && data.length > 0) {
+        setSubcategory(data[0].subcategories);
+      }
+
+      setLoading(false);
     }
 
     loadData();
 
   }, [slug]);
 
-  /* ================= ADD TO CART ================= */
-
+  /* ADD TO CART */
   function addToCart(product) {
 
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
     const unit = product.unit_type || "kg";
-    const cartonSize = product.pcs_per_carton || 1;
+    const carton = product.pcs_per_carton || 1;
 
     let qty = 1;
 
     if (unit === "kg") qty = 40;
-    if (unit === "pcs" || unit === "set") qty = cartonSize;
+    if (unit === "pcs" || unit === "set") qty = carton;
 
-    const existing = cart.find(i => i.id === product.id);
+    const exist = cart.find(i => i.id === product.id);
 
-    if (existing) {
-      existing.qty += qty;
+    if (exist) {
+      exist.qty += qty;
     } else {
-      cart.push({
-        ...product,
-        qty,
-        unit
-      });
+      cart.push({ ...product, qty, unit });
     }
 
     localStorage.setItem("cart", JSON.stringify(cart));
 
-    alert("Product added to cart");
-  }
-
-  /* ================= LOADING ================= */
-
-  if (loading) {
-
-    return (
-      <div style={{ padding: 20 }}>
-        Loading...
-      </div>
-    );
+    alert("Added to cart");
 
   }
 
-  /* ================= PAGE ================= */
+  if (loading) return <div style={{padding:20}}>Loading...</div>;
 
   return (
     <>
-
       <Head>
-        <title>
-          {subcategory?.name || "Products"} | Bartanwala
-        </title>
+        <title>{subcategory?.name || "Products"} | Bartanwala</title>
       </Head>
 
       <main style={styles.main}>
@@ -154,17 +113,14 @@ export default function SubcategoryProductsPage() {
         </h1>
 
         {products.length === 0 && (
-          <div style={styles.empty}>
-            No products found
-          </div>
+          <div>No products found</div>
         )}
 
         <div style={styles.grid}>
 
-          {products.map((p) => {
+          {products.map(p => {
 
             const unit = p.unit_type || "kg";
-            const cartonSize = p.pcs_per_carton || 1;
 
             return (
 
@@ -175,15 +131,9 @@ export default function SubcategoryProductsPage() {
                   <div style={styles.imageSection}>
 
                     {p.image ? (
-                      <img
-                        src={p.image}
-                        alt={p.name}
-                        style={styles.image}
-                      />
+                      <img src={p.image} style={styles.image} />
                     ) : (
-                      <div style={styles.noImage}>
-                        No Image
-                      </div>
+                      <div>No Image</div>
                     )}
 
                   </div>
@@ -200,42 +150,19 @@ export default function SubcategoryProductsPage() {
                     {p.name}
                   </div>
 
-                  <div style={styles.metaRow}>
-                    {p.size && <span>Size: {p.size}</span>}
-                    {p.gauge && <span>Gauge: {p.gauge}</span>}
-                  </div>
-
                   <div style={styles.price}>
-                    ₹ {p.price}
-                    <span style={styles.unit}>
-                      {" "} / {unit.toUpperCase()}
-                    </span>
+                    ₹ {p.price} / {unit}
                   </div>
-
-                  {unit === "kg" && (
-                    <div style={styles.minBox}>
-                      Min Order: 40 KG
-                    </div>
-                  )}
-
-                  {(unit === "pcs" || unit === "set") && (
-                    <div style={styles.minBox}>
-                      1 Carton = {cartonSize} {unit.toUpperCase()}
-                    </div>
-                  )}
 
                 </div>
 
                 <div style={styles.cartSection}>
-
                   <button
                     style={styles.cartBtn}
                     onClick={() => addToCart(p)}
                   >
-                    <FaShoppingCart />
-                    Add to Cart
+                    <FaShoppingCart /> Add
                   </button>
-
                 </div>
 
               </div>
@@ -247,138 +174,76 @@ export default function SubcategoryProductsPage() {
         </div>
 
       </main>
-
     </>
   );
 
 }
 
-/* ================= STYLES ================= */
+/* STYLES */
 
 const styles = {
 
-  main: {
-    padding: 16,
-    paddingBottom: 100,
-  },
+main:{padding:16},
 
-  heading: {
-    fontSize: 22,
-    fontWeight: 700,
-    marginBottom: 14,
-  },
+heading:{
+fontSize:22,
+fontWeight:700,
+marginBottom:16
+},
 
-  empty: {
-    background: "#fff",
-    padding: 20,
-    borderRadius: 12,
-    textAlign: "center",
-  },
+grid:{
+display:"grid",
+gridTemplateColumns:"repeat(2,1fr)",
+gap:16
+},
 
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    gap: 16,
-  },
+card:{
+background:"#fff",
+border:"1px solid #eee",
+borderRadius:12,
+overflow:"hidden"
+},
 
-  card: {
-    background: "#fff",
-    borderRadius: 18,
-    border: "1px solid #E5E7EB",
-    display: "flex",
-    flexDirection: "column",
-    overflow: "hidden",
-    boxShadow: "0 6px 16px rgba(0,0,0,0.05)",
-  },
+imageSection:{
+height:150,
+display:"flex",
+alignItems:"center",
+justifyContent:"center"
+},
 
-  imageSection: {
-    height: 160,
-    background: "#f9fafb",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 12,
-  },
+image:{
+maxWidth:"100%",
+maxHeight:"100%"
+},
 
-  image: {
-    maxWidth: "100%",
-    maxHeight: "100%",
-    objectFit: "contain",
-  },
+detailsSection:{
+padding:12
+},
 
-  noImage: {
-    fontSize: 12,
-    color: "#9CA3AF",
-  },
+badge:{
+fontSize:11,
+color:"#0B5ED7"
+},
 
-  detailsSection: {
-    padding: 14,
-    display: "flex",
-    flexDirection: "column",
-    gap: 6,
-    flex: 1,
-  },
+name:{
+fontWeight:600
+},
 
-  badge: {
-    fontSize: 10,
-    fontWeight: 600,
-    background: "#E0EDFF",
-    color: "#0B5ED7",
-    padding: "4px 8px",
-    borderRadius: 20,
-    width: "fit-content",
-  },
+price:{
+fontWeight:700
+},
 
-  name: {
-    fontSize: 14,
-    fontWeight: 700,
-    lineHeight: 1.3,
-    minHeight: 38,
-  },
+cartSection:{
+padding:10
+},
 
-  metaRow: {
-    display: "flex",
-    gap: 10,
-    fontSize: 12,
-    color: "#6b7280",
-  },
-
-  price: {
-    fontSize: 18,
-    fontWeight: 800,
-    color: "#0B5ED7",
-  },
-
-  unit: {
-    fontSize: 12,
-    color: "#6b7280",
-  },
-
-  minBox: {
-    fontSize: 11,
-    background: "#F3F4F6",
-    padding: "6px 8px",
-    borderRadius: 8,
-  },
-
-  cartSection: {
-    padding: 12,
-    borderTop: "1px solid #E5E7EB",
-  },
-
-  cartBtn: {
-    width: "100%",
-    background: "linear-gradient(135deg,#0B5ED7,#084298)",
-    color: "#fff",
-    border: "none",
-    borderRadius: 12,
-    padding: "10px",
-    fontWeight: 700,
-    cursor: "pointer",
-    display: "flex",
-    justifyContent: "center",
-    gap: 6,
-    alignItems: "center",
-  }
+cartBtn:{
+width:"100%",
+background:"#0B5ED7",
+color:"#fff",
+border:"none",
+padding:10,
+borderRadius:8
+}
 
 };
