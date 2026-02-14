@@ -1,74 +1,62 @@
-import { useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
-import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
 import { FaShoppingCart } from "react-icons/fa";
 
 /* ================= SUPABASE ================= */
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-export default function SubcategoryPage() {
+/* ================= SERVER ================= */
 
-  const router = useRouter();
-  const { id } = router.query;
+export async function getServerSideProps({ params }) {
+  const slug = params.slug;
 
-  const [subcategory, setSubcategory] = useState(null);
-  const [products, setProducts] = useState([]);
+  /* 🔹 GET SUBCATEGORY */
+  const { data: subcategory } = await supabase
+    .from("subcategories")
+    .select("*")
+    .eq("slug", slug)
+    .single();
 
-  /* ================= LOAD DATA ================= */
+  if (!subcategory) {
+    return { notFound: true };
+  }
 
-  useEffect(() => {
+  /* 🔹 GET PRODUCTS */
+  const { data: products } = await supabase
+    .from("products")
+    .select(`
+      id,
+      name,
+      slug,
+      price,
+      image,
+      size,
+      gauge,
+      unit_type,
+      carton_size,
+      categories(name),
+      subcategories(name)
+    `)
+    .eq("subcategory_id", subcategory.id)
+    .eq("in_stock", true)
+    .order("created_at", { ascending: false });
 
-    if (!id) return;
+  return {
+    props: {
+      subcategory,
+      products: products || [],
+    },
+  };
+}
 
-    async function loadData() {
+/* ================= PAGE ================= */
 
-      /* LOAD SUBCATEGORY INFO */
-      const { data: sub } = await supabase
-        .from("subcategories")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      setSubcategory(sub);
-
-      /* LOAD PRODUCTS */
-      const { data: prods, error } = await supabase
-        .from("products")
-        .select(`
-          id,
-          name,
-          slug,
-          price,
-          image,
-          size,
-          gauge,
-          unit_type,
-          carton_size,
-          categories(name),
-          subcategories(name)
-        `)
-        .eq("subcategory_id", id)
-        .eq("in_stock", true)
-        .order("created_at", { ascending: false });
-
-      if (!error) {
-        setProducts(prods || []);
-      }
-
-    }
-
-    loadData();
-
-  }, [id]);
-
-
-  /* ================= ADD TO CART ================= */
+export default function SubcategoryPage({ subcategory, products }) {
 
   function addToCart(product) {
 
@@ -82,12 +70,16 @@ export default function SubcategoryPage() {
     if (unit === "kg") qty = 40;
     if (unit === "pcs" || unit === "set") qty = cartonSize;
 
-    const existing = cart.find(i => i.id === product.id);
+    const existing = cart.find((i) => i.id === product.id);
 
     if (existing) {
       existing.qty += qty;
     } else {
-      cart.push({ ...product, qty, unit });
+      cart.push({
+        ...product,
+        qty,
+        unit,
+      });
     }
 
     localStorage.setItem("cart", JSON.stringify(cart));
@@ -95,27 +87,27 @@ export default function SubcategoryPage() {
     alert("Product added to cart");
   }
 
-
-  /* ================= UI ================= */
-
   return (
     <>
       <Head>
-        <title>
-          {subcategory?.name || "Subcategory"} | Bartanwala
-        </title>
+        <title>{subcategory.name} | Bartanwala</title>
       </Head>
 
       <main style={styles.main}>
 
-        <h2 style={styles.heading}>
-          {subcategory?.name || "Products"}
-        </h2>
+        <h1 style={styles.title}>
+          {subcategory.name}
+        </h1>
 
+        {products.length === 0 && (
+          <div style={styles.empty}>
+            No products found
+          </div>
+        )}
 
         <div style={styles.grid}>
 
-          {products.map(p => {
+          {products.map((p) => {
 
             const unit = p.unit_type || "kg";
             const cartonSize = p.carton_size || 1;
@@ -125,16 +117,15 @@ export default function SubcategoryPage() {
               <div key={p.id} style={styles.card}>
 
                 {/* IMAGE */}
-                <Link href={`/product/${p.slug}`}>
+                <Link href={`/product/${p.slug}`} style={{ textDecoration: "none" }}>
                   <div style={styles.imageSection}>
-                    <img
-                      src={p.image || "/placeholder.png"}
-                      alt={p.name}
-                      style={styles.image}
-                    />
+                    {p.image ? (
+                      <img src={p.image} style={styles.image} />
+                    ) : (
+                      <div style={styles.noImage}>No Image</div>
+                    )}
                   </div>
                 </Link>
-
 
                 {/* DETAILS */}
                 <div style={styles.detailsSection}>
@@ -159,7 +150,6 @@ export default function SubcategoryPage() {
                     </span>
                   </div>
 
-                  {/* MIN ORDER */}
                   {unit === "kg" && (
                     <div style={styles.minBox}>
                       Min Order: 40 KG
@@ -174,17 +164,16 @@ export default function SubcategoryPage() {
 
                 </div>
 
-
                 {/* BUTTON */}
                 <div style={styles.cartSection}>
                   <button
                     style={styles.cartBtn}
                     onClick={() => addToCart(p)}
                   >
-                    <FaShoppingCart /> Add to Cart
+                    <FaShoppingCart />
+                    Add to Cart
                   </button>
                 </div>
-
 
               </div>
 
@@ -194,19 +183,10 @@ export default function SubcategoryPage() {
 
         </div>
 
-
-        {/* EMPTY */}
-        {products.length === 0 && (
-          <div style={styles.empty}>
-            No products found
-          </div>
-        )}
-
       </main>
     </>
   );
 }
-
 
 /* ================= STYLES ================= */
 
@@ -217,10 +197,16 @@ const styles = {
     paddingBottom: 100,
   },
 
-  heading: {
-    fontSize: 20,
+  title: {
+    fontSize: 22,
     fontWeight: 700,
-    marginBottom: 16,
+    marginBottom: 14,
+  },
+
+  empty: {
+    background: "#fff",
+    padding: 20,
+    borderRadius: 12,
   },
 
   grid: {
@@ -240,11 +226,11 @@ const styles = {
   },
 
   imageSection: {
-    height: 150,
+    height: 160,
     background: "#f9fafb",
     display: "flex",
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
   },
 
   image: {
@@ -253,11 +239,13 @@ const styles = {
     objectFit: "contain",
   },
 
+  noImage: {
+    fontSize: 12,
+    color: "#9CA3AF",
+  },
+
   detailsSection: {
-    padding: 12,
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
+    padding: 14,
     flex: 1,
   },
 
@@ -273,7 +261,7 @@ const styles = {
   name: {
     fontSize: 14,
     fontWeight: 700,
-    lineHeight: 1.3,
+    marginTop: 4,
   },
 
   metaRow: {
@@ -282,7 +270,7 @@ const styles = {
   },
 
   price: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 800,
     color: "#0B5ED7",
   },
@@ -295,12 +283,13 @@ const styles = {
   minBox: {
     fontSize: 11,
     background: "#F3F4F6",
-    padding: "4px 6px",
-    borderRadius: 6,
+    padding: "6px 8px",
+    borderRadius: 8,
+    marginTop: 4,
   },
 
   cartSection: {
-    padding: 10,
+    padding: 12,
     borderTop: "1px solid #E5E7EB",
   },
 
@@ -309,20 +298,10 @@ const styles = {
     background: "linear-gradient(135deg,#0B5ED7,#084298)",
     color: "#fff",
     border: "none",
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 10,
     fontWeight: 700,
     cursor: "pointer",
-    display: "flex",
-    justifyContent: "center",
-    gap: 6,
-    alignItems: "center",
   },
-
-  empty: {
-    marginTop: 20,
-    textAlign: "center",
-    color: "#6b7280",
-  }
 
 };
