@@ -65,13 +65,14 @@ export default function SubcategoryProductsPage() {
             pcs_per_carton,
             categories(name)
           `)
-          .eq("subcategory_id", Number(subcat.id)) // FIXED
-          .eq("in_stock", true)
-          .order("created_at", { ascending: false });
+          .eq("subcategory_id", subcat.id)   // ✅ FIXED
+          .order("created_at", { ascending: false });  // ✅ removed in_stock filter
 
         if (prodError) {
           console.log("Products error:", prodError);
         }
+
+        console.log("Loaded products:", productsData);
 
         setProducts(productsData || []);
 
