@@ -126,29 +126,26 @@ export default function Home() {
 
                 <div style={styles.detailsSection}>
 
-                  {/* Category Badge */}
                   <div style={styles.badge}>
                     {p.categories?.name}
                   </div>
 
-                  {/* Name */}
+                  {/* ✅ FIXED 2 LINE NAME */}
                   <div style={styles.name}>
                     {p.name}
                   </div>
 
-                  {/* Meta */}
                   <div style={styles.metaRow}>
                     {p.size && <span>Size: {p.size}</span>}
                     {p.gauge && <span>Gauge: {p.gauge}</span>}
                   </div>
 
-                  {/* Price */}
+                  {/* ✅ price auto pushes button down */}
                   <div style={styles.price}>
                     ₹ {p.price}
                     <span style={styles.unit}> / {unit.toUpperCase()}</span>
                   </div>
 
-                  {/* Minimum Info */}
                   {unit === "kg" && (
                     <div style={styles.minBox}>
                       Min Order: 40 KG
@@ -182,6 +179,7 @@ export default function Home() {
 }
 
 const styles = {
+
   hero: {
     background: "#f8fafc",
     padding: "28px 16px",
@@ -191,12 +189,14 @@ const styles = {
     border: "1px solid #E5E7EB",
     marginBottom: 16,
   },
+
   heroTitle: { fontSize: 20, fontWeight: 700, marginBottom: 6 },
   heroSub: { fontSize: 13, color: "#6b7280" },
 
   categorySection: { padding: 16 },
   categoryHeading: { fontSize: 16, fontWeight: 700, marginBottom: 12 },
   categoryRow: { display: "flex", gap: 12 },
+
   categoryCard: {
     flex: 1,
     padding: 14,
@@ -208,6 +208,7 @@ const styles = {
     textAlign: "center",
     fontWeight: 600,
   },
+
   viewAllWrap: { marginTop: 10, textAlign: "right" },
   viewAll: { fontSize: 12, fontWeight: 600, color: "#0B5ED7" },
 
@@ -247,6 +248,7 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: 6,
+    flex: 1,
   },
 
   badge: {
@@ -259,10 +261,16 @@ const styles = {
     width: "fit-content",
   },
 
+  /* ✅ 2 LINE FIX */
   name: {
     fontSize: 14,
     fontWeight: 700,
     lineHeight: 1.3,
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
+    minHeight: 36,
   },
 
   metaRow: {
@@ -272,11 +280,12 @@ const styles = {
     color: "#6b7280",
   },
 
+  /* ✅ BUTTON ALIGN FIX */
   price: {
     fontSize: 18,
     fontWeight: 800,
     color: "#0B5ED7",
-    marginTop: 6,
+    marginTop: "auto",
   },
 
   unit: {
