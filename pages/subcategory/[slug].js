@@ -6,145 +6,164 @@ import { createClient } from "@supabase/supabase-js";
 import { FaShoppingCart } from "react-icons/fa";
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+process.env.NEXT_PUBLIC_SUPABASE_URL,
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
 export default function SubcategoryProductsPage() {
 
-  const router = useRouter();
-  const { slug } = router.query;
+const router = useRouter();
+const { slug } = router.query;
 
-  const [products, setProducts] = useState([]);
-  const [subcategory, setSubcategory] = useState(null);
-  const [loading, setLoading] = useState(true);
+const [products, setProducts] = useState([]);
+const [subcategory, setSubcategory] = useState(null);
+const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+useEffect(() => {
 
-    if (!slug) return;
+if (!slug) return;
 
-    async function loadData() {
+async function loadData() {
 
-      setLoading(true);
+  setLoading(true);
 
-      /* STEP 1: get subcategory */
-      const { data: subcat, error: subErr } = await supabase
-        .from("subcategories")
-        .select("id, name")
-        .eq("slug", slug)
-        .single();
+  /* STEP 1: GET SUBCATEGORY */
+  const { data: subcat, error: subErr } = await supabase
+    .from("subcategories")
+    .select("*")
+    .eq("slug", slug)
+    .maybeSingle();
 
-      if (subErr || !subcat) {
+  if (subErr || !subcat) {
 
-        setProducts([]);
-        setSubcategory(null);
-        setLoading(false);
-        return;
-      }
+    console.log("Subcategory not found:", slug);
 
-      setSubcategory(subcat);
-
-      /* STEP 2: get products using subcategory_id */
-      const { data: prod, error: prodErr } = await supabase
-        .from("products")
-        .select(`
-          id,
-          name,
-          slug,
-          price,
-          image,
-          unit_type,
-          pcs_per_carton,
-          categories(name)
-        `)
-        .eq("subcategory_id", subcat.id)
-        .eq("in_stock", true)
-        .order("created_at", { ascending: false });
-
-      if (prodErr) console.log(prodErr);
-
-      setProducts(prod || []);
-      setLoading(false);
-    }
-
-    loadData();
-
-  }, [slug]);
-
-  function addToCart(product) {
-
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-
-    let qty = 1;
-
-    if (product.unit_type === "kg") qty = 40;
-    if (product.unit_type === "pcs") qty = product.pcs_per_carton || 1;
-
-    const exist = cart.find(i => i.id === product.id);
-
-    if (exist) exist.qty += qty;
-    else cart.push({ ...product, qty });
-
-    localStorage.setItem("cart", JSON.stringify(cart));
-
-    alert("Added");
+    setProducts([]);
+    setLoading(false);
+    return;
   }
 
-  if (loading) return <div style={{padding:20}}>Loading...</div>;
+  setSubcategory(subcat);
 
-  return (
-    <>
-      <Head>
-        <title>{subcategory?.name}</title>
-      </Head>
+  /* STEP 2: GET PRODUCTS */
+  const { data: prodData, error: prodErr } = await supabase
+    .from("products")
+    .select(`
+      *,
+      categories(name)
+    `)
+    .eq("subcategory_id", subcat.id)
+    .eq("in_stock", true)
+    .order("id", { ascending: false });
 
-      <div style={{padding:16}}>
+  if (prodErr) {
 
-        <h2>{subcategory?.name}</h2>
+    console.log("Product error:", prodErr);
+  }
 
-        {products.length === 0 && (
-          <div>No products found</div>
-        )}
+  console.log("Products found:", prodData);
 
-        <div style={{
-          display:"grid",
-          gridTemplateColumns:"repeat(2,1fr)",
-          gap:16
-        }}>
+  setProducts(prodData || []);
+  setLoading(false);
+}
 
-          {products.map(p => (
+loadData();
 
-            <div key={p.id}
+}, [slug]);
+
+function addToCart(product) {
+
+const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+
+const unit = product.unit_type || "kg";
+const carton = product.pcs_per_carton || 1;
+
+let qty = unit === "kg" ? 40 : carton;
+
+const existing = cart.find(i => i.id === product.id);
+
+if (existing) existing.qty += qty;
+else cart.push({ ...product, qty });
+
+localStorage.setItem("cart", JSON.stringify(cart));
+
+alert("Added to cart");
+
+}
+
+if (loading) {
+
+return <div style={{ padding: 20 }}>Loading...</div>;
+
+}
+
+return (
+<>
+<Head>
+<title>{subcategory?.name}</title>
+</Head>
+
+  <div style={{ padding: 16 }}>
+
+    <h1>{subcategory?.name}</h1>
+
+    {products.length === 0 && (
+      <div>No products found</div>
+    )}
+
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(2,1fr)",
+      gap: 16
+    }}>
+
+      {products.map(p => (
+
+        <div key={p.id}
+          style={{
+            background:"#fff",
+            borderRadius:12,
+            padding:10
+          }}>
+
+          <Link href={`/product/${p.slug}`}>
+
+            <img
+              src={p.image}
               style={{
-                border:"1px solid #eee",
-                borderRadius:12,
-                padding:10
-              }}>
+                width:"100%",
+                height:140,
+                objectFit:"contain"
+              }}
+            />
 
-              <Link href={`/product/${p.slug}`}>
+          </Link>
 
-                <img src={p.image}
-                  style={{width:"100%",height:120,objectFit:"contain"}}
-                />
+          <div>{p.name}</div>
 
-              </Link>
+          <div>
+            ₹{p.price}/{p.unit_type}
+          </div>
 
-              <div>{p.name}</div>
-
-              <div>₹{p.price}</div>
-
-              <button onClick={()=>addToCart(p)}>
-                Add
-              </button>
-
-            </div>
-
-          ))}
+          <button
+            onClick={()=>addToCart(p)}
+            style={{
+              width:"100%",
+              marginTop:10
+            }}
+          >
+            Add to cart
+          </button>
 
         </div>
 
-      </div>
-    </>
-  );
+      ))}
 
-                }
+    </div>
+
+  </div>
+</>
+
+);
+
+}
