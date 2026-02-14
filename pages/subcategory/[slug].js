@@ -1,113 +1,176 @@
+import { useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
 import { FaShoppingCart } from "react-icons/fa";
 
-/* ================= SERVER ================= */
+/* ================= SUPABASE ================= */
 
-export async function getServerSideProps({ params }) {
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+);
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
+export default function SubcategoryProductsPage() {
 
-  const slug = params.slug;
+  const router = useRouter();
+  const { slug } = router.query;
 
-  /* GET SUBCATEGORY */
-  const { data: subcategory } = await supabase
-    .from("subcategories")
-    .select("id, name")
-    .eq("slug", slug)
-    .single();
+  const [products, setProducts] = useState([]);
+  const [subcategory, setSubcategory] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!subcategory) {
-    return { notFound: true };
-  }
+  /* ================= LOAD PRODUCTS ================= */
 
-  /* GET PRODUCTS */
-  const { data: products } = await supabase
-    .from("products")
-    .select(`
-      id,
-      name,
-      slug,
-      price,
-      image,
-      size,
-      gauge,
-      unit_type,
-      pcs_per_carton,
-      categories(name)
-    `)
-    .eq("subcategory_id", subcategory.id)
-    .eq("in_stock", true)
-    .order("created_at", { ascending: false });
+  useEffect(() => {
 
-  return {
-    props: {
-      subcategory,
-      products: products || [],
-    },
-  };
-}
+    if (!slug) return;
 
-/* ================= PAGE ================= */
+    async function loadData() {
 
-export default function SubcategoryPage({ subcategory, products }) {
+      setLoading(true);
+
+      /* GET SUBCATEGORY */
+      const { data: subcat } = await supabase
+        .from("subcategories")
+        .select("id, name")
+        .eq("slug", slug)
+        .single();
+
+      if (!subcat) {
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
+
+      setSubcategory(subcat);
+
+      /* GET PRODUCTS */
+      const { data: productsData } = await supabase
+        .from("products")
+        .select(`
+          id,
+          name,
+          slug,
+          price,
+          image,
+          size,
+          gauge,
+          unit_type,
+          pcs_per_carton,
+          categories(name)
+        `)
+        .eq("subcategory_id", subcat.id)
+        .eq("in_stock", true)
+        .order("created_at", { ascending: false });
+
+      setProducts(productsData || []);
+      setLoading(false);
+    }
+
+    loadData();
+
+  }, [slug]);
+
+  /* ================= ADD TO CART ================= */
 
   function addToCart(product) {
 
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
     const unit = product.unit_type || "kg";
-    const carton = product.pcs_per_carton || 1;
+    const cartonSize = product.pcs_per_carton || 1;
 
     let qty = 1;
 
     if (unit === "kg") qty = 40;
-    if (unit === "pcs" || unit === "set") qty = carton;
+    if (unit === "pcs" || unit === "set") qty = cartonSize;
 
     const existing = cart.find(i => i.id === product.id);
 
-    if (existing) existing.qty += qty;
-    else cart.push({ ...product, qty, unit });
+    if (existing) {
+      existing.qty += qty;
+    } else {
+      cart.push({
+        ...product,
+        qty,
+        unit
+      });
+    }
 
     localStorage.setItem("cart", JSON.stringify(cart));
 
-    alert("Added to cart");
+    alert("Product added to cart");
   }
+
+  /* ================= LOADING ================= */
+
+  if (loading) {
+    return (
+      <div style={{ padding: 20 }}>
+        Loading...
+      </div>
+    );
+  }
+
+  /* ================= PAGE ================= */
 
   return (
     <>
+
       <Head>
-        <title>{subcategory.name} | Bartanwala</title>
+        <title>
+          {subcategory?.name || "Products"} | Bartanwala
+        </title>
       </Head>
 
-      <div style={styles.page}>
+      <main style={styles.main}>
 
-        <h1 style={styles.title}>
-          {subcategory.name}
+        <h1 style={styles.heading}>
+          {subcategory?.name}
         </h1>
+
+        {products.length === 0 && (
+          <div style={styles.empty}>
+            No products found
+          </div>
+        )}
 
         <div style={styles.grid}>
 
-          {products.map(p => {
+          {products.map((p) => {
 
             const unit = p.unit_type || "kg";
-            const carton = p.pcs_per_carton || 1;
+            const cartonSize = p.pcs_per_carton || 1;
 
             return (
 
               <div key={p.id} style={styles.card}>
 
+                {/* IMAGE */}
                 <Link href={`/product/${p.slug}`}>
-                  <div style={styles.imageWrap}>
-                    <img src={p.image} style={styles.image}/>
+
+                  <div style={styles.imageSection}>
+
+                    {p.image ? (
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        style={styles.image}
+                      />
+                    ) : (
+                      <div style={styles.noImage}>
+                        No Image
+                      </div>
+                    )}
+
                   </div>
+
                 </Link>
 
-                <div style={styles.body}>
+                {/* DETAILS */}
+                <div style={styles.detailsSection}>
 
                   <div style={styles.badge}>
                     {p.categories?.name}
@@ -117,28 +180,44 @@ export default function SubcategoryPage({ subcategory, products }) {
                     {p.name}
                   </div>
 
+                  <div style={styles.metaRow}>
+                    {p.size && <span>Size: {p.size}</span>}
+                    {p.gauge && <span>Gauge: {p.gauge}</span>}
+                  </div>
+
                   <div style={styles.price}>
-                    ₹ {p.price} / {unit.toUpperCase()}
+                    ₹ {p.price}
+                    <span style={styles.unit}>
+                      {" "} / {unit.toUpperCase()}
+                    </span>
                   </div>
 
                   {unit === "kg" && (
-                    <div style={styles.min}>Min Order: 40 KG</div>
+                    <div style={styles.minBox}>
+                      Min Order: 40 KG
+                    </div>
                   )}
 
                   {(unit === "pcs" || unit === "set") && (
-                    <div style={styles.min}>
-                      1 Carton = {carton} PCS
+                    <div style={styles.minBox}>
+                      1 Carton = {cartonSize} {unit.toUpperCase()}
                     </div>
                   )}
 
                 </div>
 
-                <button
-                  style={styles.btn}
-                  onClick={() => addToCart(p)}
-                >
-                  <FaShoppingCart/> Add to Cart
-                </button>
+                {/* BUTTON */}
+                <div style={styles.cartSection}>
+
+                  <button
+                    style={styles.cartBtn}
+                    onClick={() => addToCart(p)}
+                  >
+                    <FaShoppingCart />
+                    Add to Cart
+                  </button>
+
+                </div>
 
               </div>
 
@@ -148,90 +227,139 @@ export default function SubcategoryPage({ subcategory, products }) {
 
         </div>
 
-      </div>
+      </main>
+
     </>
   );
+
 }
 
 /* ================= STYLES ================= */
 
 const styles = {
 
-page:{padding:16},
+  main: {
+    padding: 16,
+    paddingBottom: 100,
+  },
 
-title:{
-fontSize:20,
-fontWeight:700,
-marginBottom:14
-},
+  heading: {
+    fontSize: 22,
+    fontWeight: 700,
+    marginBottom: 14,
+  },
 
-grid:{
-display:"grid",
-gridTemplateColumns:"repeat(2,1fr)",
-gap:16
-},
+  empty: {
+    background: "#fff",
+    padding: 20,
+    borderRadius: 12,
+    textAlign: "center",
+  },
 
-card:{
-background:"#fff",
-borderRadius:14,
-border:"1px solid #eee",
-overflow:"hidden"
-},
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gap: 16,
+  },
 
-imageWrap:{
-height:150,
-display:"flex",
-alignItems:"center",
-justifyContent:"center"
-},
+  card: {
+    background: "#fff",
+    borderRadius: 18,
+    border: "1px solid #E5E7EB",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    boxShadow: "0 6px 16px rgba(0,0,0,0.05)",
+  },
 
-image:{
-maxWidth:"100%",
-maxHeight:"100%"
-},
+  imageSection: {
+    height: 160,
+    background: "#f9fafb",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+  },
 
-body:{
-padding:12
-},
+  image: {
+    maxWidth: "100%",
+    maxHeight: "100%",
+    objectFit: "contain",
+  },
 
-badge:{
-fontSize:10,
-background:"#E0EDFF",
-color:"#0B5ED7",
-padding:"4px 8px",
-borderRadius:20,
-display:"inline-block"
-},
+  noImage: {
+    fontSize: 12,
+    color: "#9CA3AF",
+  },
 
-name:{
-fontWeight:600,
-fontSize:14,
-marginTop:6,
-minHeight:38
-},
+  detailsSection: {
+    padding: 14,
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    flex: 1,
+  },
 
-price:{
-fontSize:16,
-fontWeight:700,
-color:"#0B5ED7",
-marginTop:6
-},
+  badge: {
+    fontSize: 10,
+    fontWeight: 600,
+    background: "#E0EDFF",
+    color: "#0B5ED7",
+    padding: "4px 8px",
+    borderRadius: 20,
+    width: "fit-content",
+  },
 
-min:{
-fontSize:11,
-background:"#f3f3f3",
-padding:6,
-borderRadius:6,
-marginTop:4
-},
+  name: {
+    fontSize: 14,
+    fontWeight: 700,
+    lineHeight: 1.3,
+    minHeight: 38,
+  },
 
-btn:{
-width:"100%",
-padding:10,
-background:"#0B5ED7",
-color:"#fff",
-border:"none",
-fontWeight:700
-}
+  metaRow: {
+    display: "flex",
+    gap: 10,
+    fontSize: 12,
+    color: "#6b7280",
+  },
+
+  price: {
+    fontSize: 18,
+    fontWeight: 800,
+    color: "#0B5ED7",
+  },
+
+  unit: {
+    fontSize: 12,
+    color: "#6b7280",
+  },
+
+  minBox: {
+    fontSize: 11,
+    background: "#F3F4F6",
+    padding: "6px 8px",
+    borderRadius: 8,
+  },
+
+  cartSection: {
+    padding: 12,
+    borderTop: "1px solid #E5E7EB",
+  },
+
+  cartBtn: {
+    width: "100%",
+    background: "linear-gradient(135deg,#0B5ED7,#084298)",
+    color: "#fff",
+    border: "none",
+    borderRadius: 12,
+    padding: "10px",
+    fontWeight: 700,
+    cursor: "pointer",
+    display: "flex",
+    justifyContent: "center",
+    gap: 6,
+    alignItems: "center",
+  }
 
 };
