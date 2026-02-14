@@ -2,16 +2,28 @@ import Head from "next/head";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 
+/* ================= SERVER ================= */
+
 export async function getServerSideProps() {
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 
-  const { data: categories } = await supabase
+  const { data: categories, error } = await supabase
     .from("categories")
-    .select("id, name, slug, image")
+    .select(`
+      id,
+      name,
+      slug,
+      image
+    `)
     .order("id", { ascending: true });
+
+  if (error) {
+    console.log("CATEGORY ERROR:", error);
+  }
 
   return {
     props: {
@@ -20,7 +32,10 @@ export async function getServerSideProps() {
   };
 }
 
+/* ================= PAGE ================= */
+
 export default function CategoriesPage({ categories }) {
+
   return (
     <>
       <Head>
@@ -28,15 +43,30 @@ export default function CategoriesPage({ categories }) {
       </Head>
 
       <div style={styles.page}>
-        <h1 style={styles.title}>All Categories</h1>
 
+        <h1 style={styles.title}>
+          All Categories
+        </h1>
+
+        {/* EMPTY STATE */}
+        {categories.length === 0 && (
+          <div style={styles.empty}>
+            No categories found
+          </div>
+        )}
+
+        {/* CATEGORY GRID */}
         <div style={styles.grid}>
+
           {categories.map((cat) => (
+
             <Link
               key={cat.id}
               href={`/category/${cat.slug}`}
               style={styles.card}
             >
+
+              {/* IMAGE */}
               <div style={styles.imageWrap}>
                 <img
                   src={cat.image || "/placeholder.png"}
@@ -45,18 +75,26 @@ export default function CategoriesPage({ categories }) {
                 />
               </div>
 
-              <div style={styles.name}>{cat.name}</div>
+              {/* NAME */}
+              <div style={styles.name}>
+                {cat.name}
+              </div>
+
             </Link>
+
           ))}
+
         </div>
+
       </div>
     </>
   );
 }
 
-/* ================= PROFESSIONAL STYLES ================= */
+/* ================= STYLES ================= */
 
 const styles = {
+
   page: {
     padding: "20px 16px 100px",
     background: "#f4f6f8",
@@ -67,6 +105,14 @@ const styles = {
     fontSize: 22,
     fontWeight: 700,
     marginBottom: 18,
+  },
+
+  empty: {
+    background: "#fff",
+    padding: 20,
+    borderRadius: 12,
+    textAlign: "center",
+    color: "#6b7280",
   },
 
   grid: {
@@ -83,7 +129,7 @@ const styles = {
     textDecoration: "none",
     color: "#111",
     boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
-    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+    transition: "all 0.2s ease",
   },
 
   imageWrap: {
@@ -104,5 +150,7 @@ const styles = {
   name: {
     fontSize: 14,
     fontWeight: 600,
+    lineHeight: 1.3,
   },
+
 };
