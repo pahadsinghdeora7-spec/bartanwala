@@ -23,8 +23,6 @@ export default function AddProduct() {
     weight: "",
     description: "",
     in_stock: true,
-
-    /* ✅ NEW FIELDS */
     unit_type: "kg",
     pcs_per_carton: 1,
   });
@@ -81,8 +79,9 @@ export default function AddProduct() {
     setSubcategories(data || []);
   };
 
+  /* ================= MULTI IMAGE SELECT ================= */
   const handleImages = (e) => {
-    setImages([...e.target.files]);
+    setImages(Array.from(e.target.files));
   };
 
   /* ================= SUBMIT ================= */
@@ -109,8 +108,6 @@ export default function AddProduct() {
           weight: form.weight,
           description: form.description,
           in_stock: form.in_stock,
-
-          /* ✅ NEW DATA SAVE */
           unit_type: form.unit_type,
           pcs_per_carton:
             form.unit_type === "pcs" || form.unit_type === "set"
@@ -122,25 +119,30 @@ export default function AddProduct() {
 
       if (error) throw error;
 
-      /* IMAGE UPLOAD */
+      /* ================= MULTI IMAGE UPLOAD ================= */
       if (images.length > 0) {
-        const file = images[0];
-        const filePath = `${product.id}-${Date.now()}-${file.name}`;
+        for (let i = 0; i < images.length && i < 4; i++) {
+          const file = images[i];
+          const filePath = `${product.id}-${Date.now()}-${i}-${file.name}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from("products")
-          .upload(filePath, file);
+          const { error: uploadError } = await supabase.storage
+            .from("products")
+            .upload(filePath, file);
 
-        if (uploadError) throw uploadError;
+          if (uploadError) throw uploadError;
 
-        const { data: publicUrlData } = supabase.storage
-          .from("products")
-          .getPublicUrl(filePath);
+          const { data: publicUrlData } = supabase.storage
+            .from("products")
+            .getPublicUrl(filePath);
 
-        await supabase
-          .from("products")
-          .update({ image: publicUrlData.publicUrl })
-          .eq("id", product.id);
+          const fieldName =
+            i === 0 ? "image" : `image${i}`;
+
+          await supabase
+            .from("products")
+            .update({ [fieldName]: publicUrlData.publicUrl })
+            .eq("id", product.id);
+        }
       }
 
       alert("✅ Product added successfully");
@@ -182,7 +184,31 @@ export default function AddProduct() {
             ))}
           </select>
 
-          {/* ✅ UNIT TYPE */}
+          {/* SUBCATEGORY */}
+          {subcategories.length > 0 && (
+            <>
+              <label style={styles.label}>Sub Category</label>
+              <select
+                style={styles.input}
+                value={form.subcategory_id}
+                onChange={(e) =>
+                  setForm((p) => ({
+                    ...p,
+                    subcategory_id: e.target.value,
+                  }))
+                }
+              >
+                <option value="">Select Sub Category</option>
+                {subcategories.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+
+          {/* UNIT TYPE */}
           <label style={styles.label}>Unit Type *</label>
           <select
             style={styles.input}
@@ -195,7 +221,6 @@ export default function AddProduct() {
             <option value="set">SET</option>
           </select>
 
-          {/* ✅ PCS PER CARTON */}
           {(form.unit_type === "pcs" ||
             form.unit_type === "set") && (
             <>
@@ -208,7 +233,6 @@ export default function AddProduct() {
                 name="pcs_per_carton"
                 value={form.pcs_per_carton}
                 onChange={handleChange}
-                placeholder="Example: 12"
               />
             </>
           )}
@@ -252,7 +276,8 @@ export default function AddProduct() {
             In Stock
           </label>
 
-          <input type="file" onChange={handleImages} />
+          {/* MULTI IMAGE */}
+          <input type="file" multiple onChange={handleImages} />
 
           <button
             style={styles.button}
