@@ -7,6 +7,7 @@ export default function ProductCard({ product }) {
 
   function addToCart(e) {
 
+    e.preventDefault();
     e.stopPropagation();
 
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
@@ -34,16 +35,11 @@ export default function ProductCard({ product }) {
   }
 
 
-  /* ================= URL ================= */
+  /* ================= URL FIXED ================= */
 
-  const categorySlug = product.categories?.slug;
-  const subcategorySlug = product.subcategories?.slug;
-  const productSlug = product.slug;
-
-  const productUrl =
-    categorySlug && subcategorySlug && productSlug
-      ? `/category/${categorySlug}/${subcategorySlug}/${productSlug}`
-      : "#";
+  const productUrl = product.slug
+    ? `/product/${product.slug}`
+    : "#";
 
 
   const unit = product.unit_type || "kg";
@@ -55,7 +51,6 @@ export default function ProductCard({ product }) {
   return (
 
     <div style={styles.card}>
-
 
       {/* CLICKABLE AREA */}
       <Link href={productUrl} style={styles.link}>
@@ -77,21 +72,25 @@ export default function ProductCard({ product }) {
         <div style={styles.details}>
 
 
+          {/* MAIN CATEGORY */}
           <div style={styles.category}>
             {product.categories?.name}
           </div>
 
 
+          {/* PRODUCT NAME */}
           <div style={styles.name}>
             {product.name}
           </div>
 
 
+          {/* SUBCATEGORY */}
           <div style={styles.subcategory}>
             {product.subcategories?.name}
           </div>
 
 
+          {/* SIZE + GAUGE */}
           {(product.size || product.gauge) && (
 
             <div style={styles.meta}>
@@ -107,6 +106,7 @@ export default function ProductCard({ product }) {
           )}
 
 
+          {/* PRICE */}
           <div style={styles.price}>
 
             ₹ {product.price}
@@ -118,6 +118,7 @@ export default function ProductCard({ product }) {
           </div>
 
 
+          {/* MIN ORDER */}
           {unit === "kg" && (
             <div style={styles.min}>
               Min Order: 40 KG
