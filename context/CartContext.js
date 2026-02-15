@@ -6,13 +6,7 @@ import {
   useMemo,
 } from "react";
 
-
-/* ================= CONTEXT ================= */
-
 const CartContext = createContext();
-
-
-/* ================= PROVIDER ================= */
 
 export function CartProvider({ children }) {
 
@@ -21,24 +15,16 @@ export function CartProvider({ children }) {
   const [initialized, setInitialized] = useState(false);
 
 
-
-  /* ================= LOAD ================= */
+  /* LOAD FROM LOCALSTORAGE */
 
   useEffect(() => {
 
-    try {
+    const stored =
+      localStorage.getItem("cart");
 
-      const stored = localStorage.getItem("cart");
+    if (stored) {
 
-      if (stored) {
-
-        setCart(JSON.parse(stored));
-
-      }
-
-    } catch {
-
-      setCart([]);
+      setCart(JSON.parse(stored));
 
     }
 
@@ -47,8 +33,7 @@ export function CartProvider({ children }) {
   }, []);
 
 
-
-  /* ================= SAVE ================= */
+  /* SAVE */
 
   useEffect(() => {
 
@@ -64,187 +49,111 @@ export function CartProvider({ children }) {
   }, [cart, initialized]);
 
 
+  /* ADD */
 
-  /* ================= ADD TO CART ================= */
-
-  const addToCart = (product, qty = 1, unit_type = "kg") => {
-
-    qty = Number(qty);
-
-    if (!qty || qty <= 0) qty = 1;
+  function addToCart(product, qty = 1, unit = "kg") {
 
     setCart(prev => {
 
-      const existing = prev.find(
-        item =>
-          item.id === product.id &&
-          item.unit_type === unit_type
-      );
-
-
-      /* UPDATE EXISTING */
+      const existing =
+        prev.find(i => i.id === product.id);
 
       if (existing) {
 
-        return prev.map(item =>
-
-          item.id === product.id &&
-          item.unit_type === unit_type
-
+        return prev.map(i =>
+          i.id === product.id
             ? {
-                ...item,
-                qty: item.qty + qty
+                ...i,
+                qty:
+                  i.qty +
+                  Number(qty)
               }
-
-            : item
-
+            : i
         );
 
       }
 
-
-      /* ADD NEW */
-
       return [
-
         ...prev,
-
         {
-          id: product.id,
-
-          name: product.name,
-
-          price: Number(product.price),
-
-          image: product.image,
-
-          slug: product.slug,
-
-          unit_type: unit_type,
-
-          qty: qty,
-
-          category: product.categories?.name,
-
-          subcategory: product.subcategories?.name
-
+          ...product,
+          qty: Number(qty),
+          unit
         }
-
       ];
 
     });
 
-  };
+  }
 
 
+  /* UPDATE */
 
-  /* ================= UPDATE QTY ================= */
-
-  const updateQty = (id, qty) => {
-
-    qty = Number(qty);
-
-    if (!qty || qty < 1) qty = 1;
+  function updateQty(id, qty) {
 
     setCart(prev =>
-
-      prev.map(item =>
-
-        item.id === id
-
+      prev.map(i =>
+        i.id === id
           ? {
-              ...item,
-              qty: qty
+              ...i,
+              qty: Math.max(
+                1,
+                Number(qty)
+              )
             }
-
-          : item
-
+          : i
       )
-
     );
 
-  };
+  }
 
 
+  /* REMOVE */
 
-  /* ================= REMOVE ================= */
-
-  const removeItem = (id) => {
+  function removeItem(id) {
 
     setCart(prev =>
-      prev.filter(item => item.id !== id)
+      prev.filter(i => i.id !== id)
     );
 
-  };
+  }
 
 
+  /* CLEAR */
 
-  /* ================= CLEAR ================= */
-
-  const clearCart = () => {
+  function clearCart() {
 
     setCart([]);
 
     localStorage.removeItem("cart");
 
-  };
+  }
 
 
-
-  /* ================= COUNT ================= */
+  /* COUNT */
 
   const cartCount = useMemo(() => {
 
     return cart.reduce(
-
-      (sum, item) => sum + Number(item.qty),
-
+      (sum, i) =>
+        sum + i.qty,
       0
-
     );
 
   }, [cart]);
 
-
-
-  /* ================= TOTAL ================= */
-
-  const cartTotal = useMemo(() => {
-
-    return cart.reduce(
-
-      (sum, item) =>
-        sum + Number(item.price) * Number(item.qty),
-
-      0
-
-    );
-
-  }, [cart]);
-
-
-
-  /* ================= EXPORT ================= */
 
   return (
 
     <CartContext.Provider
       value={{
-
         cart,
-
         addToCart,
-
         updateQty,
-
         removeItem,
-
         clearCart,
-
         cartCount,
-
-        cartTotal
-
+        initialized   // ⭐ IMPORTANT
       }}
     >
 
@@ -256,9 +165,6 @@ export function CartProvider({ children }) {
 
 }
 
-
-
-/* ================= HOOK ================= */
 
 export function useCart() {
 
