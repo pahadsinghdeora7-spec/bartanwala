@@ -13,6 +13,7 @@ import {
 import { useCart } from "../../../../context/CartContext";
 import ProductCard from "../../../../components/ProductCard";
 
+
 /* ================= SERVER ================= */
 
 export async function getServerSideProps({ params }) {
@@ -24,6 +25,7 @@ export async function getServerSideProps({ params }) {
 
   const { categorySlug, subcategorySlug, productSlug } = params;
 
+  /* GET PRODUCT */
   const { data: product, error } = await supabase
     .from("products")
     .select(`
@@ -37,21 +39,25 @@ export async function getServerSideProps({ params }) {
   if (error || !product)
     return { notFound: true };
 
+  /* VALIDATE URL */
   if (product.categories?.slug !== categorySlug)
     return { notFound: true };
 
   if (product.subcategories?.slug !== subcategorySlug)
     return { notFound: true };
 
+
+  /* GET RELATED PRODUCTS */
   const { data: related } = await supabase
     .from("products")
     .select(`
       *,
-      categories(name,slug),
-      subcategories(name,slug)
+      categories(name, slug),
+      subcategories(name, slug)
     `)
     .eq("category_id", product.category_id)
     .neq("id", product.id)
+    .eq("in_stock", true)
     .limit(10);
 
   return {
@@ -62,7 +68,9 @@ export async function getServerSideProps({ params }) {
       subcategorySlug,
     },
   };
+
 }
+
 
 /* ================= PAGE ================= */
 
@@ -75,6 +83,7 @@ export default function ProductPage({
 
   const { addToCart } = useCart();
 
+  /* IMAGE LIST */
   const images = [
     product.image,
     product.image1,
@@ -82,7 +91,9 @@ export default function ProductPage({
     product.image3,
   ].filter(Boolean);
 
-  const [activeImg, setActiveImg] = useState(images[0]);
+  const [activeImg, setActiveImg] = useState(
+    images[0] || "/placeholder.png"
+  );
 
   const unit = product.unit_type || "kg";
 
@@ -90,36 +101,47 @@ export default function ProductPage({
 
   const [qty, setQty] = useState(minQty);
 
-  const options =
+  const qtyOptions =
     unit === "kg"
       ? [40, 80, 120, 160, 200]
       : [1, 2, 3, 4, 5];
 
+
   function changeQty(val) {
+
     const num = Number(val);
+
     setQty(num < minQty ? minQty : num);
+
   }
 
+
+  /* ================= UI ================= */
+
   return (
+
     <>
       <Head>
         <title>{product.name} | Bartanwala</title>
       </Head>
 
+
       <div style={styles.page}>
 
-        {/* ✅ PROFESSIONAL BREADCRUMB */}
+
+        {/* BREADCRUMB */}
+
         <div style={styles.breadcrumb}>
 
           <Link href="/">Home</Link>
 
-          {" / "}
+          <span>/</span>
 
           <Link href={`/category/${categorySlug}`}>
             {product.categories?.name}
           </Link>
 
-          {" / "}
+          <span>/</span>
 
           <Link href={`/category/${categorySlug}/${subcategorySlug}`}>
             {product.subcategories?.name}
@@ -128,36 +150,52 @@ export default function ProductPage({
         </div>
 
 
+
         {/* IMAGE */}
+
         <div style={styles.imageBox}>
+
           <img
-            src={activeImg || "/placeholder.png"}
+            src={activeImg}
             style={styles.image}
+            onError={(e)=>{
+              e.target.src="/placeholder.png";
+            }}
           />
+
         </div>
 
 
+
         {/* DETAILS */}
+
         <div style={styles.card}>
 
-          {/* CATEGORY */}
+
           <div style={styles.category}>
             {product.categories?.name}
           </div>
 
-          {/* PRODUCT NAME */}
+
           <h1 style={styles.title}>
             {product.name}
           </h1>
 
-          {/* PRICE */}
+
           <div style={styles.price}>
             <FaRupeeSign />
-            {product.price} / {unit.toUpperCase()}
+            {product.price}
+            <span style={styles.unit}>
+              / {unit.toUpperCase()}
+            </span>
           </div>
 
+
+
           {/* BADGES */}
+
           <div style={styles.badges}>
+
             <span style={styles.stock}>
               <FaCheckCircle /> In Stock
             </span>
@@ -165,32 +203,37 @@ export default function ProductPage({
             <span style={styles.bulk}>
               <FaBoxOpen /> Bulk Available
             </span>
+
           </div>
+
 
 
           {/* SPECIFICATIONS */}
-          <div style={styles.details}>
+
+          <div style={styles.specBox}>
 
             {product.subcategories?.name &&
-              <Row value={product.subcategories.name} />
+              <Spec value={product.subcategories.name}/>
             }
 
             {product.size &&
-              <Row label="Size" value={product.size} />
+              <Spec label="Size" value={product.size}/>
             }
 
             {product.gauge &&
-              <Row label="Gauge" value={product.gauge} />
+              <Spec label="Gauge" value={product.gauge}/>
             }
 
             {product.weight &&
-              <Row label="Weight" value={product.weight} />
+              <Spec label="Weight" value={product.weight}/>
             }
 
           </div>
 
 
-          {/* QTY */}
+
+          {/* QUANTITY */}
+
           <div style={styles.qtyBox}>
 
             <select
@@ -198,37 +241,58 @@ export default function ProductPage({
               onChange={(e)=>changeQty(e.target.value)}
               style={styles.select}
             >
-              {options.map(o=>(
-                <option key={o} value={o}>
-                  {unit==="kg" ? `${o} KG` : `${o} Carton`}
+
+              {qtyOptions.map(q=>(
+                <option key={q} value={q}>
+                  {unit==="kg"
+                    ? `${q} KG`
+                    : `${q} Carton`}
                 </option>
               ))}
+
             </select>
 
-            <div style={styles.min}>
-              Minimum Order: {unit==="kg" ? "40 KG" : "1 Carton"}
+            <div style={styles.minNote}>
+              Minimum Order:
+              {" "}
+              {unit==="kg"
+                ? "40 KG"
+                : "1 Carton"}
             </div>
 
           </div>
 
 
+
           {/* BUTTONS */}
-          <div style={styles.buttons}>
+
+          <div style={styles.buttonRow}>
 
             <button
               style={styles.cartBtn}
-              onClick={()=>addToCart(product, qty, unit)}
+              onClick={()=>
+                addToCart(product, qty, unit)
+              }
             >
-              <FaShoppingCart /> Add to Cart
+
+              <FaShoppingCart />
+
+              Add to Cart
+
             </button>
+
 
             <a
               href="https://wa.me/919873670361"
               target="_blank"
               rel="noreferrer"
-              style={styles.whatsapp}
+              style={styles.whatsappBtn}
             >
-              <FaWhatsapp /> WhatsApp
+
+              <FaWhatsapp />
+
+              WhatsApp
+
             </a>
 
           </div>
@@ -236,22 +300,24 @@ export default function ProductPage({
         </div>
 
 
-        {/* ✅ PROFESSIONAL RELATED PRODUCTS */}
+
+        {/* RELATED PRODUCTS */}
+
         {related.length > 0 && (
 
           <div style={styles.relatedBox}>
 
-            <h3>Related Products</h3>
+            <h3 style={styles.relatedTitle}>
+              Related Products
+            </h3>
 
             <div style={styles.grid}>
 
-              {related.map(product => (
-
+              {related.map(p=>(
                 <ProductCard
-                  key={product.id}
-                  product={product}
+                  key={p.id}
+                  product={p}
                 />
-
               ))}
 
             </div>
@@ -260,38 +326,48 @@ export default function ProductPage({
 
         )}
 
+
       </div>
+
     </>
+
   );
+
 }
 
-/* ROW */
 
-function Row({label,value}) {
+/* SPEC ROW */
+
+function Spec({label,value}) {
 
   if (!label)
     return (
-      <div style={styles.rowSingle}>
+      <div style={styles.specSingle}>
         {value}
       </div>
     );
 
   return (
-    <div style={styles.row}>
+    <div style={styles.specRow}>
       <span>{label}</span>
       <span>{value}</span>
     </div>
   );
+
 }
 
-/* STYLES */
+
+
+/* ================= STYLES ================= */
 
 const styles = {
 
+
   page:{
     padding:16,
-    paddingBottom:90
+    paddingBottom:100
   },
+
 
   breadcrumb:{
     fontSize:13,
@@ -302,18 +378,21 @@ const styles = {
     flexWrap:"wrap"
   },
 
+
   imageBox:{
     background:"#fff",
-    padding:12,
+    padding:14,
     borderRadius:14,
     border:"1px solid #E5E7EB"
   },
+
 
   image:{
     width:"100%",
     height:280,
     objectFit:"contain"
   },
+
 
   card:{
     background:"#fff",
@@ -323,19 +402,21 @@ const styles = {
     border:"1px solid #E5E7EB"
   },
 
+
   category:{
     color:"#0B5ED7",
     fontSize:12,
-    fontWeight:600,
-    marginBottom:4
+    fontWeight:600
   },
+
 
   title:{
     fontSize:20,
     fontWeight:700,
-    lineHeight:1.3,
-    marginBottom:6
+    marginTop:4,
+    lineHeight:1.3
   },
+
 
   price:{
     fontSize:22,
@@ -343,68 +424,84 @@ const styles = {
     color:"#0B5ED7",
     display:"flex",
     alignItems:"center",
-    gap:4
+    gap:4,
+    marginTop:6
   },
+
+
+  unit:{
+    fontSize:14,
+    color:"#6b7280"
+  },
+
 
   badges:{
     display:"flex",
-    gap:12,
+    gap:14,
     marginTop:8,
     fontSize:13
   },
+
 
   stock:{
     color:"green",
     fontWeight:600
   },
 
+
   bulk:{
     color:"#0B5ED7",
     fontWeight:600
   },
 
-  details:{
+
+  specBox:{
     marginTop:12,
     borderTop:"1px solid #E5E7EB",
     paddingTop:10
   },
 
-  row:{
+
+  specRow:{
     display:"flex",
     justifyContent:"space-between",
     padding:"4px 0",
     fontSize:14
   },
 
-  rowSingle:{
+
+  specSingle:{
     fontSize:14,
-    fontWeight:600,
-    paddingBottom:4
+    fontWeight:600
   },
+
 
   qtyBox:{
     marginTop:14
   },
 
+
   select:{
     width:"100%",
     padding:12,
     borderRadius:10,
-    border:"1px solid #E5E7EB",
-    fontSize:14
+    border:"1px solid #E5E7EB"
   },
 
-  min:{
+
+  minNote:{
     fontSize:12,
     color:"#6b7280",
     marginTop:4
   },
 
-  buttons:{
+
+  buttonRow:{
     display:"flex",
     gap:12,
     marginTop:16
   },
+
 
   cartBtn:{
     flex:1,
@@ -414,33 +511,44 @@ const styles = {
     border:"none",
     borderRadius:12,
     fontWeight:700,
-    fontSize:15,
-    cursor:"pointer"
+    display:"flex",
+    justifyContent:"center",
+    alignItems:"center",
+    gap:6
   },
 
-  whatsapp:{
+
+  whatsappBtn:{
     flex:1,
     padding:14,
     background:"#25D366",
     color:"#fff",
     borderRadius:12,
-    textAlign:"center",
     textDecoration:"none",
     fontWeight:700,
-    fontSize:15
+    display:"flex",
+    justifyContent:"center",
+    alignItems:"center",
+    gap:6
   },
+
 
   relatedBox:{
     marginTop:24
   },
 
+
+  relatedTitle:{
+    marginBottom:12
+  },
+
+
   grid:{
     display:"grid",
     gridTemplateColumns:"repeat(2,1fr)",
     gap:16,
-    alignItems:"stretch"   // ✅ important fix
+    alignItems:"stretch"
   }
 
-};
 
 };
