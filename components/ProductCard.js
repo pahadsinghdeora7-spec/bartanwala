@@ -30,18 +30,21 @@ export default function ProductCard({ product }) {
     localStorage.setItem("cart", JSON.stringify(cart));
 
     alert("Product added to cart");
-
   }
 
   const unit = product.unit_type || "kg";
   const pcsPerCarton = product.pcs_per_carton || 1;
+
+  /* ✅ FIXED PRODUCT URL */
+  const productUrl =
+    `/category/${product.categories?.slug}/${product.subcategories?.slug}/${product.slug}`;
 
   return (
 
     <div style={styles.card}>
 
       {/* IMAGE */}
-      <Link href={`/product/${product.slug}`}>
+      <Link href={productUrl}>
 
         <div style={styles.imageSection}>
 
@@ -65,26 +68,22 @@ export default function ProductCard({ product }) {
       {/* DETAILS */}
       <div style={styles.detailsSection}>
 
-
-        {/* ✅ MAIN CATEGORY */}
+        {/* MAIN CATEGORY */}
         <div style={styles.category}>
           {product.categories?.name}
         </div>
 
-
-        {/* ✅ PRODUCT NAME */}
+        {/* PRODUCT NAME */}
         <div style={styles.name}>
           {product.name}
         </div>
 
-
-        {/* ✅ SUBCATEGORY */}
+        {/* SUBCATEGORY */}
         <div style={styles.subcategory}>
           {product.subcategories?.name}
         </div>
 
-
-        {/* ✅ SIZE AND GAUGE */}
+        {/* SIZE AND GAUGE */}
         {(product.size || product.gauge) && (
           <div style={styles.meta}>
             {product.size && <span>Size: {product.size}</span>}
@@ -93,7 +92,6 @@ export default function ProductCard({ product }) {
           </div>
         )}
 
-
         {/* PRICE */}
         <div style={styles.price}>
           ₹ {product.price}
@@ -101,7 +99,6 @@ export default function ProductCard({ product }) {
             {" "} / {unit.toUpperCase()}
           </span>
         </div>
-
 
         {/* MIN ORDER */}
         {unit === "kg" && (
@@ -138,10 +135,9 @@ export default function ProductCard({ product }) {
 }
 
 
-/* ================= STYLES ================= */
+/* SAME STYLES — NO CHANGE */
 
 const styles = {
-
   card: {
     background: "#fff",
     borderRadius: 18,
@@ -180,43 +176,32 @@ const styles = {
     flex: 1,
   },
 
-
-  /* MAIN CATEGORY */
   category: {
     fontSize: 11,
     fontWeight: 600,
     color: "#0B5ED7",
   },
 
-
-  /* PRODUCT NAME 2 LINE */
   name: {
     fontSize: 14,
     fontWeight: 700,
     lineHeight: 1.3,
-
     display: "-webkit-box",
     WebkitLineClamp: 2,
     WebkitBoxOrient: "vertical",
     overflow: "hidden",
-
     minHeight: 36,
   },
 
-
-  /* SUBCATEGORY */
   subcategory: {
     fontSize: 12,
     color: "#6b7280",
   },
 
-
-  /* SIZE GAUGE */
   meta: {
     fontSize: 12,
     color: "#6b7280",
   },
-
 
   price: {
     fontSize: 18,
@@ -230,7 +215,6 @@ const styles = {
     color: "#6b7280",
   },
 
-
   minBox: {
     fontSize: 11,
     background: "#F3F4F6",
@@ -239,12 +223,10 @@ const styles = {
     marginTop: 4,
   },
 
-
   cartSection: {
     padding: 12,
     borderTop: "1px solid #E5E7EB",
   },
-
 
   cartBtn: {
     width: "100%",
@@ -256,5 +238,4 @@ const styles = {
     fontWeight: 700,
     cursor: "pointer",
   },
-
 };
