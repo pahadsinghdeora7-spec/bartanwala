@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
 
-/* ✅ IMPORT PRODUCT CARD */
+/* PRODUCT CARD */
 import ProductCard from "../../../components/ProductCard";
 
-/* ================= SUPABASE ================= */
+/* SUPABASE */
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "",
@@ -17,7 +17,6 @@ const supabase = createClient(
 export default function CategoryPage() {
 
   const router = useRouter();
-
   const { categorySlug } = router.query;
 
   const [category, setCategory] = useState(null);
@@ -30,64 +29,99 @@ export default function CategoryPage() {
 
   useEffect(() => {
 
+    if (!router.isReady) return;
     if (!categorySlug) return;
 
     async function loadData() {
 
-      setLoading(true);
+      try {
 
-      /* CATEGORY */
-      const { data: cat } = await supabase
-        .from("categories")
-        .select("*")
-        .eq("slug", categorySlug)
-        .single();
+        setLoading(true);
 
-      if (!cat) {
-        setLoading(false);
-        return;
+        /* GET CATEGORY */
+
+        const { data: cat, error: catError } = await supabase
+          .from("categories")
+          .select("*")
+          .eq("slug", categorySlug)
+          .single();
+
+        if (catError || !cat) {
+
+          console.log("Category error:", catError);
+
+          setCategory(null);
+          setSubcategories([]);
+          setProducts([]);
+          setLoading(false);
+
+          return;
+        }
+
+        setCategory(cat);
+
+
+        /* GET SUBCATEGORIES */
+
+        const { data: subs, error: subError } = await supabase
+          .from("subcategories")
+          .select("id, name, slug")
+          .eq("category_id", cat.id)
+          .order("name");
+
+        if (subError)
+          console.log("Subcategory error:", subError);
+
+        setSubcategories(subs || []);
+
+
+        /* GET PRODUCTS */
+
+        const { data: prods, error: prodError } = await supabase
+          .from("products")
+          .select(`
+            *,
+            categories(name,slug),
+            subcategories(name,slug)
+          `)
+          .eq("category_id", cat.id)
+          .eq("in_stock", true)
+          .order("created_at", { ascending:false });
+
+        if (prodError)
+          console.log("Product error:", prodError);
+
+        setProducts(prods || []);
+
       }
+      catch (err) {
 
-      setCategory(cat);
+        console.log("Load error:", err);
 
+      }
+      finally {
 
-      /* SUBCATEGORIES */
-      const { data: subs } = await supabase
-        .from("subcategories")
-        .select("id,name,slug")
-        .eq("category_id", cat.id)
-        .order("name");
+        setLoading(false);
 
-      setSubcategories(subs || []);
-
-
-      /* PRODUCTS */
-      const { data: prods } = await supabase
-        .from("products")
-        .select(`
-          *,
-          categories(name,slug),
-          subcategories(name,slug)
-        `)
-        .eq("category_id", cat.id)
-        .eq("in_stock", true)
-        .order("created_at", { ascending:false });
-
-      setProducts(prods || []);
-
-      setLoading(false);
+      }
 
     }
 
     loadData();
 
-  }, [categorySlug]);
+  }, [router.isReady, categorySlug]);
 
 
   /* LOADING */
 
   if (loading)
-    return <div style={{padding:20}}>Loading...</div>;
+    return <div style={{ padding:20 }}>Loading...</div>;
+
+
+  /* NO CATEGORY FOUND */
+
+  if (!category)
+    return <div style={{ padding:20 }}>Category not found</div>;
 
 
   /* UI */
@@ -96,15 +130,18 @@ export default function CategoryPage() {
 
     <>
       <Head>
-        <title>{category?.name} | Bartanwala</title>
+        <title>{category.name} | Bartanwala</title>
       </Head>
 
       <main style={styles.main}>
 
-        {/* CATEGORY NAME */}
+
+        {/* CATEGORY TITLE */}
+
         <h1 style={styles.heading}>
-          {category?.name}
+          {category.name}
         </h1>
+
 
 
         {/* SUBCATEGORIES */}
@@ -112,7 +149,9 @@ export default function CategoryPage() {
         {subcategories.length > 0 && (
 
           <>
-            <h3 style={styles.subHeading}>Subcategories</h3>
+            <h3 style={styles.subHeading}>
+              Subcategories
+            </h3>
 
             <div style={styles.grid}>
 
@@ -134,14 +173,16 @@ export default function CategoryPage() {
         )}
 
 
+
         {/* PRODUCTS */}
 
         {products.length > 0 && (
 
           <>
-            <h3 style={styles.subHeading}>All Products</h3>
+            <h3 style={styles.subHeading}>
+              All Products
+            </h3>
 
-            {/* ✅ USE SAME PRODUCT CARD */}
             <div style={styles.grid}>
 
               {products.map(product => (
@@ -158,10 +199,23 @@ export default function CategoryPage() {
           </>
         )}
 
+
+
+        {/* NO PRODUCTS */}
+
+        {products.length === 0 && (
+
+          <div style={styles.empty}>
+            No products found
+          </div>
+
+        )}
+
       </main>
 
     </>
   );
+
 }
 
 
@@ -176,12 +230,15 @@ const styles = {
 
   heading:{
     fontSize:22,
-    fontWeight:700
+    fontWeight:700,
+    marginBottom:10
   },
 
   subHeading:{
     marginTop:20,
-    marginBottom:10
+    marginBottom:10,
+    fontSize:16,
+    fontWeight:600
   },
 
   grid:{
@@ -199,6 +256,12 @@ const styles = {
     color:"#000",
     border:"1px solid #E5E7EB",
     fontWeight:600
+  },
+
+  empty:{
+    padding:20,
+    textAlign:"center",
+    color:"#6b7280"
   }
 
 };
