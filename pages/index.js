@@ -29,8 +29,17 @@ export default function Home() {
           gauge,
           unit_type,
           pcs_per_carton,
-          categories(name),
-          subcategories(name)
+
+          /* ✅ FIX: SLUG ADDED */
+          categories(
+            name,
+            slug
+          ),
+
+          subcategories(
+            name,
+            slug
+          )
         `)
         .eq("in_stock", true)
         .order("created_at", { ascending: false });
@@ -99,7 +108,7 @@ export default function Home() {
           Products
         </h2>
 
-        {/* ✅ USE PRODUCT CARD COMPONENT */}
+        {/* ✅ PRODUCT CARD */}
         <div style={styles.grid}>
 
           {products.map((product) => (
