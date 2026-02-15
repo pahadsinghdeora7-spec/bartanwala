@@ -10,9 +10,7 @@ import {
   FaBoxOpen,
 } from "react-icons/fa";
 
-/* ✅ FIXED IMPORT PATH */
 import { useCart } from "../../../../context/CartContext";
-
 
 /* ================= SERVER ================= */
 
@@ -26,7 +24,7 @@ export async function getServerSideProps({ params }) {
   const { categorySlug, subcategorySlug, productSlug } = params;
 
   /* GET PRODUCT */
-  const { data: product } = await supabase
+  const { data: product, error } = await supabase
     .from("products")
     .select(`
       *,
@@ -36,9 +34,22 @@ export async function getServerSideProps({ params }) {
     .eq("slug", productSlug)
     .single();
 
-  if (!product) return { notFound: true };
+  /* PRODUCT NOT FOUND */
+  if (error || !product) {
+    return { notFound: true };
+  }
 
-  /* GET RELATED */
+  /* CATEGORY VALIDATION */
+  if (product.categories?.slug !== categorySlug) {
+    return { notFound: true };
+  }
+
+  /* SUBCATEGORY VALIDATION */
+  if (product.subcategories?.slug !== subcategorySlug) {
+    return { notFound: true };
+  }
+
+  /* RELATED PRODUCTS */
   const { data: related } = await supabase
     .from("products")
     .select(`
@@ -65,7 +76,6 @@ export async function getServerSideProps({ params }) {
   };
 }
 
-
 /* ================= PAGE ================= */
 
 export default function ProductPage({
@@ -87,16 +97,17 @@ export default function ProductPage({
   const [activeImg, setActiveImg] = useState(images[0]);
 
   const unit = product.unit_type || "kg";
-  const isKG = unit === "kg";
 
-  const minQty = isKG ? 40 : 1;
+  const minQty = unit === "kg" ? 40 : 1;
+
   const [qty, setQty] = useState(minQty);
 
-  const dropdownOptions = isKG
-    ? [40, 80, 120, 160, 200]
-    : [1, 2, 3, 4, 5];
+  const options =
+    unit === "kg"
+      ? [40, 80, 120, 160, 200]
+      : [1, 2, 3, 4, 5];
 
-  function handleQtyChange(val) {
+  function changeQty(val) {
     const num = Number(val);
     setQty(num < minQty ? minQty : num);
   }
@@ -111,22 +122,36 @@ export default function ProductPage({
 
         {/* BREADCRUMB */}
         <div style={styles.breadcrumb}>
-          <Link href="/">Home</Link> /
+
+          <Link href="/">Home</Link>
+
+          {" / "}
+
           <Link href={`/category/${categorySlug}`}>
             {product.categories?.name}
-          </Link> /
+          </Link>
+
+          {" / "}
+
           <Link href={`/category/${categorySlug}/${subcategorySlug}`}>
             {product.subcategories?.name}
-          </Link> /
-          <span>{product.name}</span>
-        </div>
+          </Link>
 
+          {" / "}
+
+          <span>{product.name}</span>
+
+        </div>
 
         {/* IMAGE */}
-        <div style={styles.imageWrap}>
-          <img src={activeImg} style={styles.mainImage} />
-        </div>
+        <div style={styles.imageBox}>
 
+          <img
+            src={activeImg || "/placeholder.png"}
+            style={styles.image}
+          />
+
+        </div>
 
         {/* DETAILS */}
         <div style={styles.card}>
@@ -139,13 +164,13 @@ export default function ProductPage({
             {product.name}
           </h1>
 
-          <div style={styles.priceRow}>
+          <div style={styles.price}>
             <FaRupeeSign />
             {product.price} / {unit.toUpperCase()}
           </div>
 
-
           <div style={styles.badges}>
+
             <span style={styles.stock}>
               <FaCheckCircle /> In Stock
             </span>
@@ -153,68 +178,66 @@ export default function ProductPage({
             <span style={styles.bulk}>
               <FaBoxOpen /> Bulk Available
             </span>
-          </div>
-
-
-          <div style={styles.detailsBox}>
-
-            {product.subcategories?.name && (
-              <Detail label="Subcategory" value={product.subcategories.name} />
-            )}
-
-            {product.size && (
-              <Detail label="Size" value={product.size} />
-            )}
-
-            {product.gauge && (
-              <Detail label="Gauge" value={product.gauge} />
-            )}
-
-            {product.weight && (
-              <Detail label="Weight" value={product.weight} />
-            )}
 
           </div>
 
+          {/* DETAILS */}
+          <div style={styles.details}>
 
-          {/* QUANTITY */}
-          <div style={styles.qtySection}>
+            {product.subcategories?.name &&
+              <Row label="Subcategory" value={product.subcategories.name} />
+            }
+
+            {product.size &&
+              <Row label="Size" value={product.size} />
+            }
+
+            {product.gauge &&
+              <Row label="Gauge" value={product.gauge} />
+            }
+
+            {product.weight &&
+              <Row label="Weight" value={product.weight} />
+            }
+
+          </div>
+
+          {/* QTY */}
+          <div style={styles.qtyBox}>
 
             <select
               value={qty}
-              onChange={(e) => handleQtyChange(e.target.value)}
+              onChange={(e)=>changeQty(e.target.value)}
               style={styles.select}
             >
-              {dropdownOptions.map(q => (
-                <option key={q} value={q}>
-                  {isKG ? `${q} KG` : `${q} Carton`}
+              {options.map(o=>(
+                <option key={o} value={o}>
+                  {unit==="kg" ? `${o} KG` : `${o} Carton`}
                 </option>
               ))}
             </select>
 
-            <div style={styles.minNote}>
-              Minimum Order: {isKG ? "40 KG" : "1 Carton"}
+            <div style={styles.min}>
+              Minimum Order: {unit==="kg" ? "40 KG" : "1 Carton"}
             </div>
 
           </div>
 
-
           {/* BUTTONS */}
-          <div style={styles.actionRow}>
+          <div style={styles.buttons}>
 
             <button
               style={styles.cartBtn}
-              onClick={() => addToCart(product, qty, unit)}
+              onClick={()=>addToCart(product, qty, unit)}
             >
               <FaShoppingCart /> Add to Cart
             </button>
 
-
             <a
               href="https://wa.me/919873670361"
-              style={styles.whatsappBtn}
               target="_blank"
               rel="noreferrer"
+              style={styles.whatsapp}
             >
               <FaWhatsapp /> WhatsApp
             </a>
@@ -223,27 +246,24 @@ export default function ProductPage({
 
         </div>
 
-
-        {/* RELATED PRODUCTS */}
+        {/* RELATED */}
         {related.length > 0 && (
 
-          <div style={styles.relatedWrap}>
+          <div style={styles.relatedBox}>
 
             <h3>Related Products</h3>
 
-            <div style={styles.relatedGrid}>
+            <div style={styles.grid}>
 
-              {related.map(p => (
-
+              {related.map(p=>(
                 <Link
                   key={p.id}
                   href={`/category/${p.categories?.slug}/${p.subcategories?.slug}/${p.slug}`}
                   style={styles.relatedCard}
                 >
-                  <img src={p.image} style={styles.relatedImage}/>
+                  <img src={p.image} style={styles.relatedImg}/>
                   <div>{p.name}</div>
                 </Link>
-
               ))}
 
             </div>
@@ -257,42 +277,141 @@ export default function ProductPage({
   );
 }
 
+/* ROW */
 
-/* DETAIL */
-function Detail({ label, value }) {
+function Row({label,value}) {
   return (
-    <div style={styles.detailRow}>
+    <div style={styles.row}>
       <span>{label}</span>
       <span>{value}</span>
     </div>
   );
 }
 
-
 /* STYLES */
 
 const styles = {
+
   page:{ padding:16 },
-  breadcrumb:{ fontSize:12, marginBottom:10, color:"#6b7280" },
-  imageWrap:{ background:"#fff", padding:10, borderRadius:12 },
-  mainImage:{ width:"100%", height:280, objectFit:"contain" },
-  card:{ background:"#fff", padding:16, borderRadius:12, marginTop:10 },
-  category:{ color:"#0B5ED7", fontSize:12, fontWeight:600 },
-  title:{ fontSize:20, fontWeight:700 },
-  priceRow:{ fontSize:20, fontWeight:800, color:"#0B5ED7" },
-  badges:{ display:"flex", gap:10, marginTop:6 },
+
+  breadcrumb:{
+    fontSize:12,
+    marginBottom:10
+  },
+
+  imageBox:{
+    background:"#fff",
+    padding:10,
+    borderRadius:12
+  },
+
+  image:{
+    width:"100%",
+    height:280,
+    objectFit:"contain"
+  },
+
+  card:{
+    background:"#fff",
+    padding:16,
+    borderRadius:12,
+    marginTop:10
+  },
+
+  category:{
+    color:"#0B5ED7",
+    fontSize:12,
+    fontWeight:600
+  },
+
+  title:{
+    fontSize:20,
+    fontWeight:700
+  },
+
+  price:{
+    fontSize:20,
+    fontWeight:800,
+    color:"#0B5ED7",
+    display:"flex",
+    gap:4
+  },
+
+  badges:{
+    display:"flex",
+    gap:10,
+    marginTop:6
+  },
+
   stock:{ color:"green" },
+
   bulk:{ color:"blue" },
-  detailsBox:{ marginTop:10 },
-  detailRow:{ display:"flex", justifyContent:"space-between" },
-  qtySection:{ marginTop:10 },
-  select:{ width:"100%", padding:10 },
-  minNote:{ fontSize:12, color:"#6b7280" },
-  actionRow:{ display:"flex", gap:10, marginTop:10 },
-  cartBtn:{ flex:1, padding:12, background:"#0B5ED7", color:"#fff", border:"none", borderRadius:8 },
-  whatsappBtn:{ flex:1, padding:12, background:"#25D366", color:"#fff", textAlign:"center", borderRadius:8, textDecoration:"none" },
-  relatedWrap:{ marginTop:20 },
-  relatedGrid:{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10 },
-  relatedCard:{ background:"#fff", padding:10, borderRadius:10, textDecoration:"none", color:"#000" },
-  relatedImage:{ width:"100%", height:120, objectFit:"contain" }
+
+  details:{ marginTop:10 },
+
+  row:{
+    display:"flex",
+    justifyContent:"space-between"
+  },
+
+  qtyBox:{ marginTop:10 },
+
+  select:{
+    width:"100%",
+    padding:10
+  },
+
+  min:{
+    fontSize:12
+  },
+
+  buttons:{
+    display:"flex",
+    gap:10,
+    marginTop:10
+  },
+
+  cartBtn:{
+    flex:1,
+    padding:12,
+    background:"#0B5ED7",
+    color:"#fff",
+    border:"none",
+    borderRadius:8
+  },
+
+  whatsapp:{
+    flex:1,
+    padding:12,
+    background:"#25D366",
+    color:"#fff",
+    borderRadius:8,
+    textAlign:"center",
+    textDecoration:"none"
+  },
+
+  relatedBox:{
+    marginTop:20
+  },
+
+  grid:{
+    display:"grid",
+    gridTemplateColumns:"repeat(2,1fr)",
+    gap:10
+  },
+
+  relatedCard:{
+    background:"#fff",
+    padding:10,
+    borderRadius:10,
+    textDecoration:"none",
+    color:"#000"
+  },
+
+  relatedImg:{
+    width:"100%",
+    height:120,
+    objectFit:"contain"
+  }
+
 };
