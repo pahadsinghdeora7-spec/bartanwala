@@ -6,99 +6,262 @@ import {
   useMemo,
 } from "react";
 
+
+/* ================= CONTEXT ================= */
+
 const CartContext = createContext();
 
+
+/* ================= PROVIDER ================= */
+
 export function CartProvider({ children }) {
+
   const [cart, setCart] = useState([]);
+
   const [initialized, setInitialized] = useState(false);
 
-  /* ================= LOAD FROM LOCALSTORAGE ================= */
+
+
+  /* ================= LOAD ================= */
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+
+    try {
+
       const stored = localStorage.getItem("cart");
+
       if (stored) {
+
         setCart(JSON.parse(stored));
+
       }
-      setInitialized(true);
+
+    } catch {
+
+      setCart([]);
+
     }
+
+    setInitialized(true);
+
   }, []);
 
-  /* ================= SAVE TO LOCALSTORAGE ================= */
+
+
+  /* ================= SAVE ================= */
 
   useEffect(() => {
+
     if (initialized) {
-      localStorage.setItem("cart", JSON.stringify(cart));
+
+      localStorage.setItem(
+        "cart",
+        JSON.stringify(cart)
+      );
+
     }
+
   }, [cart, initialized]);
+
+
 
   /* ================= ADD TO CART ================= */
 
-  const addToCart = (product, qty = 1, unit = "kg") => {
-    setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
+  const addToCart = (product, qty = 1, unit_type = "kg") => {
+
+    qty = Number(qty);
+
+    if (!qty || qty <= 0) qty = 1;
+
+    setCart(prev => {
+
+      const existing = prev.find(
+        item =>
+          item.id === product.id &&
+          item.unit_type === unit_type
+      );
+
+
+      /* UPDATE EXISTING */
 
       if (existing) {
-        return prev.map((item) =>
-          item.id === product.id
-            ? { ...item, qty: item.qty + Number(qty) }
+
+        return prev.map(item =>
+
+          item.id === product.id &&
+          item.unit_type === unit_type
+
+            ? {
+                ...item,
+                qty: item.qty + qty
+              }
+
             : item
+
         );
+
       }
 
-      return [...prev, { ...product, qty: Number(qty), unit }];
+
+      /* ADD NEW */
+
+      return [
+
+        ...prev,
+
+        {
+          id: product.id,
+
+          name: product.name,
+
+          price: Number(product.price),
+
+          image: product.image,
+
+          slug: product.slug,
+
+          unit_type: unit_type,
+
+          qty: qty,
+
+          category: product.categories?.name,
+
+          subcategory: product.subcategories?.name
+
+        }
+
+      ];
+
     });
+
   };
+
+
 
   /* ================= UPDATE QTY ================= */
 
   const updateQty = (id, qty) => {
-    setCart((prev) =>
-      prev.map((item) =>
+
+    qty = Number(qty);
+
+    if (!qty || qty < 1) qty = 1;
+
+    setCart(prev =>
+
+      prev.map(item =>
+
         item.id === id
-          ? { ...item, qty: Math.max(1, Number(qty)) }
+
+          ? {
+              ...item,
+              qty: qty
+            }
+
           : item
+
       )
+
     );
+
   };
 
-  /* ================= REMOVE ITEM ================= */
+
+
+  /* ================= REMOVE ================= */
 
   const removeItem = (id) => {
-    setCart((prev) => prev.filter((item) => item.id !== id));
+
+    setCart(prev =>
+      prev.filter(item => item.id !== id)
+    );
+
   };
 
-  /* ================= CLEAR CART (IMPORTANT FIX) ================= */
+
+
+  /* ================= CLEAR ================= */
 
   const clearCart = () => {
+
     setCart([]);
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("cart");
-    }
+
+    localStorage.removeItem("cart");
+
   };
+
+
 
   /* ================= COUNT ================= */
 
   const cartCount = useMemo(() => {
-    return cart.reduce((sum, item) => sum + item.qty, 0);
+
+    return cart.reduce(
+
+      (sum, item) => sum + Number(item.qty),
+
+      0
+
+    );
+
   }, [cart]);
 
+
+
+  /* ================= TOTAL ================= */
+
+  const cartTotal = useMemo(() => {
+
+    return cart.reduce(
+
+      (sum, item) =>
+        sum + Number(item.price) * Number(item.qty),
+
+      0
+
+    );
+
+  }, [cart]);
+
+
+
+  /* ================= EXPORT ================= */
+
   return (
+
     <CartContext.Provider
       value={{
+
         cart,
+
         addToCart,
+
         updateQty,
+
         removeItem,
-        clearCart,   // 👈 NEW
+
+        clearCart,
+
         cartCount,
+
+        cartTotal
+
       }}
     >
+
       {children}
+
     </CartContext.Provider>
+
   );
+
 }
 
+
+
+/* ================= HOOK ================= */
+
 export function useCart() {
+
   return useContext(CartContext);
+
 }
