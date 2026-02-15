@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
@@ -8,8 +8,7 @@ import {
   FaShoppingCart,
   FaCheckCircle,
   FaBoxOpen,
-  FaTruck,
-  FaShieldAlt
+  FaTimes
 } from "react-icons/fa";
 
 import { useCart } from "../../../../context/CartContext";
@@ -27,46 +26,35 @@ export async function getServerSideProps({ params }) {
 
   const { categorySlug, subcategorySlug, productSlug } = params;
 
-  const { data: product, error } = await supabase
+  const { data: product } = await supabase
     .from("products")
-    .select(`
-      *,
-      categories(name, slug),
-      subcategories(name, slug)
-    `)
+    .select(`*,categories(name,slug),subcategories(name,slug)`)
     .eq("slug", productSlug)
     .single();
 
-  if (error || !product)
-    return { notFound: true };
+  if (!product) return { notFound:true };
 
   if (product.categories?.slug !== categorySlug)
-    return { notFound: true };
+    return { notFound:true };
 
   if (product.subcategories?.slug !== subcategorySlug)
-    return { notFound: true };
-
+    return { notFound:true };
 
   const { data: related } = await supabase
     .from("products")
-    .select(`
-      *,
-      categories(name, slug),
-      subcategories(name, slug)
-    `)
+    .select(`*,categories(name,slug),subcategories(name,slug)`)
     .eq("category_id", product.category_id)
     .neq("id", product.id)
     .eq("in_stock", true)
     .limit(10);
 
-
   return {
-    props: {
+    props:{
       product,
       related: related || [],
       categorySlug,
-      subcategorySlug,
-    },
+      subcategorySlug
+    }
   };
 
 }
@@ -78,540 +66,284 @@ export default function ProductPage({
   product,
   related,
   categorySlug,
-  subcategorySlug,
-}) {
+  subcategorySlug
+}){
 
   const { addToCart } = useCart();
 
-
+  /* IMAGE LIST */
   const images = [
     product.image,
     product.image1,
     product.image2,
-    product.image3,
+    product.image3
   ].filter(Boolean);
 
+  const [index,setIndex] = useState(0);
+  const [showViewer,setShowViewer] = useState(false);
 
-  const [activeImg, setActiveImg] = useState(
-    images[0] || "/placeholder.png"
-  );
+  const startX = useRef(0);
 
+  const activeImg = images[index] || "/placeholder.png";
 
   const unit = product.unit_type || "kg";
 
+  const minQty = unit==="kg"?40:1;
 
-  const minQty = unit === "kg" ? 40 : 1;
+  const [qty,setQty]=useState(minQty);
 
-
-  const [qty, setQty] = useState(minQty);
-
-
-  const qtyOptions =
-    unit === "kg"
-      ? [40, 80, 120, 160, 200]
-      : [1, 2, 3, 4, 5];
+  const qtyOptions = unit==="kg"
+    ? [40,80,120,160,200]
+    : [1,2,3,4,5];
 
 
+  /* SWIPE START */
+  function touchStart(e){
+    startX.current = e.touches[0].clientX;
+  }
 
-  function changeQty(val) {
+  /* SWIPE END */
+  function touchEnd(e){
 
-    const num = Number(val);
+    const endX = e.changedTouches[0].clientX;
 
-    setQty(num < minQty ? minQty : num);
+    if(startX.current - endX > 50){
+      nextImage();
+    }
+
+    if(endX - startX.current > 50){
+      prevImage();
+    }
 
   }
 
+  function nextImage(){
+    setIndex((prev)=>
+      prev === images.length-1 ? 0 : prev+1
+    );
+  }
 
+  function prevImage(){
+    setIndex((prev)=>
+      prev === 0 ? images.length-1 : prev-1
+    );
+  }
 
-  return (
 
-    <>
-      <Head>
-        <title>{product.name} | Bartanwala</title>
-      </Head>
+  return(
 
+<>
+<Head>
+<title>{product.name}</title>
+</Head>
 
-      <div style={styles.page}>
 
+<div style={styles.page}>
 
-        {/* BREADCRUMB */}
 
-        <div style={styles.breadcrumb}>
+{/* IMAGE */}
 
-          <Link href="/">Home</Link>
+<div style={styles.imageBox}>
 
-          <span>/</span>
+<img
+src={activeImg}
+style={styles.image}
+onClick={()=>setShowViewer(true)}
+/>
 
-          <Link href={`/category/${categorySlug}`}>
-            {product.categories?.name}
-          </Link>
+</div>
 
-          <span>/</span>
 
-          <Link href={`/category/${categorySlug}/${subcategorySlug}`}>
-            {product.subcategories?.name}
-          </Link>
 
-        </div>
+{/* DETAILS */}
 
+<div style={styles.card}>
 
+<div style={styles.category}>
+{product.categories?.name}
+</div>
 
-        {/* IMAGE CARD */}
+<h1 style={styles.title}>
+{product.name}
+</h1>
 
-        <div style={styles.imageCard}>
+<div style={styles.price}>
+<FaRupeeSign/>
+{product.price}
+<span style={styles.unit}>
+/ {unit.toUpperCase()}
+</span>
+</div>
 
-          <img
-            src={activeImg}
-            style={styles.image}
-            onError={(e)=>{
-              e.target.src="/placeholder.png";
-            }}
-          />
+<div style={styles.badges}>
+<span style={styles.stock}>
+<FaCheckCircle/> In Stock
+</span>
+<span style={styles.bulk}>
+<FaBoxOpen/> Bulk Available
+</span>
+</div>
 
-        </div>
+</div>
 
 
 
-        {/* PRODUCT INFO CARD */}
+{/* RELATED */}
 
-        <div style={styles.infoCard}>
+<div style={styles.relatedBox}>
 
+<h3>Related Products</h3>
 
-          <div style={styles.category}>
-            {product.categories?.name}
-          </div>
+<div style={styles.grid}>
 
+{related.map(p=>(
+<ProductCard key={p.id} product={p}/>
+))}
 
-          <h1 style={styles.title}>
-            {product.name}
-          </h1>
+</div>
 
+</div>
 
 
-          {/* PRICE BOX */}
 
-          <div style={styles.priceBox}>
+{/* ================= IMAGE VIEWER ================= */}
 
-            <div style={styles.price}>
+{showViewer && (
 
-              <FaRupeeSign />
+<div
+style={styles.viewer}
+onTouchStart={touchStart}
+onTouchEnd={touchEnd}
+>
 
-              {product.price}
+<button
+style={styles.closeBtn}
+onClick={()=>setShowViewer(false)}
+>
+<FaTimes/>
+</button>
 
-              <span style={styles.unit}>
-                / {unit.toUpperCase()}
-              </span>
+<img
+src={activeImg}
+style={styles.viewerImage}
+/>
 
-            </div>
+</div>
 
+)}
 
-            <div style={styles.taxNote}>
-              GST Included
-            </div>
 
-          </div>
-
-
-
-          {/* BADGES */}
-
-          <div style={styles.badges}>
-
-            <div style={styles.badgeGreen}>
-              <FaCheckCircle />
-              In Stock
-            </div>
-
-            <div style={styles.badgeBlue}>
-              <FaBoxOpen />
-              Bulk Available
-            </div>
-
-            <div style={styles.badgeGray}>
-              <FaTruck />
-              All India Delivery
-            </div>
-
-            <div style={styles.badgeGray}>
-              <FaShieldAlt />
-              Trusted Supplier
-            </div>
-
-          </div>
-
-
-
-          {/* SPEC TABLE */}
-
-          <div style={styles.specCard}>
-
-            <div style={styles.specTitle}>
-              Product Details
-            </div>
-
-
-            {product.subcategories?.name &&
-              <SpecRow label="Subcategory" value={product.subcategories.name}/>
-            }
-
-            {product.size &&
-              <SpecRow label="Size" value={product.size}/>
-            }
-
-            {product.gauge &&
-              <SpecRow label="Gauge" value={product.gauge}/>
-            }
-
-            {product.weight &&
-              <SpecRow label="Weight" value={product.weight}/>
-            }
-
-          </div>
-
-
-
-          {/* QTY */}
-
-          <div style={styles.qtyBox}>
-
-            <select
-              value={qty}
-              onChange={(e)=>changeQty(e.target.value)}
-              style={styles.select}
-            >
-
-              {qtyOptions.map(q=>(
-                <option key={q} value={q}>
-                  {unit==="kg"
-                    ? `${q} KG`
-                    : `${q} Carton`}
-                </option>
-              ))}
-
-            </select>
-
-
-            <div style={styles.minNote}>
-              Minimum Order:
-              {" "}
-              {unit==="kg"
-                ? "40 KG"
-                : "1 Carton"}
-            </div>
-
-          </div>
-
-
-
-          {/* BUTTONS */}
-
-          <div style={styles.buttonRow}>
-
-
-            <button
-              style={styles.cartBtn}
-              onClick={()=>
-                addToCart(product, qty, unit)
-              }
-            >
-              <FaShoppingCart />
-              Add to Cart
-            </button>
-
-
-
-            <a
-              href="https://wa.me/919873670361"
-              target="_blank"
-              rel="noreferrer"
-              style={styles.whatsappBtn}
-            >
-              <FaWhatsapp />
-              WhatsApp
-            </a>
-
-
-          </div>
-
-        </div>
-
-
-
-        {/* RELATED PRODUCTS */}
-
-        {related.length > 0 && (
-
-          <div style={styles.relatedBox}>
-
-            <h3 style={styles.relatedTitle}>
-              Related Products
-            </h3>
-
-            <div style={styles.grid}>
-
-              {related.map(p=>(
-                <ProductCard
-                  key={p.id}
-                  product={p}
-                />
-              ))}
-
-            </div>
-
-          </div>
-
-        )}
-
-
-      </div>
-
-    </>
-
-  );
-
+</div>
+</>
+);
 }
 
 
 
-/* SPEC ROW */
+/* ================= STYLES ================= */
 
-function SpecRow({label,value}) {
-
-  return (
-    <div style={styles.specRow}>
-      <span>{label}</span>
-      <span>{value}</span>
-    </div>
-  );
-
-}
-
-
-
-/* ================= PREMIUM STYLES ================= */
-
-const styles = {
-
+const styles={
 
 page:{
 padding:16,
-paddingBottom:100
+background:"#F3F4F6",
+minHeight:"100vh"
 },
 
-
-breadcrumb:{
-fontSize:13,
-marginBottom:14,
-color:"#6b7280",
-display:"flex",
-gap:6,
-flexWrap:"wrap"
-},
-
-
-imageCard:{
+imageBox:{
 background:"#fff",
-padding:20,
-borderRadius:16,
-boxShadow:"0 4px 20px rgba(0,0,0,0.08)"
+padding:16,
+borderRadius:16
 },
-
 
 image:{
 width:"100%",
 height:300,
-objectFit:"contain"
+objectFit:"contain",
+cursor:"zoom-in"
 },
 
-
-infoCard:{
+card:{
 background:"#fff",
-padding:18,
+padding:16,
 borderRadius:16,
-marginTop:14,
-boxShadow:"0 4px 20px rgba(0,0,0,0.08)"
+marginTop:12
 },
-
 
 category:{
 color:"#0B5ED7",
-fontWeight:600,
-fontSize:13
+fontWeight:600
 },
-
 
 title:{
-fontSize:22,
-fontWeight:700,
-marginTop:4,
-lineHeight:1.3
+fontSize:20,
+fontWeight:700
 },
-
-
-priceBox:{
-marginTop:10
-},
-
 
 price:{
-fontSize:26,
+fontSize:22,
 fontWeight:800,
-color:"#0B5ED7",
-display:"flex",
-alignItems:"center",
-gap:4
+color:"#0B5ED7"
 },
-
 
 unit:{
 fontSize:14,
 color:"#6b7280"
 },
 
-
-taxNote:{
-fontSize:12,
-color:"#16a34a"
-},
-
-
 badges:{
 display:"flex",
-flexWrap:"wrap",
-gap:8,
-marginTop:12
-},
-
-
-badgeGreen:{
-background:"#dcfce7",
-color:"#166534",
-padding:"6px 10px",
-borderRadius:8,
-fontSize:12,
-display:"flex",
-gap:6,
-alignItems:"center"
-},
-
-
-badgeBlue:{
-background:"#dbeafe",
-color:"#1e40af",
-padding:"6px 10px",
-borderRadius:8,
-fontSize:12,
-display:"flex",
-gap:6,
-alignItems:"center"
-},
-
-
-badgeGray:{
-background:"#f3f4f6",
-color:"#374151",
-padding:"6px 10px",
-borderRadius:8,
-fontSize:12,
-display:"flex",
-gap:6,
-alignItems:"center"
-},
-
-
-specCard:{
-marginTop:14,
-borderTop:"1px solid #E5E7EB",
-paddingTop:10
-},
-
-
-specTitle:{
-fontWeight:700,
-marginBottom:6
-},
-
-
-specRow:{
-display:"flex",
-justifyContent:"space-between",
-padding:"6px 0",
-fontSize:14
-},
-
-
-qtyBox:{
-marginTop:14
-},
-
-
-select:{
-width:"100%",
-padding:12,
-borderRadius:10,
-border:"1px solid #E5E7EB"
-},
-
-
-minNote:{
-fontSize:12,
-color:"#6b7280",
-marginTop:4
-},
-
-
-buttonRow:{
-display:"flex",
 gap:12,
-marginTop:16
+marginTop:8
 },
 
-
-cartBtn:{
-flex:1,
-padding:14,
-background:"linear-gradient(135deg,#0B5ED7,#084298)",
-color:"#fff",
-border:"none",
-borderRadius:12,
-fontWeight:700,
-display:"flex",
-justifyContent:"center",
-alignItems:"center",
-gap:6
-},
-
-
-whatsappBtn:{
-flex:1,
-padding:14,
-background:"#25D366",
-color:"#fff",
-borderRadius:12,
-textDecoration:"none",
-fontWeight:700,
-display:"flex",
-justifyContent:"center",
-alignItems:"center",
-gap:6
-},
-
+stock:{color:"green"},
+bulk:{color:"#0B5ED7"},
 
 relatedBox:{
-marginTop:26
+marginTop:24
 },
-
-
-relatedTitle:{
-marginBottom:12
-},
-
 
 grid:{
 display:"grid",
 gridTemplateColumns:"repeat(2,1fr)",
 gap:16
-}
+},
 
+
+
+/* VIEWER */
+
+viewer:{
+position:"fixed",
+top:0,
+left:0,
+right:0,
+bottom:0,
+background:"#fff",
+display:"flex",
+alignItems:"center",
+justifyContent:"center",
+zIndex:9999
+},
+
+viewerImage:{
+maxWidth:"100%",
+maxHeight:"100%",
+objectFit:"contain"
+},
+
+closeBtn:{
+position:"absolute",
+top:20,
+right:20,
+background:"#000",
+color:"#fff",
+border:"none",
+borderRadius:"50%",
+width:40,
+height:40,
+fontSize:18
+}
 
 };
