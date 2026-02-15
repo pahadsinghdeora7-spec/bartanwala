@@ -60,8 +60,6 @@ export async function getServerSideProps({ params }) {
 export default function ProductPage({
   product,
   related,
-  categorySlug,
-  subcategorySlug
 }){
 
   const { addToCart } = useCart();
@@ -94,6 +92,7 @@ export default function ProductPage({
 
 
 /* SWIPE */
+
 function touchStart(e){
 startX.current=e.touches[0].clientX;
 }
@@ -102,11 +101,9 @@ function touchEnd(e){
 
 const endX=e.changedTouches[0].clientX;
 
-if(startX.current-endX>50)
-next();
+if(startX.current-endX>50) next();
 
-if(endX-startX.current>50)
-prev();
+if(endX-startX.current>50) prev();
 
 }
 
@@ -118,6 +115,19 @@ function prev(){
 setImgIndex(prev=>prev===0?images.length-1:prev-1);
 }
 
+
+/* MANUAL INPUT */
+
+function handleManualQty(value){
+
+let num = Number(value);
+
+if(!num || num < minQty)
+num = minQty;
+
+setQty(num);
+
+}
 
 
 /* ================= UI ================= */
@@ -212,6 +222,9 @@ onClick={()=>setViewer(true)}
 
 <div style={styles.qtyBox}>
 
+
+<div style={styles.qtyRow}>
+
 <select
 value={qty}
 onChange={(e)=>setQty(Number(e.target.value))}
@@ -225,6 +238,18 @@ style={styles.select}
 ))}
 
 </select>
+
+
+<input
+type="number"
+value={qty}
+min={minQty}
+onChange={(e)=>handleManualQty(e.target.value)}
+style={styles.qtyInput}
+/>
+
+</div>
+
 
 <div style={styles.minNote}>
 Minimum Order: {unit==="kg"?"40 KG":"1 Carton"}
@@ -419,10 +444,26 @@ qtyBox:{
 marginTop:14
 },
 
+qtyRow:{
+display:"flex",
+gap:10
+},
+
 select:{
-width:"100%",
+flex:1,
 padding:12,
-borderRadius:10
+borderRadius:10,
+border:"1px solid #E5E7EB"
+},
+
+qtyInput:{
+width:90,
+padding:12,
+borderRadius:10,
+border:"1px solid #E5E7EB",
+fontSize:16,
+fontWeight:600,
+textAlign:"center"
 },
 
 minNote:{
@@ -470,9 +511,6 @@ display:"grid",
 gridTemplateColumns:"repeat(2,1fr)",
 gap:16
 },
-
-
-/* VIEWER */
 
 viewer:{
 position:"fixed",
