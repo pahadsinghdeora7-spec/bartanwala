@@ -288,18 +288,25 @@ function Row({label,value}) {
 
 const styles = {
 
-  page:{ padding:16 },
+  page:{
+    padding:16,
+    paddingBottom:90
+  },
 
   breadcrumb:{
-    fontSize:12,
-    marginBottom:10,
-    color:"#6b7280"
+    fontSize:13,
+    marginBottom:12,
+    color:"#6b7280",
+    display:"flex",
+    gap:6,
+    flexWrap:"wrap"
   },
 
   imageBox:{
     background:"#fff",
-    padding:10,
-    borderRadius:12
+    padding:12,
+    borderRadius:14,
+    border:"1px solid #E5E7EB"
   },
 
   image:{
@@ -311,94 +318,129 @@ const styles = {
   card:{
     background:"#fff",
     padding:16,
-    borderRadius:12,
-    marginTop:10
+    borderRadius:14,
+    marginTop:12,
+    border:"1px solid #E5E7EB"
   },
 
   category:{
     color:"#0B5ED7",
     fontSize:12,
-    fontWeight:600
+    fontWeight:600,
+    marginBottom:4
   },
 
   title:{
-    fontSize:22,
-    fontWeight:700
+    fontSize:20,
+    fontWeight:700,
+    lineHeight:1.3,
+    marginBottom:6
   },
 
   price:{
-    fontSize:20,
+    fontSize:22,
     fontWeight:800,
     color:"#0B5ED7",
     display:"flex",
+    alignItems:"center",
     gap:4
   },
 
   badges:{
     display:"flex",
-    gap:10,
-    marginTop:6
+    gap:12,
+    marginTop:8,
+    fontSize:13
   },
 
-  stock:{ color:"green" },
-  bulk:{ color:"blue" },
+  stock:{
+    color:"green",
+    fontWeight:600
+  },
 
-  details:{ marginTop:10 },
+  bulk:{
+    color:"#0B5ED7",
+    fontWeight:600
+  },
+
+  details:{
+    marginTop:12,
+    borderTop:"1px solid #E5E7EB",
+    paddingTop:10
+  },
 
   row:{
     display:"flex",
-    justifyContent:"space-between"
+    justifyContent:"space-between",
+    padding:"4px 0",
+    fontSize:14
   },
 
   rowSingle:{
     fontSize:14,
-    fontWeight:500
+    fontWeight:600,
+    paddingBottom:4
   },
 
-  qtyBox:{ marginTop:10 },
+  qtyBox:{
+    marginTop:14
+  },
 
   select:{
     width:"100%",
-    padding:10
+    padding:12,
+    borderRadius:10,
+    border:"1px solid #E5E7EB",
+    fontSize:14
   },
 
   min:{
-    fontSize:12
+    fontSize:12,
+    color:"#6b7280",
+    marginTop:4
   },
 
   buttons:{
     display:"flex",
-    gap:10,
-    marginTop:10
+    gap:12,
+    marginTop:16
   },
 
   cartBtn:{
     flex:1,
-    padding:12,
-    background:"#0B5ED7",
+    padding:14,
+    background:"linear-gradient(135deg,#0B5ED7,#084298)",
     color:"#fff",
     border:"none",
-    borderRadius:8
+    borderRadius:12,
+    fontWeight:700,
+    fontSize:15,
+    cursor:"pointer"
   },
 
   whatsapp:{
     flex:1,
-    padding:12,
+    padding:14,
     background:"#25D366",
     color:"#fff",
-    borderRadius:8,
+    borderRadius:12,
     textAlign:"center",
-    textDecoration:"none"
+    textDecoration:"none",
+    fontWeight:700,
+    fontSize:15
   },
 
   relatedBox:{
-    marginTop:20
+    marginTop:24
   },
 
   grid:{
     display:"grid",
     gridTemplateColumns:"repeat(2,1fr)",
-    gap:16
+    gap:16,
+    alignItems:"stretch"   // ✅ important fix
   }
+
+};
 
 };
