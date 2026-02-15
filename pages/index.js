@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
-import ProductCard from "../components/ProductCard"; // ✅ IMPORT
+import ProductCard from "../components/ProductCard";
+
+/* ================= SUPABASE ================= */
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "",
@@ -12,12 +14,17 @@ const supabase = createClient(
 export default function Home() {
 
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  /* ================= LOAD PRODUCTS ================= */
 
   useEffect(() => {
 
     async function loadProducts() {
 
-      const { data } = await supabase
+      setLoading(true);
+
+      const { data, error } = await supabase
         .from("products")
         .select(`
           id,
@@ -30,7 +37,6 @@ export default function Home() {
           unit_type,
           pcs_per_carton,
 
-          /* ✅ FIX: SLUG ADDED */
           categories(
             name,
             slug
@@ -44,14 +50,22 @@ export default function Home() {
         .eq("in_stock", true)
         .order("created_at", { ascending: false });
 
-      setProducts(data || []);
+      if (error) {
+        console.log("Supabase error:", error);
+        setProducts([]);
+      }
+      else {
+        setProducts(data || []);
+      }
 
+      setLoading(false);
     }
 
     loadProducts();
 
   }, []);
 
+  /* ================= UI ================= */
 
   return (
     <>
@@ -80,11 +94,17 @@ export default function Home() {
 
         <div style={styles.categoryRow}>
 
-          <Link href="/category/stainless-steel-utensils" style={styles.categoryCard}>
+          <Link
+            href="/category/stainless-steel-utensils"
+            style={styles.categoryCard}
+          >
             Stainless Steel Utensils
           </Link>
 
-          <Link href="/category/aluminium-utensils" style={styles.categoryCard}>
+          <Link
+            href="/category/aluminium-utensils"
+            style={styles.categoryCard}
+          >
             Aluminium Utensils
           </Link>
 
@@ -108,10 +128,24 @@ export default function Home() {
           Products
         </h2>
 
-        {/* ✅ PRODUCT CARD */}
+        {/* LOADING */}
+        {loading && (
+          <div style={styles.loading}>
+            Loading products...
+          </div>
+        )}
+
+        {/* EMPTY */}
+        {!loading && products.length === 0 && (
+          <div style={styles.loading}>
+            No products found
+          </div>
+        )}
+
+        {/* PRODUCT GRID */}
         <div style={styles.grid}>
 
-          {products.map((product) => (
+          {products.map(product => (
 
             <ProductCard
               key={product.id}
@@ -129,6 +163,8 @@ export default function Home() {
 
 }
 
+
+/* ================= STYLES ================= */
 
 const styles = {
 
@@ -200,6 +236,12 @@ const styles = {
     fontSize: 18,
     fontWeight: 700,
     marginBottom: 14
+  },
+
+  loading: {
+    textAlign: "center",
+    padding: 20,
+    color: "#6b7280"
   },
 
   grid: {
