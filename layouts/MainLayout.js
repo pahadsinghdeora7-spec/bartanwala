@@ -5,12 +5,13 @@ import Header from "../components/Header";
 import SearchBar from "../components/SearchBar";
 import BottomNav from "../components/BottomNav";
 import MenuDrawer from "../components/MenuDrawer";
-import Footer from "../components/Footer"; // ✅ Footer Import
+import Footer from "../components/Footer";
 import { supabase } from "../lib/supabase";
 
 const HIDE_NAV = ["/login", "/signup", "/checkout", "/payment"];
 
 export default function MainLayout({ children }) {
+
   const router = useRouter();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -20,46 +21,86 @@ export default function MainLayout({ children }) {
     router.pathname.startsWith(p)
   );
 
-  // ✅ AUTH STATE
+  /* ================= AUTH ================= */
+
   useEffect(() => {
+
     supabase.auth.getSession().then(({ data }) => {
       setUser(data?.session?.user ?? null);
     });
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+    const { data: subscription } =
+      supabase.auth.onAuthStateChange((_event, session) => {
         setUser(session?.user ?? null);
-      }
-    );
+      });
 
     return () => {
       subscription?.subscription?.unsubscribe();
     };
+
   }, []);
 
+  /* ================= UI ================= */
+
   return (
-    <>
-      <Header
-        onMenuClick={() => setDrawerOpen(true)}
-        user={user}
-      />
 
-      <SearchBar />
+    <div style={styles.outer}>
 
-      <MenuDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        user={user}
-      />
+      {/* MOBILE APP CONTAINER */}
+      <div style={styles.mobile}>
 
-      <main style={{ paddingBottom: hideBottomNav ? 0 : 72 }}>
-        {children}
-      </main>
+        <Header
+          onMenuClick={() => setDrawerOpen(true)}
+          user={user}
+        />
 
-      {/* ✅ Desktop Only Footer */}
-      <Footer />
+        <SearchBar />
 
-      {!hideBottomNav && <BottomNav />}
-    </>
+        <MenuDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          user={user}
+        />
+
+        <main style={{
+          paddingBottom: hideBottomNav ? 0 : 72
+        }}>
+          {children}
+        </main>
+
+        {/* Footer */}
+        <Footer />
+
+        {/* Bottom Nav */}
+        {!hideBottomNav && <BottomNav />}
+
+      </div>
+
+    </div>
+
   );
-        }
+
+}
+
+/* ================= STYLES ================= */
+
+const styles = {
+
+  /* Desktop background */
+  outer: {
+    background: "#f1f3f6",
+    minHeight: "100vh",
+    display: "flex",
+    justifyContent: "center",
+  },
+
+  /* Mobile app width */
+  mobile: {
+    width: "100%",
+    maxWidth: "480px",     // ✅ mobile app width lock
+    background: "#ffffff",
+    minHeight: "100vh",
+    boxShadow: "0 0 25px rgba(0,0,0,0.08)",
+  },
+
+};
