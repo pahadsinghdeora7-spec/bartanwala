@@ -11,8 +11,18 @@ export default function CartPage() {
   const {
     cart,
     updateQty,
-    removeItem
+    removeItem,
+    initialized   // ⭐ IMPORTANT FIX
   } = useCart();
+
+
+  /* WAIT UNTIL CART LOADS */
+
+  if (!initialized) {
+
+    return null;
+
+  }
 
 
   /* ================= CALCULATE TOTAL ================= */
@@ -85,7 +95,7 @@ export default function CartPage() {
 
 
 
-        {/* EMPTY */}
+        {/* EMPTY STATE */}
 
         {cart.length === 0 && (
 
@@ -130,7 +140,7 @@ export default function CartPage() {
                 ₹ {item.price}
 
                 <span className={styles.unit}>
-                  / {item.unit_type?.toUpperCase()}
+                  / {(item.unit || item.unit_type || "kg").toUpperCase()}
                 </span>
 
               </div>
@@ -168,7 +178,7 @@ export default function CartPage() {
             </div>
 
 
-            {/* DELETE */}
+            {/* DELETE BUTTON */}
 
             <button
               className={styles.delete}
@@ -252,4 +262,4 @@ export default function CartPage() {
 
   );
 
-              }
+}
