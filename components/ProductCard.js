@@ -3,6 +3,18 @@ import { FaShoppingCart } from "react-icons/fa";
 
 export default function ProductCard({ product }) {
 
+  /* ================= URL (FINAL FIX) ================= */
+
+  const categorySlug = product.categories?.slug;
+  const subcategorySlug = product.subcategories?.slug;
+  const productSlug = product.slug;
+
+  const productUrl =
+    categorySlug && subcategorySlug && productSlug
+      ? `/category/${categorySlug}/${subcategorySlug}/${productSlug}`
+      : "#";
+
+
   /* ================= ADD TO CART ================= */
 
   function addToCart(e) {
@@ -35,12 +47,7 @@ export default function ProductCard({ product }) {
   }
 
 
-  /* ================= URL FIXED ================= */
-
-  const productUrl = product.slug
-    ? `/product/${product.slug}`
-    : "#";
-
+  /* ================= DATA ================= */
 
   const unit = product.unit_type || "kg";
   const pcs = product.pcs_per_carton || 1;
@@ -54,7 +61,6 @@ export default function ProductCard({ product }) {
 
       {/* CLICKABLE AREA */}
       <Link href={productUrl} style={styles.link}>
-
 
         {/* IMAGE */}
         <div style={styles.imageSection}>
@@ -71,10 +77,9 @@ export default function ProductCard({ product }) {
         {/* DETAILS */}
         <div style={styles.details}>
 
-
-          {/* MAIN CATEGORY */}
+          {/* CATEGORY */}
           <div style={styles.category}>
-            {product.categories?.name}
+            {product.categories?.name || ""}
           </div>
 
 
@@ -86,7 +91,7 @@ export default function ProductCard({ product }) {
 
           {/* SUBCATEGORY */}
           <div style={styles.subcategory}>
-            {product.subcategories?.name}
+            {product.subcategories?.name || ""}
           </div>
 
 
@@ -120,18 +125,20 @@ export default function ProductCard({ product }) {
 
           {/* MIN ORDER */}
           {unit === "kg" && (
+
             <div style={styles.min}>
               Min Order: 40 KG
             </div>
+
           )}
 
-
           {(unit === "pcs" || unit === "set") && (
+
             <div style={styles.min}>
               1 Carton = {pcs}
             </div>
-          )}
 
+          )}
 
         </div>
 
@@ -150,7 +157,6 @@ export default function ProductCard({ product }) {
         </button>
 
       </div>
-
 
     </div>
 
