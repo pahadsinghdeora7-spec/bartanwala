@@ -11,6 +11,7 @@ import {
 } from "react-icons/fa";
 
 import { useCart } from "../../../../context/CartContext";
+import ProductCard from "../../../../components/ProductCard";
 
 /* ================= SERVER ================= */
 
@@ -23,7 +24,6 @@ export async function getServerSideProps({ params }) {
 
   const { categorySlug, subcategorySlug, productSlug } = params;
 
-  /* GET PRODUCT */
   const { data: product, error } = await supabase
     .from("products")
     .select(`
@@ -34,33 +34,21 @@ export async function getServerSideProps({ params }) {
     .eq("slug", productSlug)
     .single();
 
-  /* PRODUCT NOT FOUND */
-  if (error || !product) {
+  if (error || !product)
     return { notFound: true };
-  }
 
-  /* CATEGORY VALIDATION */
-  if (product.categories?.slug !== categorySlug) {
+  if (product.categories?.slug !== categorySlug)
     return { notFound: true };
-  }
 
-  /* SUBCATEGORY VALIDATION */
-  if (product.subcategories?.slug !== subcategorySlug) {
+  if (product.subcategories?.slug !== subcategorySlug)
     return { notFound: true };
-  }
 
-  /* RELATED PRODUCTS */
   const { data: related } = await supabase
     .from("products")
     .select(`
-      id,
-      name,
-      slug,
-      image,
-      price,
-      unit_type,
-      categories(slug),
-      subcategories(slug)
+      *,
+      categories(name,slug),
+      subcategories(name,slug)
     `)
     .eq("category_id", product.category_id)
     .neq("id", product.id)
@@ -120,7 +108,7 @@ export default function ProductPage({
 
       <div style={styles.page}>
 
-        {/* BREADCRUMB */}
+        {/* ✅ PROFESSIONAL BREADCRUMB */}
         <div style={styles.breadcrumb}>
 
           <Link href="/">Home</Link>
@@ -137,40 +125,39 @@ export default function ProductPage({
             {product.subcategories?.name}
           </Link>
 
-          {" / "}
-
-          <span>{product.name}</span>
-
         </div>
+
 
         {/* IMAGE */}
         <div style={styles.imageBox}>
-
           <img
             src={activeImg || "/placeholder.png"}
             style={styles.image}
           />
-
         </div>
+
 
         {/* DETAILS */}
         <div style={styles.card}>
 
+          {/* CATEGORY */}
           <div style={styles.category}>
             {product.categories?.name}
           </div>
 
+          {/* PRODUCT NAME */}
           <h1 style={styles.title}>
             {product.name}
           </h1>
 
+          {/* PRICE */}
           <div style={styles.price}>
             <FaRupeeSign />
             {product.price} / {unit.toUpperCase()}
           </div>
 
+          {/* BADGES */}
           <div style={styles.badges}>
-
             <span style={styles.stock}>
               <FaCheckCircle /> In Stock
             </span>
@@ -178,14 +165,14 @@ export default function ProductPage({
             <span style={styles.bulk}>
               <FaBoxOpen /> Bulk Available
             </span>
-
           </div>
 
-          {/* DETAILS */}
+
+          {/* SPECIFICATIONS */}
           <div style={styles.details}>
 
             {product.subcategories?.name &&
-              <Row label="Subcategory" value={product.subcategories.name} />
+              <Row value={product.subcategories.name} />
             }
 
             {product.size &&
@@ -201,6 +188,7 @@ export default function ProductPage({
             }
 
           </div>
+
 
           {/* QTY */}
           <div style={styles.qtyBox}>
@@ -222,6 +210,7 @@ export default function ProductPage({
             </div>
 
           </div>
+
 
           {/* BUTTONS */}
           <div style={styles.buttons}>
@@ -246,7 +235,8 @@ export default function ProductPage({
 
         </div>
 
-        {/* RELATED */}
+
+        {/* ✅ PROFESSIONAL RELATED PRODUCTS */}
         {related.length > 0 && (
 
           <div style={styles.relatedBox}>
@@ -255,15 +245,13 @@ export default function ProductPage({
 
             <div style={styles.grid}>
 
-              {related.map(p=>(
-                <Link
-                  key={p.id}
-                  href={`/category/${p.categories?.slug}/${p.subcategories?.slug}/${p.slug}`}
-                  style={styles.relatedCard}
-                >
-                  <img src={p.image} style={styles.relatedImg}/>
-                  <div>{p.name}</div>
-                </Link>
+              {related.map(product => (
+
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                />
+
               ))}
 
             </div>
@@ -280,6 +268,14 @@ export default function ProductPage({
 /* ROW */
 
 function Row({label,value}) {
+
+  if (!label)
+    return (
+      <div style={styles.rowSingle}>
+        {value}
+      </div>
+    );
+
   return (
     <div style={styles.row}>
       <span>{label}</span>
@@ -296,7 +292,8 @@ const styles = {
 
   breadcrumb:{
     fontSize:12,
-    marginBottom:10
+    marginBottom:10,
+    color:"#6b7280"
   },
 
   imageBox:{
@@ -325,7 +322,7 @@ const styles = {
   },
 
   title:{
-    fontSize:20,
+    fontSize:22,
     fontWeight:700
   },
 
@@ -344,7 +341,6 @@ const styles = {
   },
 
   stock:{ color:"green" },
-
   bulk:{ color:"blue" },
 
   details:{ marginTop:10 },
@@ -352,6 +348,11 @@ const styles = {
   row:{
     display:"flex",
     justifyContent:"space-between"
+  },
+
+  rowSingle:{
+    fontSize:14,
+    fontWeight:500
   },
 
   qtyBox:{ marginTop:10 },
@@ -397,21 +398,7 @@ const styles = {
   grid:{
     display:"grid",
     gridTemplateColumns:"repeat(2,1fr)",
-    gap:10
-  },
-
-  relatedCard:{
-    background:"#fff",
-    padding:10,
-    borderRadius:10,
-    textDecoration:"none",
-    color:"#000"
-  },
-
-  relatedImg:{
-    width:"100%",
-    height:120,
-    objectFit:"contain"
+    gap:16
   }
 
 };
