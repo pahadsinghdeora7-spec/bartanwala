@@ -43,41 +43,32 @@ export default function MainLayout({ children }) {
   /* ================= UI ================= */
 
   return (
+    <div style={styles.container}>
 
-    <div style={styles.outer}>
+      <Header
+        onMenuClick={() => setDrawerOpen(true)}
+        user={user}
+      />
 
-      {/* MOBILE APP CONTAINER */}
-      <div style={styles.mobile}>
+      <SearchBar />
 
-        <Header
-          onMenuClick={() => setDrawerOpen(true)}
-          user={user}
-        />
+      <MenuDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        user={user}
+      />
 
-        <SearchBar />
+      <main style={{
+        paddingBottom: hideBottomNav ? 0 : 72
+      }}>
+        {children}
+      </main>
 
-        <MenuDrawer
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-          user={user}
-        />
+      <Footer />
 
-        <main style={{
-          paddingBottom: hideBottomNav ? 0 : 72
-        }}>
-          {children}
-        </main>
-
-        {/* Footer */}
-        <Footer />
-
-        {/* Bottom Nav */}
-        {!hideBottomNav && <BottomNav />}
-
-      </div>
+      {!hideBottomNav && <BottomNav />}
 
     </div>
-
   );
 
 }
@@ -86,21 +77,10 @@ export default function MainLayout({ children }) {
 
 const styles = {
 
-  /* Desktop background */
-  outer: {
-    background: "#f1f3f6",
-    minHeight: "100vh",
-    display: "flex",
-    justifyContent: "center",
-  },
-
-  /* Mobile app width */
-  mobile: {
+  container: {
     width: "100%",
-    maxWidth: "480px",     // ✅ mobile app width lock
-    background: "#ffffff",
     minHeight: "100vh",
-    boxShadow: "0 0 25px rgba(0,0,0,0.08)",
+    background: "#ffffff",
   },
 
 };
