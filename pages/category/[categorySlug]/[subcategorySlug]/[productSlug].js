@@ -8,6 +8,8 @@ import {
   FaShoppingCart,
   FaCheckCircle,
   FaBoxOpen,
+  FaTruck,
+  FaShieldAlt
 } from "react-icons/fa";
 
 import { useCart } from "../../../../context/CartContext";
@@ -25,7 +27,6 @@ export async function getServerSideProps({ params }) {
 
   const { categorySlug, subcategorySlug, productSlug } = params;
 
-  /* GET PRODUCT */
   const { data: product, error } = await supabase
     .from("products")
     .select(`
@@ -39,7 +40,6 @@ export async function getServerSideProps({ params }) {
   if (error || !product)
     return { notFound: true };
 
-  /* VALIDATE URL */
   if (product.categories?.slug !== categorySlug)
     return { notFound: true };
 
@@ -47,7 +47,6 @@ export async function getServerSideProps({ params }) {
     return { notFound: true };
 
 
-  /* GET RELATED PRODUCTS */
   const { data: related } = await supabase
     .from("products")
     .select(`
@@ -59,6 +58,7 @@ export async function getServerSideProps({ params }) {
     .neq("id", product.id)
     .eq("in_stock", true)
     .limit(10);
+
 
   return {
     props: {
@@ -83,7 +83,7 @@ export default function ProductPage({
 
   const { addToCart } = useCart();
 
-  /* IMAGE LIST */
+
   const images = [
     product.image,
     product.image1,
@@ -91,20 +91,26 @@ export default function ProductPage({
     product.image3,
   ].filter(Boolean);
 
+
   const [activeImg, setActiveImg] = useState(
     images[0] || "/placeholder.png"
   );
 
+
   const unit = product.unit_type || "kg";
+
 
   const minQty = unit === "kg" ? 40 : 1;
 
+
   const [qty, setQty] = useState(minQty);
+
 
   const qtyOptions =
     unit === "kg"
       ? [40, 80, 120, 160, 200]
       : [1, 2, 3, 4, 5];
+
 
 
   function changeQty(val) {
@@ -116,7 +122,6 @@ export default function ProductPage({
   }
 
 
-  /* ================= UI ================= */
 
   return (
 
@@ -151,9 +156,9 @@ export default function ProductPage({
 
 
 
-        {/* IMAGE */}
+        {/* IMAGE CARD */}
 
-        <div style={styles.imageBox}>
+        <div style={styles.imageCard}>
 
           <img
             src={activeImg}
@@ -167,9 +172,9 @@ export default function ProductPage({
 
 
 
-        {/* DETAILS */}
+        {/* PRODUCT INFO CARD */}
 
-        <div style={styles.card}>
+        <div style={styles.infoCard}>
 
 
           <div style={styles.category}>
@@ -182,12 +187,28 @@ export default function ProductPage({
           </h1>
 
 
-          <div style={styles.price}>
-            <FaRupeeSign />
-            {product.price}
-            <span style={styles.unit}>
-              / {unit.toUpperCase()}
-            </span>
+
+          {/* PRICE BOX */}
+
+          <div style={styles.priceBox}>
+
+            <div style={styles.price}>
+
+              <FaRupeeSign />
+
+              {product.price}
+
+              <span style={styles.unit}>
+                / {unit.toUpperCase()}
+              </span>
+
+            </div>
+
+
+            <div style={styles.taxNote}>
+              GST Included
+            </div>
+
           </div>
 
 
@@ -196,43 +217,60 @@ export default function ProductPage({
 
           <div style={styles.badges}>
 
-            <span style={styles.stock}>
-              <FaCheckCircle /> In Stock
-            </span>
+            <div style={styles.badgeGreen}>
+              <FaCheckCircle />
+              In Stock
+            </div>
 
-            <span style={styles.bulk}>
-              <FaBoxOpen /> Bulk Available
-            </span>
+            <div style={styles.badgeBlue}>
+              <FaBoxOpen />
+              Bulk Available
+            </div>
+
+            <div style={styles.badgeGray}>
+              <FaTruck />
+              All India Delivery
+            </div>
+
+            <div style={styles.badgeGray}>
+              <FaShieldAlt />
+              Trusted Supplier
+            </div>
 
           </div>
 
 
 
-          {/* SPECIFICATIONS */}
+          {/* SPEC TABLE */}
 
-          <div style={styles.specBox}>
+          <div style={styles.specCard}>
+
+            <div style={styles.specTitle}>
+              Product Details
+            </div>
+
 
             {product.subcategories?.name &&
-              <Spec value={product.subcategories.name}/>
+              <SpecRow label="Subcategory" value={product.subcategories.name}/>
             }
 
             {product.size &&
-              <Spec label="Size" value={product.size}/>
+              <SpecRow label="Size" value={product.size}/>
             }
 
             {product.gauge &&
-              <Spec label="Gauge" value={product.gauge}/>
+              <SpecRow label="Gauge" value={product.gauge}/>
             }
 
             {product.weight &&
-              <Spec label="Weight" value={product.weight}/>
+              <SpecRow label="Weight" value={product.weight}/>
             }
 
           </div>
 
 
 
-          {/* QUANTITY */}
+          {/* QTY */}
 
           <div style={styles.qtyBox}>
 
@@ -252,6 +290,7 @@ export default function ProductPage({
 
             </select>
 
+
             <div style={styles.minNote}>
               Minimum Order:
               {" "}
@@ -268,18 +307,17 @@ export default function ProductPage({
 
           <div style={styles.buttonRow}>
 
+
             <button
               style={styles.cartBtn}
               onClick={()=>
                 addToCart(product, qty, unit)
               }
             >
-
               <FaShoppingCart />
-
               Add to Cart
-
             </button>
+
 
 
             <a
@@ -288,12 +326,10 @@ export default function ProductPage({
               rel="noreferrer"
               style={styles.whatsappBtn}
             >
-
               <FaWhatsapp />
-
               WhatsApp
-
             </a>
+
 
           </div>
 
@@ -336,16 +372,10 @@ export default function ProductPage({
 }
 
 
+
 /* SPEC ROW */
 
-function Spec({label,value}) {
-
-  if (!label)
-    return (
-      <div style={styles.specSingle}>
-        {value}
-      </div>
-    );
+function SpecRow({label,value}) {
 
   return (
     <div style={styles.specRow}>
@@ -358,197 +388,230 @@ function Spec({label,value}) {
 
 
 
-/* ================= STYLES ================= */
+/* ================= PREMIUM STYLES ================= */
 
 const styles = {
 
 
-  page:{
-    padding:16,
-    paddingBottom:100
-  },
+page:{
+padding:16,
+paddingBottom:100
+},
 
 
-  breadcrumb:{
-    fontSize:13,
-    marginBottom:12,
-    color:"#6b7280",
-    display:"flex",
-    gap:6,
-    flexWrap:"wrap"
-  },
+breadcrumb:{
+fontSize:13,
+marginBottom:14,
+color:"#6b7280",
+display:"flex",
+gap:6,
+flexWrap:"wrap"
+},
 
 
-  imageBox:{
-    background:"#fff",
-    padding:14,
-    borderRadius:14,
-    border:"1px solid #E5E7EB"
-  },
+imageCard:{
+background:"#fff",
+padding:20,
+borderRadius:16,
+boxShadow:"0 4px 20px rgba(0,0,0,0.08)"
+},
 
 
-  image:{
-    width:"100%",
-    height:280,
-    objectFit:"contain"
-  },
+image:{
+width:"100%",
+height:300,
+objectFit:"contain"
+},
 
 
-  card:{
-    background:"#fff",
-    padding:16,
-    borderRadius:14,
-    marginTop:12,
-    border:"1px solid #E5E7EB"
-  },
+infoCard:{
+background:"#fff",
+padding:18,
+borderRadius:16,
+marginTop:14,
+boxShadow:"0 4px 20px rgba(0,0,0,0.08)"
+},
 
 
-  category:{
-    color:"#0B5ED7",
-    fontSize:12,
-    fontWeight:600
-  },
+category:{
+color:"#0B5ED7",
+fontWeight:600,
+fontSize:13
+},
 
 
-  title:{
-    fontSize:20,
-    fontWeight:700,
-    marginTop:4,
-    lineHeight:1.3
-  },
+title:{
+fontSize:22,
+fontWeight:700,
+marginTop:4,
+lineHeight:1.3
+},
 
 
-  price:{
-    fontSize:22,
-    fontWeight:800,
-    color:"#0B5ED7",
-    display:"flex",
-    alignItems:"center",
-    gap:4,
-    marginTop:6
-  },
+priceBox:{
+marginTop:10
+},
 
 
-  unit:{
-    fontSize:14,
-    color:"#6b7280"
-  },
+price:{
+fontSize:26,
+fontWeight:800,
+color:"#0B5ED7",
+display:"flex",
+alignItems:"center",
+gap:4
+},
 
 
-  badges:{
-    display:"flex",
-    gap:14,
-    marginTop:8,
-    fontSize:13
-  },
+unit:{
+fontSize:14,
+color:"#6b7280"
+},
 
 
-  stock:{
-    color:"green",
-    fontWeight:600
-  },
+taxNote:{
+fontSize:12,
+color:"#16a34a"
+},
 
 
-  bulk:{
-    color:"#0B5ED7",
-    fontWeight:600
-  },
+badges:{
+display:"flex",
+flexWrap:"wrap",
+gap:8,
+marginTop:12
+},
 
 
-  specBox:{
-    marginTop:12,
-    borderTop:"1px solid #E5E7EB",
-    paddingTop:10
-  },
+badgeGreen:{
+background:"#dcfce7",
+color:"#166534",
+padding:"6px 10px",
+borderRadius:8,
+fontSize:12,
+display:"flex",
+gap:6,
+alignItems:"center"
+},
 
 
-  specRow:{
-    display:"flex",
-    justifyContent:"space-between",
-    padding:"4px 0",
-    fontSize:14
-  },
+badgeBlue:{
+background:"#dbeafe",
+color:"#1e40af",
+padding:"6px 10px",
+borderRadius:8,
+fontSize:12,
+display:"flex",
+gap:6,
+alignItems:"center"
+},
 
 
-  specSingle:{
-    fontSize:14,
-    fontWeight:600
-  },
+badgeGray:{
+background:"#f3f4f6",
+color:"#374151",
+padding:"6px 10px",
+borderRadius:8,
+fontSize:12,
+display:"flex",
+gap:6,
+alignItems:"center"
+},
 
 
-  qtyBox:{
-    marginTop:14
-  },
+specCard:{
+marginTop:14,
+borderTop:"1px solid #E5E7EB",
+paddingTop:10
+},
 
 
-  select:{
-    width:"100%",
-    padding:12,
-    borderRadius:10,
-    border:"1px solid #E5E7EB"
-  },
+specTitle:{
+fontWeight:700,
+marginBottom:6
+},
 
 
-  minNote:{
-    fontSize:12,
-    color:"#6b7280",
-    marginTop:4
-  },
+specRow:{
+display:"flex",
+justifyContent:"space-between",
+padding:"6px 0",
+fontSize:14
+},
 
 
-  buttonRow:{
-    display:"flex",
-    gap:12,
-    marginTop:16
-  },
+qtyBox:{
+marginTop:14
+},
 
 
-  cartBtn:{
-    flex:1,
-    padding:14,
-    background:"linear-gradient(135deg,#0B5ED7,#084298)",
-    color:"#fff",
-    border:"none",
-    borderRadius:12,
-    fontWeight:700,
-    display:"flex",
-    justifyContent:"center",
-    alignItems:"center",
-    gap:6
-  },
+select:{
+width:"100%",
+padding:12,
+borderRadius:10,
+border:"1px solid #E5E7EB"
+},
 
 
-  whatsappBtn:{
-    flex:1,
-    padding:14,
-    background:"#25D366",
-    color:"#fff",
-    borderRadius:12,
-    textDecoration:"none",
-    fontWeight:700,
-    display:"flex",
-    justifyContent:"center",
-    alignItems:"center",
-    gap:6
-  },
+minNote:{
+fontSize:12,
+color:"#6b7280",
+marginTop:4
+},
 
 
-  relatedBox:{
-    marginTop:24
-  },
+buttonRow:{
+display:"flex",
+gap:12,
+marginTop:16
+},
 
 
-  relatedTitle:{
-    marginBottom:12
-  },
+cartBtn:{
+flex:1,
+padding:14,
+background:"linear-gradient(135deg,#0B5ED7,#084298)",
+color:"#fff",
+border:"none",
+borderRadius:12,
+fontWeight:700,
+display:"flex",
+justifyContent:"center",
+alignItems:"center",
+gap:6
+},
 
 
-  grid:{
-    display:"grid",
-    gridTemplateColumns:"repeat(2,1fr)",
-    gap:16,
-    alignItems:"stretch"
-  }
+whatsappBtn:{
+flex:1,
+padding:14,
+background:"#25D366",
+color:"#fff",
+borderRadius:12,
+textDecoration:"none",
+fontWeight:700,
+display:"flex",
+justifyContent:"center",
+alignItems:"center",
+gap:6
+},
+
+
+relatedBox:{
+marginTop:26
+},
+
+
+relatedTitle:{
+marginBottom:12
+},
+
+
+grid:{
+display:"grid",
+gridTemplateColumns:"repeat(2,1fr)",
+gap:16
+}
 
 
 };
