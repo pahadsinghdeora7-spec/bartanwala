@@ -65,7 +65,7 @@ export default function AdminOrders() {
 
     try {
 
-      // optimistic update (instant UI update)
+      // optimistic UI update
       setOrders(prev =>
         prev.map(order =>
           order.id === id
@@ -74,27 +74,37 @@ export default function AdminOrders() {
         )
       );
 
-      // update supabase
+      // IMPORTANT FIX: map correct DB column names
+      let dbField = field;
+
+      if (field === "order_status")
+        dbField = "status";
+
+      if (field === "payment_status")
+        dbField = "payment_status";
+
       const { error } = await supabase
         .from("orders")
-        .update({ [field]: value })
+        .update({ [dbField]: value })
         .eq("id", id);
 
       if (error) {
 
+        console.error(error);
+
         alert("Update failed");
 
-        // revert if failed
         fetchOrders();
 
       } else {
 
-        // refresh from server (important fix)
         fetchOrders();
 
       }
 
-    } catch {
+    } catch (err) {
+
+      console.error(err);
 
       alert("Error updating status");
 
@@ -168,179 +178,186 @@ export default function AdminOrders() {
       }
 
 
-      {orders.map(order => (
+      {orders.map(order => {
 
-        <div key={order.id} style={styles.card}>
+        const orderStatus = order.status || "Processing";
+        const paymentStatus = order.payment_status || "Pending";
+
+        return (
+
+          <div key={order.id} style={styles.card}>
 
 
-          {/* HEADER */}
+            {/* HEADER */}
 
-          <div style={styles.header}>
+            <div style={styles.header}>
 
-            <div>
+              <div>
 
-              <div style={styles.orderNo}>
-                {order.order_number}
+                <div style={styles.orderNo}>
+                  {order.order_number}
+                </div>
+
+                <div style={styles.date}>
+                  {new Date(order.created_at).toLocaleString()}
+                </div>
+
               </div>
 
-              <div style={styles.date}>
-                {new Date(order.created_at).toLocaleString()}
+              <div style={styles.amount}>
+                ₹ {order.total_amount}
               </div>
 
             </div>
 
-            <div style={styles.amount}>
-              ₹ {order.total_amount}
-            </div>
 
-          </div>
+            {/* BADGES */}
 
+            <div style={styles.badgeRow}>
 
-          {/* BADGES */}
-
-          <div style={styles.badgeRow}>
-
-            <span
-              style={{
-                ...styles.badge,
-                background: getOrderStatusColor(order.order_status)
-              }}
-            >
-              {order.order_status || "Processing"}
-            </span>
-
-
-            <span
-              style={{
-                ...styles.badge,
-                background: getPaymentStatusColor(order.payment_status)
-              }}
-            >
-              {order.payment_status || "Pending"}
-            </span>
-
-          </div>
-
-
-          {/* CUSTOMER */}
-
-          <div style={styles.info}>
-
-            <p>
-              <strong>Business:</strong>
-              {" "}
-              {order.customer_business || "-"}
-            </p>
-
-            <p>
-              <strong>Name:</strong>
-              {" "}
-              {order.customer_name}
-            </p>
-
-            <p>
-              <strong>Phone:</strong>
-              {" "}
-              {order.customer_phone}
-            </p>
-
-            <p>
-              <strong>City:</strong>
-              {" "}
-              {order.customer_city}
-            </p>
-
-            <p>
-              <strong>Transport:</strong>
-              {" "}
-              {order.transport_name || "-"}
-            </p>
-
-          </div>
-
-
-          {/* STATUS UPDATE */}
-
-          <div style={styles.statusRow}>
-
-
-            {/* ORDER STATUS */}
-
-            <div style={styles.statusBox}>
-
-              <label style={styles.label}>
-                Order Status
-              </label>
-
-              <select
-                value={order.order_status || "Processing"}
-                onChange={(e)=>
-                  updateStatus(
-                    order.id,
-                    "order_status",
-                    e.target.value
-                  )
-                }
-                style={styles.select}
+              <span
+                style={{
+                  ...styles.badge,
+                  background: getOrderStatusColor(orderStatus)
+                }}
               >
-
-                <option value="Processing">Processing</option>
-                <option value="Confirmed">Confirmed</option>
-                <option value="Shipped">Shipped</option>
-                <option value="Delivered">Delivered</option>
-                <option value="Cancelled">Cancelled</option>
-
-              </select>
-
-            </div>
+                {orderStatus}
+              </span>
 
 
-            {/* PAYMENT STATUS */}
-
-            <div style={styles.statusBox}>
-
-              <label style={styles.label}>
-                Payment Status
-              </label>
-
-              <select
-                value={order.payment_status || "Pending"}
-                onChange={(e)=>
-                  updateStatus(
-                    order.id,
-                    "payment_status",
-                    e.target.value
-                  )
-                }
-                style={styles.select}
+              <span
+                style={{
+                  ...styles.badge,
+                  background: getPaymentStatusColor(paymentStatus)
+                }}
               >
-
-                <option value="Pending">Pending</option>
-                <option value="Paid">Paid</option>
-                <option value="Failed">Failed</option>
-
-              </select>
+                {paymentStatus}
+              </span>
 
             </div>
+
+
+            {/* CUSTOMER */}
+
+            <div style={styles.info}>
+
+              <p>
+                <strong>Business:</strong>
+                {" "}
+                {order.customer_business || "-"}
+              </p>
+
+              <p>
+                <strong>Name:</strong>
+                {" "}
+                {order.customer_name}
+              </p>
+
+              <p>
+                <strong>Phone:</strong>
+                {" "}
+                {order.customer_phone}
+              </p>
+
+              <p>
+                <strong>City:</strong>
+                {" "}
+                {order.customer_city}
+              </p>
+
+              <p>
+                <strong>Transport:</strong>
+                {" "}
+                {order.transport_name || "-"}
+              </p>
+
+            </div>
+
+
+            {/* STATUS UPDATE */}
+
+            <div style={styles.statusRow}>
+
+
+              {/* ORDER STATUS */}
+
+              <div style={styles.statusBox}>
+
+                <label style={styles.label}>
+                  Order Status
+                </label>
+
+                <select
+                  value={orderStatus}
+                  onChange={(e)=>
+                    updateStatus(
+                      order.id,
+                      "order_status",
+                      e.target.value
+                    )
+                  }
+                  style={styles.select}
+                >
+
+                  <option value="Processing">Processing</option>
+                  <option value="Confirmed">Confirmed</option>
+                  <option value="Shipped">Shipped</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Cancelled">Cancelled</option>
+
+                </select>
+
+              </div>
+
+
+              {/* PAYMENT STATUS */}
+
+              <div style={styles.statusBox}>
+
+                <label style={styles.label}>
+                  Payment Status
+                </label>
+
+                <select
+                  value={paymentStatus}
+                  onChange={(e)=>
+                    updateStatus(
+                      order.id,
+                      "payment_status",
+                      e.target.value
+                    )
+                  }
+                  style={styles.select}
+                >
+
+                  <option value="Pending">Pending</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Failed">Failed</option>
+
+                </select>
+
+              </div>
+
+            </div>
+
+
+            {/* VIEW BUTTON */}
+
+            <button
+              style={styles.viewBtn}
+              onClick={() =>
+                router.push(`/admin/orders/${order.id}`)
+              }
+            >
+              View Full Details
+            </button>
+
 
           </div>
 
+        );
 
-          {/* VIEW BUTTON */}
-
-          <button
-            style={styles.viewBtn}
-            onClick={() =>
-              router.push(`/admin/orders/${order.id}`)
-            }
-          >
-            View Full Details
-          </button>
-
-
-        </div>
-
-      ))}
+      })}
 
     </div>
 
