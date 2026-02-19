@@ -1,19 +1,19 @@
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
 import { supabase } from "../../lib/supabase";
-import { FaBars } from "react-icons/fa";
+import { useRouter } from "next/router";
 
-import AdminDrawer from "./AdminDrawer";
+import AdminSidebar from "./AdminSidebar";
+import AdminHeader from "./AdminHeader";
 
 export default function AdminLayout({ children }) {
 
   const router = useRouter();
 
-  const [checking, setChecking] = useState(true);
-
-  const [drawerOpen, setDrawerOpen] = useState(false);
-
   const [user, setUser] = useState(null);
+
+  const [loading, setLoading] = useState(true);
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
 
   /* ================= CHECK ADMIN ================= */
@@ -28,13 +28,13 @@ export default function AdminLayout({ children }) {
 
         router.replace("/admin/login");
 
-      } else {
-
-        setUser(data.user);
-
-        setChecking(false);
+        return;
 
       }
+
+      setUser(data.user);
+
+      setLoading(false);
 
     }
 
@@ -43,81 +43,41 @@ export default function AdminLayout({ children }) {
   }, []);
 
 
-  if (checking) return null;
+  if (loading) return null;
 
-
-  /* ================= UI ================= */
 
   return (
 
     <div style={styles.wrapper}>
 
-      {/* ================= DRAWER ================= */}
 
-      <AdminDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+      {/* SIDEBAR */}
+
+      <AdminSidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
 
 
-      {/* ================= HEADER ================= */}
+      {/* MAIN */}
 
-      <header style={styles.header}>
-
-
-        {/* LEFT */}
-
-        <div style={styles.left}>
-
-          <div
-            style={styles.menuBtn}
-            onClick={() => setDrawerOpen(true)}
-          >
-            <FaBars size={20} />
-          </div>
+      <div style={styles.main}>
 
 
-          <span style={styles.logo}>
-            Admin Panel
-          </span>
+        <AdminHeader
+          user={user}
+          onMenuClick={() => setSidebarOpen(true)}
+        />
+
+
+        <div style={styles.content}>
+
+          {children}
 
         </div>
 
 
-        {/* RIGHT */}
-
-        <div style={styles.right}>
-
-
-          {user?.email && (
-
-            <span style={styles.email}>
-              {user.email}
-            </span>
-
-          )}
-
-
-          <button
-            style={styles.storeBtn}
-            onClick={() => router.push("/")}
-          >
-            Store →
-          </button>
-
-        </div>
-
-
-      </header>
-
-
-      {/* ================= CONTENT ================= */}
-
-      <main style={styles.content}>
-
-        {children}
-
-      </main>
+      </div>
 
 
     </div>
@@ -127,77 +87,23 @@ export default function AdminLayout({ children }) {
 }
 
 
-
 /* ================= STYLES ================= */
 
 const styles = {
 
   wrapper: {
+    display: "flex",
     minHeight: "100vh",
-    background: "#f5f6f8"
+    background: "#f4f6f8"
   },
 
-
-  header: {
-    height: 56,
-    background: "#0B5ED7",
-    color: "#fff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "0 16px",
-    position: "sticky",
-    top: 0,
-    zIndex: 100
+  main: {
+    flex: 1,
+    marginLeft: 240
   },
-
-
-  left: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12
-  },
-
-
-  menuBtn: {
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center"
-  },
-
-
-  logo: {
-    fontWeight: 700,
-    fontSize: 16
-  },
-
-
-  right: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10
-  },
-
-
-  email: {
-    fontSize: 12,
-    opacity: 0.9
-  },
-
-
-  storeBtn: {
-    background: "#fff",
-    color: "#0B5ED7",
-    border: "none",
-    padding: "6px 12px",
-    borderRadius: 6,
-    fontWeight: 600,
-    cursor: "pointer"
-  },
-
 
   content: {
-    padding: 16
+    padding: 20
   }
 
 };
