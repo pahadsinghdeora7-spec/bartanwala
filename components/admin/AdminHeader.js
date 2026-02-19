@@ -1,66 +1,80 @@
+import { FaBars } from "react-icons/fa";
 import { useRouter } from "next/router";
 
-export default function AdminHeader({ onMenuClick }) {
+export default function AdminHeader({ user, onMenuClick }) {
+
   const router = useRouter();
 
   return (
-    <header style={styles.header}>
-      {/* LEFT – MENU ICON */}
-      <button style={styles.menuBtn} onClick={onMenuClick}>
-        ☰
-      </button>
 
-      {/* TITLE */}
-      <div style={styles.title}>Admin Panel</div>
+    <div style={styles.header}>
 
-      {/* RIGHT – BACK TO STORE */}
-      <button
-        style={styles.storeBtn}
-        onClick={() => router.push("/")}
-      >
-        Back to Store →
-      </button>
-    </header>
+
+      <FaBars
+        size={20}
+        onClick={onMenuClick}
+        style={{ cursor: "pointer" }}
+      />
+
+
+      <div style={styles.right}>
+
+
+        <span style={styles.email}>
+          {user?.email}
+        </span>
+
+
+        <button
+          style={styles.storeBtn}
+          onClick={() => router.push("/")}
+        >
+
+          View Store
+
+        </button>
+
+
+      </div>
+
+
+    </div>
+
   );
+
 }
+
 
 /* ================= STYLES ================= */
 
 const styles = {
+
   header: {
     height: 56,
-    background: "#0B5ED7",
-    color: "#fff",
+    background: "#fff",
+    borderBottom: "1px solid #e5e7eb",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "0 20px"
+  },
+
+  right: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    padding: "0 12px",
-    position: "sticky",
-    top: 0,
-    zIndex: 1000,
+    gap: 10
   },
 
-  menuBtn: {
-    fontSize: 22,
-    background: "transparent",
-    border: "none",
-    color: "#fff",
-    cursor: "pointer",
-  },
-
-  title: {
-    fontSize: 16,
-    fontWeight: 700,
+  email: {
+    fontSize: 13
   },
 
   storeBtn: {
-    background: "#fff",
-    color: "#0B5ED7",
+    background: "#0B5ED7",
+    color: "#fff",
     border: "none",
-    padding: "6px 10px",
-    borderRadius: 6,
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: "pointer",
-  },
+    padding: "6px 12px",
+    borderRadius: 6
+  }
+
 };
