@@ -7,38 +7,42 @@ export default function AdminHeader({ user, onMenuClick }) {
 
   return (
 
-    <div style={styles.header}>
+    <header style={styles.header}>
+
+      {/* LEFT */}
+      <div style={styles.left}>
+
+        <FaBars
+          size={20}
+          onClick={onMenuClick}
+          style={styles.menu}
+        />
+
+        <span style={styles.logo}>
+          Admin Panel
+        </span>
+
+      </div>
 
 
-      <FaBars
-        size={20}
-        onClick={onMenuClick}
-        style={{ cursor: "pointer" }}
-      />
-
-
+      {/* RIGHT */}
       <div style={styles.right}>
-
 
         <span style={styles.email}>
           {user?.email}
         </span>
 
-
         <button
           style={styles.storeBtn}
           onClick={() => router.push("/")}
         >
-
           View Store
-
         </button>
-
 
       </div>
 
 
-    </div>
+    </header>
 
   );
 
@@ -56,17 +60,36 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "0 20px"
+    padding: "0 16px",
+    position: "sticky",
+    top: 0,
+    zIndex: 500
+  },
+
+  left: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12
+  },
+
+  menu: {
+    cursor: "pointer"
+  },
+
+  logo: {
+    fontWeight: 700,
+    fontSize: 16
   },
 
   right: {
     display: "flex",
     alignItems: "center",
-    gap: 10
+    gap: 12
   },
 
   email: {
-    fontSize: 13
+    fontSize: 13,
+    color: "#6b7280"
   },
 
   storeBtn: {
@@ -74,7 +97,9 @@ const styles = {
     color: "#fff",
     border: "none",
     padding: "6px 12px",
-    borderRadius: 6
+    borderRadius: 6,
+    cursor: "pointer",
+    fontWeight: 600
   }
 
 };
