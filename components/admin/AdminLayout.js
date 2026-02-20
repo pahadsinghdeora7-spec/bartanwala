@@ -52,14 +52,10 @@ export default function AdminLayout({ children }) {
 
       setIsMobile(mobile);
 
-      // desktop = always open
+      // Desktop → sidebar always open
       if (!mobile) {
 
         setSidebarOpen(true);
-
-      } else {
-
-        setSidebarOpen(false);
 
       }
 
@@ -95,17 +91,15 @@ export default function AdminLayout({ children }) {
       />
 
 
-      {/* MAIN */}
+      {/* MAIN AREA */}
 
       <div
         style={{
           ...styles.main,
-
           marginLeft:
             !isMobile && sidebarOpen
               ? 240
               : 0
-
         }}
       >
 
@@ -114,11 +108,13 @@ export default function AdminLayout({ children }) {
 
         <AdminHeader
           user={user}
-          onMenuClick={() => setSidebarOpen(true)}
+          onMenuClick={() =>
+            setSidebarOpen(!sidebarOpen)
+          }
         />
 
 
-        {/* CONTENT */}
+        {/* PAGE CONTENT */}
 
         <div style={styles.content}>
 
@@ -142,19 +138,34 @@ export default function AdminLayout({ children }) {
 
 const styles = {
 
-  wrapper:{
-    display:"flex",
-    minHeight:"100vh",
-    background:"#f4f6f8"
+  wrapper: {
+
+    display: "flex",
+
+    minHeight: "100vh",
+
+    background: "#f4f6f8"
+
   },
 
-  main:{
-    flex:1,
-    transition:"margin-left 0.2s ease"
+
+  main: {
+
+    flex: 1,
+
+    transition: "margin-left 0.2s ease"
+
   },
 
-  content:{
-    padding:20
+
+  content: {
+
+    padding: 20,
+
+    paddingTop: 76,   // ✅ IMPORTANT → fixed header offset
+
+    minHeight: "100vh"
+
   }
 
 };
