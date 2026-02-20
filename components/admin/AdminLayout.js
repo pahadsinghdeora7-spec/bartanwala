@@ -25,8 +25,10 @@ export default function AdminLayout({ children }) {
       const { data } = await supabase.auth.getUser();
 
       if (!data?.user) {
+
         router.replace("/admin/login");
         return;
+
       }
 
       setUser(data.user);
@@ -39,7 +41,8 @@ export default function AdminLayout({ children }) {
   }, []);
 
 
-  /* ================= CHECK SCREEN SIZE ================= */
+
+  /* ================= CHECK DEVICE ================= */
 
   useEffect(() => {
 
@@ -49,8 +52,15 @@ export default function AdminLayout({ children }) {
 
       setIsMobile(mobile);
 
+      // desktop = always open
       if (!mobile) {
-        setSidebarOpen(true); // always open on desktop
+
+        setSidebarOpen(true);
+
+      } else {
+
+        setSidebarOpen(false);
+
       }
 
     }
@@ -65,7 +75,9 @@ export default function AdminLayout({ children }) {
   }, []);
 
 
+
   if (loading) return null;
+
 
 
   /* ================= UI ================= */
@@ -73,7 +85,6 @@ export default function AdminLayout({ children }) {
   return (
 
     <div style={styles.wrapper}>
-
 
       {/* SIDEBAR */}
 
@@ -84,12 +95,17 @@ export default function AdminLayout({ children }) {
       />
 
 
-      {/* MAIN AREA */}
+      {/* MAIN */}
 
       <div
         style={{
           ...styles.main,
-          marginLeft: isMobile ? 0 : 240
+
+          marginLeft:
+            !isMobile && sidebarOpen
+              ? 240
+              : 0
+
         }}
       >
 
@@ -121,23 +137,24 @@ export default function AdminLayout({ children }) {
 }
 
 
+
 /* ================= STYLES ================= */
 
 const styles = {
 
-  wrapper: {
-    display: "flex",
-    minHeight: "100vh",
-    background: "#f4f6f8"
+  wrapper:{
+    display:"flex",
+    minHeight:"100vh",
+    background:"#f4f6f8"
   },
 
-  main: {
-    flex: 1,
-    transition: "margin-left 0.2s ease"
+  main:{
+    flex:1,
+    transition:"margin-left 0.2s ease"
   },
 
-  content: {
-    padding: 20
+  content:{
+    padding:20
   }
 
 };
