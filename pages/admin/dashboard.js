@@ -32,31 +32,22 @@ export default function Dashboard() {
 
     try {
 
-      /* PRODUCTS COUNT */
       const { count: products } = await supabase
         .from("products")
         .select("*", { count: "exact", head: true });
 
-
-      /* CATEGORIES COUNT */
       const { count: categories } = await supabase
         .from("categories")
         .select("*", { count: "exact", head: true });
 
-
-      /* SUBCATEGORIES COUNT */
       const { count: subcategories } = await supabase
         .from("subcategories")
         .select("*", { count: "exact", head: true });
 
-
-      /* CUSTOMERS COUNT */
       const { count: customers } = await supabase
         .from("customers")
         .select("*", { count: "exact", head: true });
 
-
-      /* ORDERS DATA */
       const { data: orders } = await supabase
         .from("orders")
         .select("status,total_amount");
@@ -116,111 +107,88 @@ export default function Dashboard() {
       <h1 style={styles.title}>Admin Dashboard</h1>
 
 
-      {/* ================= STATS CARDS ================= */}
+      {/* ================= STATS ================= */}
 
       <div style={styles.statsGrid}>
 
-        <div style={styles.statCard}>
-          <div style={styles.statValue}>{stats.orders}</div>
-          <div style={styles.statLabel}>Total Orders</div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div style={styles.statValue}>{stats.pending}</div>
-          <div style={styles.statLabel}>Pending Orders</div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div style={styles.statValue}>{stats.cancelled}</div>
-          <div style={styles.statLabel}>Cancelled Orders</div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div style={styles.statValue}>{stats.delivered}</div>
-          <div style={styles.statLabel}>Delivered Orders</div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div style={styles.statValue}>₹ {stats.revenue}</div>
-          <div style={styles.statLabel}>Total Revenue</div>
-        </div>
-
-        <div style={styles.statCard}>
-          <div style={styles.statValue}>{stats.subcategories}</div>
-          <div style={styles.statLabel}>Sub Categories</div>
-        </div>
+        <StatCard label="Total Orders" value={stats.orders} />
+        <StatCard label="Pending Orders" value={stats.pending} />
+        <StatCard label="Cancelled Orders" value={stats.cancelled} />
+        <StatCard label="Delivered Orders" value={stats.delivered} />
+        <StatCard label="Total Revenue" value={`₹ ${stats.revenue}`} />
+        <StatCard label="Sub Categories" value={stats.subcategories} />
 
       </div>
 
 
 
-      {/* ================= MAIN CARDS ================= */}
+      {/* ================= MANAGEMENT ================= */}
 
       <div style={styles.grid}>
-        
+
+
         {/* PRODUCTS */}
-        <div
-          style={styles.card}
+        <Card
+          icon="📦"
+          label="Products"
+          sub={`Total: ${stats.products}`}
           onClick={() => router.push("/admin/products")}
-        >
-          <div style={styles.icon}>📦</div>
-          <div style={styles.label}>Products</div>
-          <div style={styles.sub}>
-            Total: {stats.products}
-          </div>
-        </div>
+        />
 
 
         {/* CATEGORIES */}
-        <div
-          style={styles.card}
+        <Card
+          icon="🗂️"
+          label="Categories"
+          sub={`Total: ${stats.categories}`}
           onClick={() => router.push("/admin/categories")}
-        >
-          <div style={styles.icon}>🗂️</div>
-          <div style={styles.label}>Categories</div>
-          <div style={styles.sub}>
-            Total: {stats.categories}
-          </div>
-        </div>
+        />
+
+
+        {/* SUBCATEGORIES */}
+        <Card
+          icon="📂"
+          label="Sub Categories"
+          sub={`Total: ${stats.subcategories}`}
+          onClick={() => router.push("/admin/categories/add-sub")}
+        />
 
 
         {/* ORDERS */}
-        <div
-          style={styles.card}
+        <Card
+          icon="🧾"
+          label="Orders"
+          sub={`Total: ${stats.orders}`}
           onClick={() => router.push("/admin/orders")}
-        >
-          <div style={styles.icon}>🧾</div>
-          <div style={styles.label}>Orders</div>
-          <div style={styles.sub}>
-            Total: {stats.orders}
-          </div>
-        </div>
+        />
 
 
         {/* CUSTOMERS */}
-        <div
-          style={styles.card}
+        <Card
+          icon="👤"
+          label="Customers"
+          sub={`Total: ${stats.customers}`}
           onClick={() => router.push("/admin/customers")}
-        >
-          <div style={styles.icon}>👤</div>
-          <div style={styles.label}>Customers</div>
-          <div style={styles.sub}>
-            Total: {stats.customers}
-          </div>
-        </div>
+        />
 
 
-        {/* DELIVERY */}
-        <div
-          style={styles.card}
-          onClick={() => router.push("/admin/delivery")}
-        >
-          <div style={styles.icon}>🚚</div>
-          <div style={styles.label}>Delivery</div>
-          <div style={styles.sub}>
-            Shipping & Tracking
-          </div>
-        </div>
+        {/* BANNERS */}
+        <Card
+          icon="🖼️"
+          label="Banner Management"
+          sub="Upload & manage banners"
+          onClick={() => router.push("/admin/banners")}
+        />
+
+
+        {/* POLICIES */}
+        <Card
+          icon="📄"
+          label="Policy Management"
+          sub="Edit website policies"
+          onClick={() => router.push("/admin/policies")}
+        />
+
 
       </div>
 
@@ -233,80 +201,119 @@ export default function Dashboard() {
 
 
 
+/* ================= COMPONENTS ================= */
+
+function StatCard({ label, value }) {
+
+  return (
+
+    <div style={styles.statCard}>
+
+      <div style={styles.statValue}>{value}</div>
+
+      <div style={styles.statLabel}>{label}</div>
+
+    </div>
+
+  );
+
+}
+
+
+
+function Card({ icon, label, sub, onClick }) {
+
+  return (
+
+    <div style={styles.card} onClick={onClick}>
+
+      <div style={styles.icon}>{icon}</div>
+
+      <div style={styles.label}>{label}</div>
+
+      <div style={styles.sub}>{sub}</div>
+
+    </div>
+
+  );
+
+}
+
+
+
 /* ================= STYLES ================= */
 
 const styles = {
 
-  title: {
-    fontSize: 22,
-    fontWeight: 700,
-    marginBottom: 16
+  title:{
+    fontSize:22,
+    fontWeight:700,
+    marginBottom:16
   },
 
 
-  statsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-    gap: 12,
-    marginBottom: 20
+  statsGrid:{
+    display:"grid",
+    gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",
+    gap:12,
+    marginBottom:20
   },
 
 
-  statCard: {
-    background: "#fff",
-    padding: 16,
-    borderRadius: 12,
-    border: "1px solid #e5e7eb"
+  statCard:{
+    background:"#fff",
+    padding:16,
+    borderRadius:12,
+    border:"1px solid #e5e7eb"
   },
 
 
-  statValue: {
-    fontSize: 20,
-    fontWeight: 700,
-    color: "#0B5ED7"
+  statValue:{
+    fontSize:20,
+    fontWeight:700,
+    color:"#0B5ED7"
   },
 
 
-  statLabel: {
-    fontSize: 12,
-    color: "#6b7280"
+  statLabel:{
+    fontSize:12,
+    color:"#6b7280"
   },
 
 
-  grid: {
-    marginTop: 10,
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-    gap: 16
+  grid:{
+    display:"grid",
+    gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",
+    gap:16
   },
 
 
-  card: {
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: 14,
-    padding: 20,
-    textAlign: "center",
-    cursor: "pointer"
+  card:{
+    background:"#fff",
+    border:"1px solid #e5e7eb",
+    borderRadius:14,
+    padding:20,
+    textAlign:"center",
+    cursor:"pointer"
   },
 
 
-  icon: {
-    fontSize: 28,
-    marginBottom: 8
+  icon:{
+    fontSize:28,
+    marginBottom:8
   },
 
 
-  label: {
-    fontSize: 16,
-    fontWeight: 700
+  label:{
+    fontSize:16,
+    fontWeight:700
   },
 
 
-  sub: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 6
+  sub:{
+    fontSize:12,
+    color:"#6b7280",
+    marginTop:6
   }
 
 };
