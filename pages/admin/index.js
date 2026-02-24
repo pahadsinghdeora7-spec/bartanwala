@@ -170,7 +170,7 @@ export default function AdminDashboard() {
 
 
 
-        {/* ================= ORDER STATS ================= */}
+        {/* ORDER STATS */}
 
         <div style={styles.grid}>
 
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
 
 
 
-        {/* ================= MAIN MANAGEMENT ================= */}
+        {/* MAIN MANAGEMENT */}
 
         <div style={styles.grid}>
 
@@ -230,11 +230,12 @@ export default function AdminDashboard() {
             onClick={() => router.push("/admin/categories")}
           />
 
+          {/* ✅ FIXED ROUTE */}
           <StatCard
             icon={<FaLayerGroup />}
             label="Subcategories"
             value={stats.subcategories}
-            onClick={() => router.push("/admin/subcategories")}
+            onClick={() => router.push("/admin/categories/add-sub")}
           />
 
           <StatCard
@@ -282,9 +283,10 @@ export default function AdminDashboard() {
             ➕ Add Category
           </button>
 
+          {/* ✅ FIXED ROUTE */}
           <button
             style={styles.quickBtn}
-            onClick={() => router.push("/admin/subcategories/add")}
+            onClick={() => router.push("/admin/categories/add-sub")}
           >
             ➕ Add Subcategory
           </button>
@@ -306,7 +308,7 @@ export default function AdminDashboard() {
 
 
 
-/* ================= COMPONENT ================= */
+/* COMPONENT */
 
 function StatCard({ icon, label, value, onClick }) {
 
@@ -336,105 +338,90 @@ function StatCard({ icon, label, value, onClick }) {
 
 
 
-/* ================= STYLES ================= */
+/* STYLES */
 
 const styles = {
-
-  header: {
-    background: "#0B5ED7",
-    color: "#fff",
-    padding: "12px 16px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center"
+  header:{
+    background:"#0B5ED7",
+    color:"#fff",
+    padding:"12px 16px",
+    display:"flex",
+    justifyContent:"space-between",
+    alignItems:"center"
   },
-
-  menu: {
-    fontSize: 18,
-    fontWeight: 700
+  menu:{
+    fontSize:18,
+    fontWeight:700
   },
-
-  backBtn: {
-    background: "#fff",
-    color: "#0B5ED7",
-    border: "none",
-    padding: "8px 12px",
-    borderRadius: 8,
-    fontWeight: 600
+  backBtn:{
+    background:"#fff",
+    color:"#0B5ED7",
+    border:"none",
+    padding:"8px 12px",
+    borderRadius:8,
+    fontWeight:600
   },
-
-  page: {
-    padding: 16,
-    background: "#f5f6f8",
-    minHeight: "100vh"
+  page:{
+    padding:16,
+    background:"#f5f6f8",
+    minHeight:"100vh"
   },
-
-  title: {
-    fontSize: 22,
-    fontWeight: 700
+  title:{
+    fontSize:22,
+    fontWeight:700
   },
-
-  sub: {
-    fontSize: 13,
-    color: "#6b7280",
-    marginBottom: 16
+  sub:{
+    fontSize:13,
+    color:"#6b7280",
+    marginBottom:16
   },
-
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2,1fr)",
-    gap: 14,
-    marginBottom: 20
+  grid:{
+    display:"grid",
+    gridTemplateColumns:"repeat(2,1fr)",
+    gap:14,
+    marginBottom:20
   },
-
-  stat: {
-    background: "#fff",
-    padding: 16,
-    borderRadius: 14,
-    display: "flex",
-    gap: 12,
-    alignItems: "center",
-    cursor: "pointer",
-    border: "1px solid #e5e7eb"
+  stat:{
+    background:"#fff",
+    padding:16,
+    borderRadius:14,
+    display:"flex",
+    gap:12,
+    alignItems:"center",
+    cursor:"pointer",
+    border:"1px solid #e5e7eb"
   },
-
-  icon: {
-    fontSize: 22,
-    color: "#0B5ED7"
+  icon:{
+    fontSize:22,
+    color:"#0B5ED7"
   },
-
-  statValue: {
-    fontSize: 18,
-    fontWeight: 700
+  statValue:{
+    fontSize:18,
+    fontWeight:700
   },
-
-  statLabel: {
-    fontSize: 13,
-    color: "#6b7280"
+  statLabel:{
+    fontSize:13,
+    color:"#6b7280"
   },
-
-  quickWrap: {
-    background: "#fff",
-    padding: 16,
-    borderRadius: 14,
-    border: "1px solid #e5e7eb"
+  quickWrap:{
+    background:"#fff",
+    padding:16,
+    borderRadius:14,
+    border:"1px solid #e5e7eb"
   },
-
-  quickTitle: {
-    fontSize: 16,
-    fontWeight: 700,
-    marginBottom: 10
+  quickTitle:{
+    fontSize:16,
+    fontWeight:700,
+    marginBottom:10
   },
-
-  quickBtn: {
-    width: "100%",
-    padding: 12,
-    marginTop: 8,
-    borderRadius: 10,
-    border: "1px solid #0B5ED7",
-    background: "#fff",
-    color: "#0B5ED7",
-    fontWeight: 600
+  quickBtn:{
+    width:"100%",
+    padding:12,
+    marginTop:8,
+    borderRadius:10,
+    border:"1px solid #0B5ED7",
+    background:"#fff",
+    color:"#0B5ED7",
+    fontWeight:600
   }
-
 };
