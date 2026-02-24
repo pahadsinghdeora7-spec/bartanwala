@@ -145,12 +145,12 @@ export default function Dashboard() {
         />
 
 
-        {/* SUBCATEGORIES */}
+        {/* ✅ FIXED SUBCATEGORIES ROUTE */}
         <Card
           icon="📂"
           label="Sub Categories"
           sub={`Total: ${stats.subcategories}`}
-          onClick={() => router.push("/admin/categories/add-sub")}
+          onClick={() => router.push("/admin/subcategories/add")}
         />
 
 
@@ -251,14 +251,12 @@ const styles = {
     marginBottom:16
   },
 
-
   statsGrid:{
     display:"grid",
     gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",
     gap:12,
     marginBottom:20
   },
-
 
   statCard:{
     background:"#fff",
@@ -267,26 +265,22 @@ const styles = {
     border:"1px solid #e5e7eb"
   },
 
-
   statValue:{
     fontSize:20,
     fontWeight:700,
     color:"#0B5ED7"
   },
 
-
   statLabel:{
     fontSize:12,
     color:"#6b7280"
   },
-
 
   grid:{
     display:"grid",
     gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",
     gap:16
   },
-
 
   card:{
     background:"#fff",
@@ -297,18 +291,15 @@ const styles = {
     cursor:"pointer"
   },
 
-
   icon:{
     fontSize:28,
     marginBottom:8
   },
 
-
   label:{
     fontSize:16,
     fontWeight:700
   },
-
 
   sub:{
     fontSize:12,
